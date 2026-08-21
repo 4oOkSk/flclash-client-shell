@@ -7,6 +7,17 @@ on:
         description: Ten-digit release build number
         required: true
         type: string
+      platform:
+        description: Platform set to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - android
+          - linux
+          - windows
+          - macos
 
 permissions:
   contents: read
@@ -28,6 +39,8 @@ jobs:
     name: Source and exact release checks
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    outputs:
+      build_matrix: ${{ steps.build_matrix.outputs.value }}
     steps:
       - name: Checkout public source without credentials
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -92,6 +105,30 @@ jobs:
           flutter analyze --no-fatal-warnings --no-fatal-infos
           flutter test --reporter expanded
 
+      - name: Select requested build matrix
+        id: build_matrix
+        shell: bash
+        run: |
+          case '${{ inputs.platform }}' in
+            all)
+              value='{"include":[{"platform":"android","os":"ubuntu-22.04","targets":"apk","extension":"apk","setup_args":"--no-split-per-abi"},{"platform":"linux","os":"ubuntu-22.04","targets":"deb","extension":"deb","setup_args":""},{"platform":"windows","os":"windows-2022","targets":"zip","extension":"exe","setup_args":""},{"platform":"macos","os":"macos-15","targets":"dmg","extension":"dmg","setup_args":""}]}'
+              ;;
+            android)
+              value='{"include":[{"platform":"android","os":"ubuntu-22.04","targets":"apk","extension":"apk","setup_args":"--no-split-per-abi"}]}'
+              ;;
+            linux)
+              value='{"include":[{"platform":"linux","os":"ubuntu-22.04","targets":"deb","extension":"deb","setup_args":""}]}'
+              ;;
+            windows)
+              value='{"include":[{"platform":"windows","os":"windows-2022","targets":"zip","extension":"exe","setup_args":""}]}'
+              ;;
+            macos)
+              value='{"include":[{"platform":"macos","os":"macos-15","targets":"dmg","extension":"dmg","setup_args":""}]}'
+              ;;
+            *) exit 2 ;;
+          esac
+          printf 'value=%s\n' "$value" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build sealed ${{ matrix.platform }} package
     needs: verify
@@ -99,28 +136,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: android
-            os: ubuntu-22.04
-            targets: apk
-            extension: apk
-            setup_args: --no-split-per-abi
-          - platform: linux
-            os: ubuntu-22.04
-            targets: deb
-            extension: deb
-            setup_args: ''
-          - platform: windows
-            os: windows-2022
-            targets: zip
-            extension: exe
-            setup_args: ''
-          - platform: macos
-            os: macos-15
-            targets: dmg
-            extension: dmg
-            setup_args: ''
+      matrix: ${{ fromJSON(needs.verify.outputs.build_matrix) }}
     steps:
       - name: Checkout public source without credentials
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -285,7 +301,7 @@ jobs:
             (Join-Path $stage 'package.exe')
 
       - name: Stage one generic package filename
-        if: matrix.platform != 'windows'
+        if: matrix.platform != 'windows' && matrix.platform != 'android'
         shell: bash
         run: |
           shopt -s nullglob
@@ -295,6 +311,17 @@ jobs:
           test ! -e "$stage"
           mkdir "$stage"
           cp -- "${packages[0]}" "$stage/package.${{ matrix.extension }}"
+
+      - name: Stage Android package from Flutter output
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          package='build/app/outputs/flutter-apk/app-release.apk'
+          test -f "$package"
+          stage="$RUNNER_TEMP/sealed-package-stage"
+          test ! -e "$stage"
+          mkdir "$stage"
+          cp -- "$package" "$stage/package.apk"
 
       - name: Verify Android signature
         if: matrix.platform == 'android'
