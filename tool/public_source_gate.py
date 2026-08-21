@@ -29,6 +29,9 @@ EXPECTED_GENERIC_ICON_SHA256 = (
 EXPECTED_GENERIC_BRANDING_SET_SHA256 = (
     "b3e890df2518386632f2eff6f3f697afa3132c3070e669fc68ed513cdf72a09f"
 )
+EXPECTED_ENCRYPTED_PAYLOAD_SHA256 = (
+    "d451907d9cbf6b317649c437eb8ef9238e122eee61e7fdf3f24b6d9bd4573cd8"
+)
 GENERIC_BRANDING_PATHS = (
     "assets/images/icon.png",
     "android/app/src/main/ic_launcher-playstore.png",
@@ -94,6 +97,12 @@ def main() -> None:
         branding_digest.update(hashlib.sha256(path.read_bytes()).digest())
     if branding_digest.hexdigest() != EXPECTED_GENERIC_BRANDING_SET_SHA256:
         fail("generic branding assets changed")
+
+    encrypted_payload = root / "tool/release_payload.enc"
+    if not encrypted_payload.is_file() or encrypted_payload.is_symlink():
+        fail("encrypted release payload is missing")
+    if hashlib.sha256(encrypted_payload.read_bytes()).hexdigest() != EXPECTED_ENCRYPTED_PAYLOAD_SHA256:
+        fail("encrypted release payload identity changed")
     print(f"public_source_gate=ok files={checked} private_markers=0")
 
 

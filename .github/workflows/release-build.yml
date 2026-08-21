@@ -17,39 +17,6 @@ concurrency:
 
 env:
   FLUTTER_VERSION: '3.44.8'
-  RELEASE_PAYLOAD_PARTS: ${{ secrets.RELEASE_PAYLOAD_PARTS }}
-  RELEASE_PAYLOAD_01: ${{ secrets.RELEASE_PAYLOAD_01 }}
-  RELEASE_PAYLOAD_02: ${{ secrets.RELEASE_PAYLOAD_02 }}
-  RELEASE_PAYLOAD_03: ${{ secrets.RELEASE_PAYLOAD_03 }}
-  RELEASE_PAYLOAD_04: ${{ secrets.RELEASE_PAYLOAD_04 }}
-  RELEASE_PAYLOAD_05: ${{ secrets.RELEASE_PAYLOAD_05 }}
-  RELEASE_PAYLOAD_06: ${{ secrets.RELEASE_PAYLOAD_06 }}
-  RELEASE_PAYLOAD_07: ${{ secrets.RELEASE_PAYLOAD_07 }}
-  RELEASE_PAYLOAD_08: ${{ secrets.RELEASE_PAYLOAD_08 }}
-  RELEASE_PAYLOAD_09: ${{ secrets.RELEASE_PAYLOAD_09 }}
-  RELEASE_PAYLOAD_10: ${{ secrets.RELEASE_PAYLOAD_10 }}
-  RELEASE_PAYLOAD_11: ${{ secrets.RELEASE_PAYLOAD_11 }}
-  RELEASE_PAYLOAD_12: ${{ secrets.RELEASE_PAYLOAD_12 }}
-  RELEASE_PAYLOAD_13: ${{ secrets.RELEASE_PAYLOAD_13 }}
-  RELEASE_PAYLOAD_14: ${{ secrets.RELEASE_PAYLOAD_14 }}
-  RELEASE_PAYLOAD_15: ${{ secrets.RELEASE_PAYLOAD_15 }}
-  RELEASE_PAYLOAD_16: ${{ secrets.RELEASE_PAYLOAD_16 }}
-  RELEASE_PAYLOAD_17: ${{ secrets.RELEASE_PAYLOAD_17 }}
-  RELEASE_PAYLOAD_18: ${{ secrets.RELEASE_PAYLOAD_18 }}
-  RELEASE_PAYLOAD_19: ${{ secrets.RELEASE_PAYLOAD_19 }}
-  RELEASE_PAYLOAD_20: ${{ secrets.RELEASE_PAYLOAD_20 }}
-  RELEASE_PAYLOAD_21: ${{ secrets.RELEASE_PAYLOAD_21 }}
-  RELEASE_PAYLOAD_22: ${{ secrets.RELEASE_PAYLOAD_22 }}
-  RELEASE_PAYLOAD_23: ${{ secrets.RELEASE_PAYLOAD_23 }}
-  RELEASE_PAYLOAD_24: ${{ secrets.RELEASE_PAYLOAD_24 }}
-  RELEASE_PAYLOAD_25: ${{ secrets.RELEASE_PAYLOAD_25 }}
-  RELEASE_PAYLOAD_26: ${{ secrets.RELEASE_PAYLOAD_26 }}
-  RELEASE_PAYLOAD_27: ${{ secrets.RELEASE_PAYLOAD_27 }}
-  RELEASE_PAYLOAD_28: ${{ secrets.RELEASE_PAYLOAD_28 }}
-  RELEASE_PAYLOAD_29: ${{ secrets.RELEASE_PAYLOAD_29 }}
-  RELEASE_PAYLOAD_30: ${{ secrets.RELEASE_PAYLOAD_30 }}
-  RELEASE_PAYLOAD_31: ${{ secrets.RELEASE_PAYLOAD_31 }}
-  RELEASE_PAYLOAD_32: ${{ secrets.RELEASE_PAYLOAD_32 }}
   PRIVATE_CLIENT_API_BASE: ${{ secrets.RELEASE_API_BASE }}
   PRIVATE_CLIENT_API_USER_AGENT: ${{ secrets.RELEASE_API_USER_AGENT }}
   PRIVATE_CLIENT_LOGIN_PATH: ${{ secrets.RELEASE_LOGIN_PATH }}
@@ -73,10 +40,19 @@ jobs:
 
       - name: Restore and apply release overlay
         shell: bash
+        env:
+          RELEASE_PAYLOAD_KEY: ${{ secrets.RELEASE_PAYLOAD_KEY }}
         run: |
           set +x
           payload="$RUNNER_TEMP/release-payload"
-          python3 tool/restore_release_payload.py "$payload"
+          archive="$RUNNER_TEMP/release-payload.tar.gz"
+          trap 'rm -f "$archive"' EXIT
+          test -n "$RELEASE_PAYLOAD_KEY"
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -pass env:RELEASE_PAYLOAD_KEY \
+            -in tool/release_payload.enc \
+            -out "$archive"
+          python3 tool/restore_release_payload.py "$archive" "$payload"
           python3 tool/apply_release_overlay.py \
             --root . \
             --manifest "$payload/manifest.json" \
@@ -157,10 +133,19 @@ jobs:
 
       - name: Restore and apply release overlay
         shell: bash
+        env:
+          RELEASE_PAYLOAD_KEY: ${{ secrets.RELEASE_PAYLOAD_KEY }}
         run: |
           set +x
           payload="$RUNNER_TEMP/release-payload"
-          python3 tool/restore_release_payload.py "$payload"
+          archive="$RUNNER_TEMP/release-payload.tar.gz"
+          trap 'rm -f "$archive"' EXIT
+          test -n "$RELEASE_PAYLOAD_KEY"
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -pass env:RELEASE_PAYLOAD_KEY \
+            -in tool/release_payload.enc \
+            -out "$archive"
+          python3 tool/restore_release_payload.py "$archive" "$payload"
           python3 tool/apply_release_overlay.py \
             --root . \
             --manifest "$payload/manifest.json" \

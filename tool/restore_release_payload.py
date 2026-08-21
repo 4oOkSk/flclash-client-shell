@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Restore a bounded release payload from repository secrets."""
+"""Restore a bounded release payload from a decrypted archive."""
 
 from __future__ import annotations
 
-import base64
 from io import BytesIO
 import os
 from pathlib import Path
@@ -23,34 +22,15 @@ def fail(message: str) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        fail("one output directory is required")
-    output = Path(sys.argv[1])
+    if len(sys.argv) != 3:
+        fail("an archive and one output directory are required")
+    archive_path = Path(sys.argv[1])
+    output = Path(sys.argv[2])
     if output.exists() or output.is_symlink():
         fail("output path already exists")
-
-    try:
-        part_count = int(os.environ["RELEASE_PAYLOAD_PARTS"])
-    except (KeyError, ValueError) as exc:
-        raise SystemExit("release payload: invalid part count") from exc
-    if not 1 <= part_count <= 32:
-        fail("part count is outside the allowed range")
-
-    chunks: list[str] = []
-    for index in range(1, part_count + 1):
-        name = f"RELEASE_PAYLOAD_{index:02d}"
-        value = os.environ.get(name, "")
-        if not value or any(character.isspace() for character in value):
-            fail("a payload part is missing or malformed")
-        chunks.append(value)
-    for index in range(part_count + 1, 33):
-        if os.environ.get(f"RELEASE_PAYLOAD_{index:02d}", ""):
-            fail("an undeclared payload part is present")
-
-    try:
-        archive_bytes = base64.b64decode("".join(chunks), validate=True)
-    except ValueError as exc:
-        raise SystemExit("release payload: base64 decoding failed") from exc
+    if not archive_path.is_file() or archive_path.is_symlink():
+        fail("archive path is invalid")
+    archive_bytes = archive_path.read_bytes()
     if not archive_bytes or len(archive_bytes) > 3 * 1024 * 1024:
         fail("archive size is invalid")
 
@@ -79,7 +59,7 @@ def main() -> None:
                 target.write(source.read())
                 target.flush()
                 os.fsync(target.fileno())
-            if stat.S_IMODE(destination.stat().st_mode) != 0o600:
+            if os.name != "nt" and stat.S_IMODE(destination.stat().st_mode) != 0o600:
                 fail("restored file permissions are invalid")
 
     print("release_payload=restored files=2")
