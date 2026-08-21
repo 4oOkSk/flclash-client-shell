@@ -92,6 +92,7 @@ def write_github_environment(path: Path, manifest: dict[str, object]) -> None:
     assert isinstance(replacements, list)
     mask_values = [item["to"] for item in replacements]
     mask_values.append(manifest["website_url"])
+    mask_values.append(manifest["android_certificate_sha256"])
     for value in mask_values:
         print(f"::add-mask::{value}")
     website = manifest["website_url"]
