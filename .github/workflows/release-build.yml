@@ -277,10 +277,11 @@ jobs:
           $license = Join-Path $tools 'license.txt'
           Invoke-WebRequest -Uri 'https://www.7-zip.org/a/7zr.exe' -OutFile $extractor
           Invoke-WebRequest -Uri 'https://www.7-zip.org/license.txt' -OutFile $license
-          New-Item -ItemType Directory -Path release | Out-Null
+          if (Test-Path -LiteralPath package-stage) { throw 'Package staging path already exists.' }
+          New-Item -ItemType Directory -Path package-stage | Out-Null
           & tool/windows_sfx/build.ps1 `
             $zip[0].FullName $extractor $license $PWD.Path `
-            (Join-Path $PWD 'release/package.exe')
+            (Join-Path $PWD 'package-stage/package.exe')
 
       - name: Stage one generic package filename
         if: matrix.platform != 'windows'
@@ -289,20 +290,16 @@ jobs:
           shopt -s nullglob
           packages=(dist/*.${{ matrix.extension }})
           test "${#packages[@]}" -eq 1
-          if [ -e release ]; then
-            test -d release
-            test -z "$(find release -mindepth 1 -maxdepth 1 -print -quit)"
-          else
-            mkdir release
-          fi
-          cp -- "${packages[0]}" 'release/package.${{ matrix.extension }}'
+          test ! -e package-stage
+          mkdir package-stage
+          cp -- "${packages[0]}" 'package-stage/package.${{ matrix.extension }}'
 
       - name: Verify Android signature
         if: matrix.platform == 'android'
         shell: bash
         run: |
           build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
-          "$build_tools/apksigner" verify --verbose --print-certs release/package.apk > "$RUNNER_TEMP/android-signature.txt"
+          "$build_tools/apksigner" verify --verbose --print-certs package-stage/package.apk > "$RUNNER_TEMP/android-signature.txt"
           actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/android-signature.txt" | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
           test "$actual" = "$EXPECTED_ANDROID_CERT_SHA256"
 
@@ -314,18 +311,18 @@ jobs:
           set +x
           test -n "$OUTPUT_PASSPHRASE"
           bash .github/scripts/ci-sensitive-gate.sh self-test
-          bash .github/scripts/ci-sensitive-gate.sh artifacts release
+          bash .github/scripts/ci-sensitive-gate.sh artifacts package-stage
           mkdir sealed
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
             -pass env:OUTPUT_PASSPHRASE \
-            -in 'release/package.${{ matrix.extension }}' \
+            -in 'package-stage/package.${{ matrix.extension }}' \
             -out sealed/package.bin
 
       - name: Remove plaintext build inputs
         if: always()
         shell: bash
         run: |
-          find dist release -type f -delete 2>/dev/null || true
+          find dist package-stage -type f -delete 2>/dev/null || true
           find "$RUNNER_TEMP/release-payload" -type f -delete 2>/dev/null || true
           rm -f core_sha256.json core/client_build_config_generated.go \
             android/local.properties android/app/release.p12
