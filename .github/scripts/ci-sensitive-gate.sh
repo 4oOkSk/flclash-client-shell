@@ -87,7 +87,9 @@ scan_artifacts() {
   local path pattern destination
   local -a forbidden_paths=()
   local -a raw_matches=()
+  local -a filtered_matches=()
   local expanded_root
+  local known_tika_mimetypes_sha256='f3d9d3951edc2b1c729963f0957c2746518bebab999da60127a878c8ac726768'
   local -a patterns=(
     '/(link|sub|subscribe)/[A-Za-z0-9._~-]{20,}'
     '(vless|vmess|trojan|ssr|hysteria2?|tuic)://[^[:space:]<>]{20,}'
@@ -152,6 +154,17 @@ scan_artifacts() {
     done < <(
       grep -aIlrE -e "$pattern" "$artifact_root" "$expanded_root" 2>/dev/null || true
     )
+    if [[ "$pattern" == '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----' ]]; then
+      filtered_matches=()
+      for path in "${raw_matches[@]}"; do
+        if [[ "$path" == "$expanded_root"/*/org/apache/tika/mime/tika-mimetypes.xml ]] &&
+          [[ "$(sha256sum "$path" | awk '{print $1}')" == "$known_tika_mimetypes_sha256" ]]; then
+          continue
+        fi
+        filtered_matches+=("$path")
+      done
+      raw_matches=("${filtered_matches[@]}")
+    fi
     if ((${#raw_matches[@]})); then
       printf 'sensitive gate: high-risk literal found in artifact set:\n' >&2
       print_paths "${raw_matches[@]}"
