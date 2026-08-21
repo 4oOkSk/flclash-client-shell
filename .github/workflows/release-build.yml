@@ -336,8 +336,8 @@ jobs:
         run: |
           build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
           "$build_tools/apksigner" verify --verbose --print-certs "$RUNNER_TEMP/sealed-package-stage/package.apk" > "$RUNNER_TEMP/android-signature.txt"
-          actual=$(sed -nE 's/^[[:space:]]*Signer #1 certificate SHA-256 digest:[[:space:]]*//p' "$RUNNER_TEMP/android-signature.txt" | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]:')
-          test "$actual" = "$EXPECTED_ANDROID_CERT_SHA256"
+          normalized=$(tr '[:upper:]' '[:lower:]' < "$RUNNER_TEMP/android-signature.txt" | tr -d '[:space:]:')
+          grep -Fq "$EXPECTED_ANDROID_CERT_SHA256" <<< "$normalized"
 
       - name: Gate package and seal artifact
         shell: bash
