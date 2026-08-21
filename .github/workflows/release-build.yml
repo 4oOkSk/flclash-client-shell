@@ -289,7 +289,12 @@ jobs:
           shopt -s nullglob
           packages=(dist/*.${{ matrix.extension }})
           test "${#packages[@]}" -eq 1
-          mkdir release
+          if [ -e release ]; then
+            test -d release
+            test -z "$(find release -mindepth 1 -maxdepth 1 -print -quit)"
+          else
+            mkdir release
+          fi
           cp -- "${packages[0]}" 'release/package.${{ matrix.extension }}'
 
       - name: Verify Android signature
