@@ -15,8 +15,8 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $ExpectedExtractorBytes = [int64]602112
 $ExpectedExtractorSha256 = '56b8cc9f4971cef253644fafe54063ed7fdca551d4dee0f8c6baa81b855acd72'
-$ExpectedLicenseBytes = [int64]6190
-$ExpectedLicenseSha256 = 'dac8389b6bc39339537bc351772106afe7951cb242cdf03e855b67c3a683deb1'
+$ExpectedLicenseBytes = [int64]6031
+$ExpectedLicenseSha256 = '3a184aa13dc8ad30734e28ff901b478ccbcb5b41be52427a5e7609c8fd9e5ddb'
 $Program = Join-Path $SourceRoot 'tool\windows_sfx\Program.cs'
 $Manifest = Join-Path $SourceRoot 'tool\windows_sfx\app.manifest'
 
