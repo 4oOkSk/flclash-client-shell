@@ -1,0 +1,351 @@
+name: Sealed four-platform release build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: Ten-digit release build number
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sealed-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: '3.44.8'
+  RELEASE_PAYLOAD_PARTS: ${{ secrets.RELEASE_PAYLOAD_PARTS }}
+  RELEASE_PAYLOAD_01: ${{ secrets.RELEASE_PAYLOAD_01 }}
+  RELEASE_PAYLOAD_02: ${{ secrets.RELEASE_PAYLOAD_02 }}
+  RELEASE_PAYLOAD_03: ${{ secrets.RELEASE_PAYLOAD_03 }}
+  RELEASE_PAYLOAD_04: ${{ secrets.RELEASE_PAYLOAD_04 }}
+  RELEASE_PAYLOAD_05: ${{ secrets.RELEASE_PAYLOAD_05 }}
+  RELEASE_PAYLOAD_06: ${{ secrets.RELEASE_PAYLOAD_06 }}
+  RELEASE_PAYLOAD_07: ${{ secrets.RELEASE_PAYLOAD_07 }}
+  RELEASE_PAYLOAD_08: ${{ secrets.RELEASE_PAYLOAD_08 }}
+  RELEASE_PAYLOAD_09: ${{ secrets.RELEASE_PAYLOAD_09 }}
+  RELEASE_PAYLOAD_10: ${{ secrets.RELEASE_PAYLOAD_10 }}
+  RELEASE_PAYLOAD_11: ${{ secrets.RELEASE_PAYLOAD_11 }}
+  RELEASE_PAYLOAD_12: ${{ secrets.RELEASE_PAYLOAD_12 }}
+  RELEASE_PAYLOAD_13: ${{ secrets.RELEASE_PAYLOAD_13 }}
+  RELEASE_PAYLOAD_14: ${{ secrets.RELEASE_PAYLOAD_14 }}
+  RELEASE_PAYLOAD_15: ${{ secrets.RELEASE_PAYLOAD_15 }}
+  RELEASE_PAYLOAD_16: ${{ secrets.RELEASE_PAYLOAD_16 }}
+  RELEASE_PAYLOAD_17: ${{ secrets.RELEASE_PAYLOAD_17 }}
+  RELEASE_PAYLOAD_18: ${{ secrets.RELEASE_PAYLOAD_18 }}
+  RELEASE_PAYLOAD_19: ${{ secrets.RELEASE_PAYLOAD_19 }}
+  RELEASE_PAYLOAD_20: ${{ secrets.RELEASE_PAYLOAD_20 }}
+  RELEASE_PAYLOAD_21: ${{ secrets.RELEASE_PAYLOAD_21 }}
+  RELEASE_PAYLOAD_22: ${{ secrets.RELEASE_PAYLOAD_22 }}
+  RELEASE_PAYLOAD_23: ${{ secrets.RELEASE_PAYLOAD_23 }}
+  RELEASE_PAYLOAD_24: ${{ secrets.RELEASE_PAYLOAD_24 }}
+  RELEASE_PAYLOAD_25: ${{ secrets.RELEASE_PAYLOAD_25 }}
+  RELEASE_PAYLOAD_26: ${{ secrets.RELEASE_PAYLOAD_26 }}
+  RELEASE_PAYLOAD_27: ${{ secrets.RELEASE_PAYLOAD_27 }}
+  RELEASE_PAYLOAD_28: ${{ secrets.RELEASE_PAYLOAD_28 }}
+  RELEASE_PAYLOAD_29: ${{ secrets.RELEASE_PAYLOAD_29 }}
+  RELEASE_PAYLOAD_30: ${{ secrets.RELEASE_PAYLOAD_30 }}
+  RELEASE_PAYLOAD_31: ${{ secrets.RELEASE_PAYLOAD_31 }}
+  RELEASE_PAYLOAD_32: ${{ secrets.RELEASE_PAYLOAD_32 }}
+  PRIVATE_CLIENT_API_BASE: ${{ secrets.RELEASE_API_BASE }}
+  PRIVATE_CLIENT_API_USER_AGENT: ${{ secrets.RELEASE_API_USER_AGENT }}
+  PRIVATE_CLIENT_LOGIN_PATH: ${{ secrets.RELEASE_LOGIN_PATH }}
+  PRIVATE_CLIENT_CONFIG_PATH: ${{ secrets.RELEASE_CONFIG_PATH }}
+  PRIVATE_CLIENT_LOGOUT_PATH: ${{ secrets.RELEASE_LOGOUT_PATH }}
+
+jobs:
+  verify:
+    name: Source and exact release checks
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout public source without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify public source boundary
+        run: python3 tool/public_source_gate.py .
+
+      - name: Restore and apply release overlay
+        shell: bash
+        run: |
+          set +x
+          payload="$RUNNER_TEMP/release-payload"
+          python3 tool/restore_release_payload.py "$payload"
+          python3 tool/apply_release_overlay.py \
+            --root . \
+            --manifest "$payload/manifest.json" \
+            --icon "$payload/icon-master.png" \
+            --github-env "$GITHUB_ENV"
+          python3 tool/generate_branding_assets.py
+
+      - name: Verify requested build
+        shell: bash
+        run: |
+          [[ '${{ inputs.build }}' =~ ^[0-9]{10}$ ]]
+          grep -Eq '^version:[[:space:]]*0[.]0[.]1[+]${{ inputs.build }}[[:space:]]*$' pubspec.yaml
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: |
+            core/go.sum
+            core/Clash.Meta/go.sum
+
+      - name: Test core integration
+        working-directory: core
+        run: go test ./...
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Resolve, analyze and test Flutter source
+        shell: bash
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-warnings --no-fatal-infos
+          flutter test --reporter expanded
+
+  build:
+    name: Build sealed ${{ matrix.platform }} package
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-22.04
+            targets: apk
+            extension: apk
+            setup_args: --no-split-per-abi
+          - platform: linux
+            os: ubuntu-22.04
+            targets: deb
+            extension: deb
+            setup_args: ''
+          - platform: windows
+            os: windows-2022
+            targets: zip
+            extension: exe
+            setup_args: ''
+          - platform: macos
+            os: macos-15
+            targets: dmg
+            extension: dmg
+            setup_args: ''
+    steps:
+      - name: Checkout public source without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify public source boundary
+        run: python3 tool/public_source_gate.py .
+
+      - name: Restore and apply release overlay
+        shell: bash
+        run: |
+          set +x
+          payload="$RUNNER_TEMP/release-payload"
+          python3 tool/restore_release_payload.py "$payload"
+          python3 tool/apply_release_overlay.py \
+            --root . \
+            --manifest "$payload/manifest.json" \
+            --icon "$payload/icon-master.png" \
+            --github-env "$GITHUB_ENV"
+          python3 tool/generate_branding_assets.py
+
+      - name: Verify requested build
+        shell: bash
+        run: |
+          [[ '${{ inputs.build }}' =~ ^[0-9]{10}$ ]]
+          grep -Eq '^version:[[:space:]]*0[.]0[.]1[+]${{ inputs.build }}[[:space:]]*$' pubspec.yaml
+
+      - name: Free Android runner disk space
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          sudo rm -rf -- \
+            /opt/hostedtoolcache/CodeQL \
+            /usr/local/.ghcup \
+            /usr/local/lib/android/sdk/system-images \
+            /usr/share/dotnet
+          df -h /
+
+      - name: Enable Windows long paths
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: git config --global core.longpaths true
+
+      - name: Set up Java 17
+        if: matrix.platform == 'android'
+        uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android NDK r28c
+        if: matrix.platform == 'android'
+        uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779
+        with:
+          ndk-version: r28c
+          add-to-path: true
+          link-to-sdk: true
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: |
+            core/go.sum
+            core/Clash.Meta/go.sum
+
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+
+      - name: Select Xcode 26.3
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          developer_dir=/Applications/Xcode_26.3.app/Contents/Developer
+          test -d "$developer_dir"
+          test "$(DEVELOPER_DIR="$developer_dir" xcodebuild -version | head -n 1)" = 'Xcode 26.3'
+          printf 'DEVELOPER_DIR=%s\n' "$developer_dir" >> "$GITHUB_ENV"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Linux packaging dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: >-
+          sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
+          apt-get update -y &&
+          sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
+          apt-get install -y
+          libayatana-appindicator3-dev libkeybinder-3.0-dev libgtk-3-dev
+          libfuse2 locate ninja-build patchelf rpm
+
+      - name: Restore Android signing identity
+        if: matrix.platform == 'android'
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          set +x
+          for variable in KEYSTORE_B64 KEY_ALIAS KEY_PASSWORD STORE_PASSWORD; do
+            test -n "${!variable}"
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > android/app/release.p12
+          flutter_bin=$(command -v flutter)
+          flutter_sdk=$(cd "$(dirname "$flutter_bin")/.." && pwd -P)
+          {
+            printf 'flutter.sdk=%s\n' "$flutter_sdk"
+            printf 'storeFile=release.p12\n'
+            printf 'storeType=PKCS12\n'
+            printf 'storePassword=%s\n' "$STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+          } > android/local.properties
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Build package
+        run: >-
+          dart setup.dart ${{ matrix.platform }}
+          --env stable
+          --targets ${{ matrix.targets }}
+          ${{ matrix.setup_args }}
+
+      - name: Build Windows interactive self-extractor
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $zip = @(Get-ChildItem dist -File -Filter '*.zip')
+          if ($zip.Count -ne 1) { throw 'Expected exactly one Windows ZIP.' }
+          $tools = Join-Path $env:RUNNER_TEMP 'sevenzip-tools'
+          New-Item -ItemType Directory -Path $tools | Out-Null
+          $extractor = Join-Path $tools 'extractor.exe'
+          $license = Join-Path $tools 'license.txt'
+          Invoke-WebRequest -Uri 'https://www.7-zip.org/a/7zr.exe' -OutFile $extractor
+          Invoke-WebRequest -Uri 'https://www.7-zip.org/license.txt' -OutFile $license
+          New-Item -ItemType Directory -Path release | Out-Null
+          & tool/windows_sfx/build.ps1 `
+            $zip[0].FullName $extractor $license $PWD.Path `
+            (Join-Path $PWD 'release/package.exe')
+
+      - name: Stage one generic package filename
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(dist/*.${{ matrix.extension }})
+          test "${#packages[@]}" -eq 1
+          mkdir release
+          cp -- "${packages[0]}" 'release/package.${{ matrix.extension }}'
+
+      - name: Verify Android signature
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          "$build_tools/apksigner" verify --verbose --print-certs release/package.apk > "$RUNNER_TEMP/android-signature.txt"
+          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/android-signature.txt" | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          test "$actual" = "$EXPECTED_ANDROID_CERT_SHA256"
+
+      - name: Gate package and seal artifact
+        shell: bash
+        env:
+          OUTPUT_PASSPHRASE: ${{ secrets.OUTPUT_PASSPHRASE }}
+        run: |
+          set +x
+          test -n "$OUTPUT_PASSPHRASE"
+          bash .github/scripts/ci-sensitive-gate.sh self-test
+          bash .github/scripts/ci-sensitive-gate.sh artifacts release
+          mkdir sealed
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -pass env:OUTPUT_PASSPHRASE \
+            -in 'release/package.${{ matrix.extension }}' \
+            -out sealed/package.bin
+
+      - name: Remove plaintext build inputs
+        if: always()
+        shell: bash
+        run: |
+          find dist release -type f -delete 2>/dev/null || true
+          find "$RUNNER_TEMP/release-payload" -type f -delete 2>/dev/null || true
+          rm -f core_sha256.json core/client_build_config_generated.go \
+            android/local.properties android/app/release.p12
+
+      - name: Upload sealed artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sealed-${{ matrix.platform }}-${{ github.run_id }}
+          path: sealed/package.bin
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 1
+          compression-level: 0

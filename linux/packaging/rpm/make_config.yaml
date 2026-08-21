@@ -1,0 +1,23 @@
+display_name: HarborProxy
+
+packager: HarborProxy
+packagerEmail: 4oOkSk@users.noreply.github.com
+license: Other
+
+priority: optional
+section: x11
+installed_size: 6604
+essential: false
+icon: ./assets/images/icon.png
+
+keywords:
+  - HarborProxy
+  - Clash
+  - ClashMeta
+  - Proxy
+
+generic_name: HarborProxy
+
+group: Applications/Internet
+
+startup_notify: true

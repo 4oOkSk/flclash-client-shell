@@ -1,0 +1,35 @@
+HarborProxy 0.0.1 候选版安装说明
+=============================
+
+Android
+-------
+安装 HarborProxy APK。该包包含常见 Android CPU 架构，并使用长期固定的正式更新签名。
+旧测试包的包名不同，不会被覆盖；候选版验证正常后可手动卸载旧测试包。
+
+Windows
+-------
+下载 windows-amd64 ZIP，完整解压后运行 HarborProxy.exe，不要只复制 exe 文件。
+
+本候选版没有购买 Windows 代码签名证书。SmartScreen 首次提示时，请确认文件来自
+HarborProxy 官方下载位置，再选择「更多信息」→「仍要运行」。若设备管理员禁止该选项，
+只能由管理员放行，或后续改用受信任证书/商店分发；不建议全局关闭 SmartScreen。
+
+macOS
+-----
+当前只提供 Apple Silicon（M1/M2/M3/M4）macos-arm64；Intel Mac 暂无本版安装包。
+把 HarborProxy 拖入「应用程序」。首次打开如被拦截，先尝试打开一次，再前往
+「系统设置」→「隐私与安全性」找到 HarborProxy，选择「仍要打开」。
+
+本候选版只有 ad-hoc 本地签名，没有 Apple Developer ID 和公证，因此无法完全消除
+首次确认；不建议全局关闭 Gatekeeper。
+
+Linux
+-----
+当前提供 amd64 DEB。Debian/Ubuntu 可使用系统软件安装器打开，或运行：
+
+  sudo apt install ./harborproxy*.deb
+
+许可说明
+--------
+HarborProxy 基于 GPLv3 的 FlClash 修改。本次预发布仅供内部测试；面向其他用户分发
+二进制时，必须同时按 GPLv3 向二进制接收者提供对应源码和许可证。

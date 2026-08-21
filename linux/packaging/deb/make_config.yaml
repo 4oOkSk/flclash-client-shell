@@ -1,0 +1,28 @@
+display_name: HarborProxy
+package_name: harborproxy
+maintainer:
+  name: HarborProxy
+  email: 4oOkSk@users.noreply.github.com
+
+priority: optional
+section: x11
+installed_size: 129784
+essential: false
+icon: ./assets/images/icon.png
+
+dependencies:
+  - libayatana-appindicator3-1
+  - libkeybinder-3.0-0
+
+keywords:
+  - HarborProxy
+  - Clash
+  - ClashMeta
+  - Proxy
+
+generic_name: HarborProxy
+
+categories:
+  - Network
+
+startup_notify: true

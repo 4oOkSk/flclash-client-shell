@@ -1,0 +1,18 @@
+display_name: HarborProxy
+
+icon: ./assets/images/icon.png
+
+keywords:
+  - HarborProxy
+  - Clash
+  - ClashMeta
+  - Proxy
+
+generic_name: HarborProxy
+
+categories:
+  - Network
+
+startup_notify: true
+
+include: []
