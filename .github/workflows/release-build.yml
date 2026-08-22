@@ -311,8 +311,10 @@ jobs:
         if: matrix.platform != 'windows' && matrix.platform != 'android'
         shell: bash
         run: |
-          shopt -s nullglob
-          packages=(dist/*.${{ matrix.extension }})
+          packages=()
+          while IFS= read -r -d '' package; do
+            packages+=("$package")
+          done < <(find dist -type f -name '*.${{ matrix.extension }}' -print0)
           test "${#packages[@]}" -eq 1
           stage="$RUNNER_TEMP/sealed-package-stage"
           test ! -e "$stage"
