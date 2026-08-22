@@ -249,7 +249,7 @@ Future<int> _package(
       '--git-ref',
       // Pin the packaging code used by CI/test builds. A mutable branch here
       // would execute whatever the upstream branch contains at build time.
-      'cdeeef2d8f8325bb6ae0bc86b39f56e4325d1a58',
+      '84cdf665fb35158eda01ffb40e3423273f334409',
       '--git-path',
       'packages/flutter_distributor',
     ]);
