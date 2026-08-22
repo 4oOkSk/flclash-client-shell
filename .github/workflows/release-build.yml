@@ -292,7 +292,7 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          $zip = @(Get-ChildItem dist -File -Filter '*.zip')
+          $zip = @(Get-ChildItem dist -File -Filter '*.zip' -Recurse)
           if ($zip.Count -ne 1) { throw 'Expected exactly one Windows ZIP.' }
           $tools = Join-Path $env:RUNNER_TEMP 'sevenzip-tools'
           New-Item -ItemType Directory -Path $tools | Out-Null

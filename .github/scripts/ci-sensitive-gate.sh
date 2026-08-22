@@ -153,7 +153,8 @@ scan_artifacts() {
     done < <(
       grep -aIlrE -e "$pattern" "$artifact_root" "$expanded_root" 2>/dev/null || true
     )
-    if [[ "$pattern" == '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----' ]]; then
+    if [[ "$pattern" == '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----' ]] &&
+      ((${#raw_matches[@]})); then
       filtered_matches=()
       for path in "${raw_matches[@]}"; do
         if [[ "$path" == "$expanded_root"/*/org/apache/tika/mime/tika-mimetypes.xml ]] &&
@@ -162,7 +163,11 @@ scan_artifacts() {
         fi
         filtered_matches+=("$path")
       done
-      raw_matches=("${filtered_matches[@]}")
+      if ((${#filtered_matches[@]})); then
+        raw_matches=("${filtered_matches[@]}")
+      else
+        raw_matches=()
+      fi
     fi
     if ((${#raw_matches[@]})); then
       printf 'sensitive gate: high-risk literal found in artifact set:\n' >&2
