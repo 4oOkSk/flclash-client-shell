@@ -231,10 +231,6 @@ Future<int> _package(
       splitAndroid: splitAndroid,
       defineFile: defineFile.path,
     );
-    final descriptionArgs = <String>[];
-    if (platform != 'android') {
-      descriptionArgs.addAll(['--description', arch]);
-    }
 
     final depExit = await _ensureDependencies(platform, arch);
     if (depExit != 0) return depExit;
@@ -275,7 +271,6 @@ Future<int> _package(
           '--build-target-platform=${_androidFlutterTarget[androidArch]!}',
         if (flutterBuildArgs.isNotEmpty)
           '--flutter-build-args=${flutterBuildArgs.join(',')}',
-        ...descriptionArgs,
       ],
       includeParentEnvironment: true,
       environment: {'ANDROID_ARCH': ?androidArch},
