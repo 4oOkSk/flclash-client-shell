@@ -49,8 +49,7 @@ scan_source() {
       matches+=("$path")
     done < <(
       git grep -I -l -E -e "$pattern" -- . \
-        ':(exclude).github/scripts/ci-sensitive-gate.sh' \
-        ':(exclude)android/app/google-services.json' || true
+        ':(exclude).github/scripts/ci-sensitive-gate.sh' || true
     )
     if ((${#matches[@]})); then
       printf 'sensitive gate: high-risk literal found in tracked source:\n' >&2

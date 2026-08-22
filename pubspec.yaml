@@ -1,7 +1,7 @@
 name: fl_clash
 description: HarborProxy private multi-platform client, based on FlClash and Mihomo.
 publish_to: 'none'
-version: 0.0.1+2026082101
+version: 0.0.1+2026082201
 environment:
   sdk: '>=3.8.0 <4.0.0'
 
