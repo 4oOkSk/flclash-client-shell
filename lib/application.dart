@@ -53,6 +53,7 @@ class ApplicationState extends ConsumerState<Application> {
         exit(0);
       }
       if (await app?.consumePendingQuickStart() == true) {
+        await app?.backgroundPendingQuickStart();
         await globalState.container
             .read(setupActionProvider.notifier)
             .updateStatus(true);

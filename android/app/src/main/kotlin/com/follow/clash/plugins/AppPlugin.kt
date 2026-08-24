@@ -19,6 +19,7 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
+import com.follow.clash.MainActivity
 import com.follow.clash.R
 import com.follow.clash.State
 import com.follow.clash.common.ClientSecureStorage
@@ -127,6 +128,13 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             "moveTaskToBack" -> {
                 activityRef?.get()?.moveTaskToBack(true)
                 result.success(true)
+            }
+
+            "backgroundPendingQuickStart" -> {
+                val activity = activityRef?.get()
+                result.success(
+                    activity is MainActivity && activity.backgroundPendingQuickStart()
+                )
             }
 
             "updateExcludeFromRecents" -> {

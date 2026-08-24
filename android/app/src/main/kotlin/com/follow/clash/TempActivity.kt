@@ -15,8 +15,12 @@ class TempActivity : Activity(),
         super.onCreate(savedInstanceState)
         when (intent.action) {
             QuickAction.START.action -> {
-                launch {
-                    State.handleStartServiceAction()
+                if (State.flutterEngine == null && State.runStateFlow.value == RunState.STOP) {
+                    State.launchClientForPendingStart()
+                } else {
+                    launch {
+                        State.handleStartServiceAction()
+                    }
                 }
             }
 
@@ -27,8 +31,12 @@ class TempActivity : Activity(),
             }
 
             QuickAction.TOGGLE.action -> {
-                launch {
-                    State.handleToggleAction()
+                if (State.flutterEngine == null && State.runStateFlow.value == RunState.STOP) {
+                    State.launchClientForPendingStart()
+                } else {
+                    launch {
+                        State.handleToggleAction()
+                    }
                 }
             }
         }

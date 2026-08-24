@@ -50,6 +50,10 @@ object State {
         return pendingQuickStart.getAndSet(false)
     }
 
+    fun clearPendingQuickStart() {
+        pendingQuickStart.set(false)
+    }
+
     fun launchClientForPendingStart() {
         markPendingQuickStart()
         GlobalState.application.startActivity(
