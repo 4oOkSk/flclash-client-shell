@@ -148,8 +148,6 @@ Future<List<String>> collectDesktopPlatformDiagnostics({
 Future<List<String>> _windowsNetworkDiagnostics() async {
   const script = r'''
 $ErrorActionPreference = 'Stop'
-$helperServiceName = 'HarborProxyHelperService'
-$helperExecutableName = 'HarborProxyHelperService.exe'
 $adapters = @(Get-NetAdapter -IncludeHidden | Where-Object {
   $_.Name -match 'HarborProxy|Mihomo|Wintun|WireGuard' -or
   $_.InterfaceDescription -match 'HarborProxy|Mihomo|Wintun|WireGuard'
@@ -171,96 +169,6 @@ Write-Output ("desktop.tunUp={0}" -f $up.Count)
 Write-Output ("desktop.tunMtu={0}" -f ($(if ($mtus.Count) { $mtus -join ',' } else { 'unknown' })))
 Write-Output ("desktop.tunRoutes={0}" -f $routes.Count)
 Write-Output ("desktop.tunDnsServers={0}" -f $dns.Count)
-
-$helper = Get-CimInstance Win32_Service -Filter "Name='$helperServiceName'" -ErrorAction SilentlyContinue
-if ($null -eq $helper) {
-  Write-Output 'desktop.helperService=absent'
-  Write-Output 'desktop.helperStartMode=unknown'
-  Write-Output 'desktop.helperProcess=not-running'
-  Write-Output 'desktop.helperExitCode=unknown'
-} else {
-  $helperState = switch ($helper.State) {
-    'Running' { 'running' }
-    'Stopped' { 'stopped' }
-    'Start Pending' { 'start-pending' }
-    'Stop Pending' { 'stop-pending' }
-    'Continue Pending' { 'continue-pending' }
-    'Pause Pending' { 'pause-pending' }
-    'Paused' { 'paused' }
-    default { 'other' }
-  }
-  $helperStartMode = switch ($helper.StartMode) {
-    'Auto' { 'auto' }
-    'Manual' { 'manual' }
-    'Disabled' { 'disabled' }
-    default { 'unknown' }
-  }
-  $helperProcess = if ([uint32]$helper.ProcessId -gt 0) { 'running' } else { 'not-running' }
-  $helperExitCode = if ($null -ne $helper.ExitCode) { [uint32]$helper.ExitCode } else { 'unknown' }
-  Write-Output ("desktop.helperService={0}" -f $helperState)
-  Write-Output ("desktop.helperStartMode={0}" -f $helperStartMode)
-  Write-Output ("desktop.helperProcess={0}" -f $helperProcess)
-  Write-Output ("desktop.helperExitCode={0}" -f $helperExitCode)
-}
-
-try {
-  $helperListeners = @(Get-NetTCPConnection -LocalPort 47890 -State Listen -ErrorAction SilentlyContinue)
-  if ($helperListeners.Count -eq 0) {
-    $helperPortOwner = 'unbound'
-  } else {
-    $ownerClasses = @($helperListeners | ForEach-Object {
-      $owner = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $_.OwningProcess) -ErrorAction SilentlyContinue
-      $ownerName = if ($null -ne $owner -and $null -ne $owner.Name) { [string]$owner.Name } else { '' }
-      switch ($ownerName.ToLowerInvariant()) {
-        'harborproxyhelperservice.exe' { 'harborproxy-helper' }
-        'flclashhelperservice.exe' { 'flclash-helper' }
-        'harborproxycore.exe' { 'harborproxy-core' }
-        'flclashcore.exe' { 'flclash-core' }
-        'harborproxy.exe' { 'harborproxy-app' }
-        'flclash.exe' { 'flclash-app' }
-        'system' { 'system' }
-        default { 'other' }
-      }
-    } | Sort-Object -Unique)
-    $helperPortOwner = if ($ownerClasses.Count -eq 1) { $ownerClasses[0] } else { 'multiple' }
-  }
-  Write-Output ("desktop.helperPortOwner={0}" -f $helperPortOwner)
-} catch {
-  Write-Output 'desktop.helperPortOwner=unknown'
-}
-
-try {
-  $since = (Get-Date).AddHours(-24)
-  $serviceEvent = Get-WinEvent -FilterHashtable @{
-    LogName = 'System'
-    ProviderName = 'Service Control Manager'
-    StartTime = $since
-    Id = 7000,7001,7009,7011,7023,7024,7031,7034
-  } -MaxEvents 100 -ErrorAction SilentlyContinue | Where-Object {
-    $_.Message -match [regex]::Escape($helperServiceName) -or
-    $_.Message -match 'HarborProxy Helper Service'
-  } | Select-Object -First 1
-  $crashEvent = Get-WinEvent -FilterHashtable @{
-    LogName = 'Application'
-    StartTime = $since
-    Id = 1000,1001
-  } -MaxEvents 100 -ErrorAction SilentlyContinue | Where-Object {
-    $_.Message -match [regex]::Escape($helperExecutableName)
-  } | Select-Object -First 1
-  $recentEvent = @($serviceEvent, $crashEvent) | Where-Object { $null -ne $_ } |
-    Sort-Object TimeCreated -Descending | Select-Object -First 1
-  if ($null -eq $recentEvent) {
-    Write-Output 'desktop.helperRecentError=none'
-  } elseif ($recentEvent.ProviderName -eq 'Service Control Manager') {
-    Write-Output ("desktop.helperRecentError=scm-{0}" -f $recentEvent.Id)
-  } elseif ($recentEvent.Id -eq 1000) {
-    Write-Output 'desktop.helperRecentError=appcrash-1000'
-  } else {
-    Write-Output 'desktop.helperRecentError=wer-1001'
-  }
-} catch {
-  Write-Output 'desktop.helperRecentError=unavailable'
-}
 ''';
   final result = await Process.run('powershell.exe', [
     '-NoProfile',

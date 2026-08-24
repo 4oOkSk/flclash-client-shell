@@ -50,10 +50,6 @@ class AppPath {
     return join(executableDirPath, 'HarborProxyCore$executableExtension');
   }
 
-  String get helperPath {
-    return join(executableDirPath, '$appHelperService$executableExtension');
-  }
-
   Future<String> get downloadDirPath async {
     final directory = await downloadDir.future;
     return (directory ?? await dataDir.future).path;

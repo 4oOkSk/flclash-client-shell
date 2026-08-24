@@ -18,7 +18,21 @@ PrivilegesRequired={{PRIVILEGES_REQUIRED}}
 ArchitecturesAllowed={{ARCH}}
 ArchitecturesInstallIn64BitMode={{ARCH}}
 
+[InstallDelete]
+Type: files; Name: "{app}\HarborProxyHelperService.exe"
+
 [Code]
+const
+  LegacyHelperService = 'HarborProxyHelperService';
+
+procedure StopLegacyHelperService;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{sys}\sc.exe'), 'stop ' + LegacyHelperService, '',
+    SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
 procedure KillProcesses;
 var
   Processes: TArrayOfString;
@@ -33,10 +47,53 @@ begin
   end;
 end;
 
+function DeleteLegacyHelperService: Boolean;
+var
+  i: Integer;
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{sys}\sc.exe'), 'query ' + LegacyHelperService, '',
+    SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if ResultCode <> 0 then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  if not Exec(ExpandConstant('{sys}\sc.exe'), 'delete ' + LegacyHelperService,
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := False;
+    Exit;
+  end;
+  if ResultCode <> 0 then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  for i := 1 to 50 do
+  begin
+    Exec(ExpandConstant('{sys}\sc.exe'), 'query ' + LegacyHelperService, '',
+      SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    if ResultCode <> 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Sleep(200);
+  end;
+  Result := False;
+end;
+
 function InitializeSetup(): Boolean;
 begin
+  StopLegacyHelperService;
   KillProcesses;
-  Result := True;
+  Result := DeleteLegacyHelperService;
+  if not Result then
+    MsgBox('无法删除旧版 HarborProxy Helper 服务，请重启 Windows 后重试。',
+      mbError, MB_OK);
 end;
 
 [Languages]

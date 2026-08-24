@@ -330,14 +330,6 @@ enum AuthorizeCode {
   none,
   success,
   error,
-  uacCancelled,
-  serviceStopFailed,
-  serviceDeleteFailed,
-  serviceCreateFailed,
-  serviceStartFailed,
-  imagePathMismatch,
-  helperUnreachable,
-  helperTokenMismatch,
   coreHashMismatch,
 }
 
@@ -346,29 +338,9 @@ extension AuthorizeCodeExt on AuthorizeCode {
     AuthorizeCode.none => 'none',
     AuthorizeCode.success => 'success',
     AuthorizeCode.error => 'authorization_failed',
-    AuthorizeCode.uacCancelled => 'uac_cancelled',
-    AuthorizeCode.serviceStopFailed => 'service_stop_failed',
-    AuthorizeCode.serviceDeleteFailed => 'service_delete_failed',
-    AuthorizeCode.serviceCreateFailed => 'service_create_failed',
-    AuthorizeCode.serviceStartFailed => 'service_start_failed',
-    AuthorizeCode.imagePathMismatch => 'imagepath_mismatch',
-    AuthorizeCode.helperUnreachable => 'helper_unreachable',
-    AuthorizeCode.helperTokenMismatch => 'helper_token_mismatch',
     AuthorizeCode.coreHashMismatch => 'core_hash_mismatch',
   };
 }
-
-enum WindowsHelperServiceStatus {
-  none,
-  presence,
-  running,
-  imagePathMismatch,
-  helperUnreachable,
-  helperTokenMismatch,
-  coreHashMismatch,
-}
-
-enum WindowsHelperPingStatus { success, unreachable, tokenMismatch }
 
 enum FunctionTag {
   updateConfig,

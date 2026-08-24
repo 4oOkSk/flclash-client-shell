@@ -124,12 +124,17 @@ Platform build hooks inside `flutter build` trigger `build_tool` automatically:
 - Windows: CMake include, `buildkit/cmake/buildkit.cmake`, `build_tool windows`. Debug passes `--dev` via `CMAKE_BUILD_TYPE`.
 - Android: Gradle include, `buildkit/gradle/plugin.gradle`, `build_tool android`.
 
-Windows helper auth:
+Windows direct core:
 
-- Release: Core SHA256 is embedded in both the Flutter app and the Rust helper. The app pings the helper and verifies the token matches.
-- Debug: The Rust helper skips token verification when built in debug mode, so `flutter run` works without the SHA256 flow.
+- The GUI requests administrator privileges through its manifest and starts
+  `HarborProxyCore.exe` directly.
+- Release builds embed the core SHA256 in the Flutter app and refuse to launch
+  a mismatched core. Debug builds skip this release-integrity check.
+- The runner assigns itself and its child core to a kill-on-close Windows Job
+  Object so an abnormal GUI exit does not leave the core running.
 
-`plugins/setup/` is an FFI plugin that exists only as a build harness. It carries no Dart API, only platform build hooks that trigger Go compilation. Windows builds also compile a Rust helper in `services/helper/` through `RustBuilder`.
+`plugins/setup/` is an FFI plugin that exists only as a build harness. It
+carries no Dart API, only platform build hooks that trigger Go compilation.
 
 Build configuration defaults live in `build_tool/lib/src/options.dart` and can be overridden via `build_config.yaml`.
 
@@ -150,12 +155,8 @@ to `flutter_distributor` adds arch suffixes to artifact names, such as
 - `window_ext`: window extensions.
 - `flutter_distributor`: app packaging/distribution.
 
-## Rust Helper Service
+## Windows Privilege Boundary
 
-`services/helper/` is a Windows-only privileged helper for starting the core as admin and managing TUN. It is built with:
-
-```bash
-cargo build --release --features windows-service
-```
-
-It uses token-based auth with the Flutter app.
+The Windows runner is the privilege boundary. It is elevated by the manifest,
+starts only the packaged `HarborProxyCore.exe`, and owns the core process lifetime.
+Installers remove the retired `HarborProxyHelperService` during upgrades.

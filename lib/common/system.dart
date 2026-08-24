@@ -46,8 +46,7 @@ class System {
   Future<bool> checkIsAdmin() async {
     final corePath = appPath.corePath;
     if (system.isWindows) {
-      final result = await windows?.checkService();
-      return result == WindowsHelperServiceStatus.running;
+      return windows?.isUserAnAdmin() ?? false;
     } else if (system.isMacOS) {
       final result = await Process.run('stat', ['-f', '%Su:%Sg %Sp', corePath]);
       final output = result.stdout.trim();
@@ -80,12 +79,14 @@ class System {
     }
     final isAdmin = await checkIsAdmin();
     if (isAdmin) {
+      if (system.isWindows && !await coreBinaryMatchesExpectedHash()) {
+        return AuthorizeCode.coreHashMismatch;
+      }
       return AuthorizeCode.none;
     }
 
     if (system.isWindows) {
-      final result = await windows?.registerService();
-      return result ?? AuthorizeCode.error;
+      return AuthorizeCode.error;
     }
 
     if (system.isMacOS) {
@@ -145,6 +146,18 @@ class System {
     return AuthorizeCode.error;
   }
 
+  Future<bool> coreBinaryMatchesExpectedHash() async {
+    if (kDebugMode) return true;
+    final expected = globalState.coreSHA256.trim().toLowerCase();
+    if (expected.isEmpty) return false;
+    try {
+      final digest = await sha256.bind(File(appPath.corePath).openRead()).first;
+      return digest.toString().toLowerCase() == expected;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> back() async {
     await app?.moveTaskToBack();
     await window?.hide();
@@ -172,6 +185,14 @@ class Windows {
   factory Windows() {
     _instance ??= Windows._internal();
     return _instance!;
+  }
+
+  bool isUserAnAdmin() {
+    final check = _shell32.lookupFunction<
+      Int32 Function(),
+      int Function()
+    >('IsUserAnAdmin');
+    return check() != 0;
   }
 
   bool runas(String command, String arguments) {
@@ -237,212 +258,6 @@ class Windows {
   //     }
   //   }
   // }
-
-  Future<WindowsHelperServiceStatus> checkService() async {
-    if (!await _coreHashMatches()) {
-      return WindowsHelperServiceStatus.coreHashMismatch;
-    }
-    final result = await Process.run('sc.exe', ['query', appHelperService]);
-    if (result.exitCode != 0) {
-      return WindowsHelperServiceStatus.none;
-    }
-    final registeredHelperPath = await _registeredHelperPath();
-    if (registeredHelperPath == null ||
-        !_windowsPathsEqual(registeredHelperPath, appPath.helperPath)) {
-      return WindowsHelperServiceStatus.imagePathMismatch;
-    }
-    final output = result.stdout.toString();
-    if (!output.contains('RUNNING')) {
-      return WindowsHelperServiceStatus.presence;
-    }
-    final pingStatus = await request.checkHelperPing();
-    return switch (pingStatus) {
-      WindowsHelperPingStatus.success => WindowsHelperServiceStatus.running,
-      WindowsHelperPingStatus.unreachable =>
-        WindowsHelperServiceStatus.helperUnreachable,
-      WindowsHelperPingStatus.tokenMismatch =>
-        WindowsHelperServiceStatus.helperTokenMismatch,
-    };
-  }
-
-  Future<bool> _coreHashMatches() async {
-    if (kDebugMode) return true;
-    final expected = globalState.coreSHA256.trim().toLowerCase();
-    if (expected.isEmpty) return false;
-    try {
-      final digest = await sha256.bind(File(appPath.corePath).openRead()).first;
-      return digest.toString().toLowerCase() == expected;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<String?> _registeredHelperPath() async {
-    try {
-      final result = await Process.run('reg.exe', [
-        'query',
-        r'HKLM\SYSTEM\CurrentControlSet\Services\HarborProxyHelperService',
-        '/v',
-        'ImagePath',
-      ]);
-      if (result.exitCode != 0) return null;
-      final match = RegExp(
-        r'REG_(?:EXPAND_)?SZ\s+(.+)$',
-        multiLine: true,
-      ).firstMatch(result.stdout.toString());
-      final value = match?.group(1)?.trim();
-      if (value == null || value.isEmpty) return null;
-      final expanded = _expandWindowsEnvironment(value);
-      if (expanded.startsWith('"')) {
-        final closing = expanded.indexOf('"', 1);
-        if (closing <= 1) return null;
-        return expanded.substring(1, closing);
-      }
-      final executable = expanded.split(RegExp(r'\s+')).first;
-      return executable;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  String _expandWindowsEnvironment(String value) {
-    return value.replaceAllMapped(RegExp(r'%([^%]+)%'), (match) {
-      return Platform.environment[match.group(1)] ?? match.group(0)!;
-    });
-  }
-
-  bool _windowsPathsEqual(String left, String right) {
-    try {
-      return normalize(absolute(left)).toLowerCase() ==
-          normalize(absolute(right)).toLowerCase();
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<AuthorizeCode> registerService() async {
-    final status = await checkService();
-
-    if (status == WindowsHelperServiceStatus.running) {
-      return AuthorizeCode.success;
-    }
-    if (status == WindowsHelperServiceStatus.coreHashMismatch) {
-      return AuthorizeCode.coreHashMismatch;
-    }
-
-    final helperPath = appPath.helperPath;
-    if (helperPath.contains('"')) {
-      return AuthorizeCode.imagePathMismatch;
-    }
-    final token = DateTime.now().microsecondsSinceEpoch.toString();
-    final scriptPath = join(
-      await appPath.tempPath,
-      'harborproxy-helper-install-$token.cmd',
-    );
-    final statusPath = join(
-      await appPath.tempPath,
-      'harborproxy-helper-install-$token.status',
-    );
-    final batchHelperPath = helperPath.replaceAll('%', '%%');
-    final batchStatusPath = statusPath.replaceAll('%', '%%');
-    final batchQuotedHelper = r'\"%HELPER%\"';
-    final script =
-        '''@echo off\r
-setlocal\r
-set "HELPER=$batchHelperPath"\r
-set "STATUS=$batchStatusPath"\r
-sc.exe query "$appHelperService" >nul 2>&1 || goto create_service\r
-sc.exe stop "$appHelperService" >nul 2>&1\r
-if errorlevel 1 (\r
-  sc.exe query "$appHelperService" | findstr /R /C:"STATE.*: 1" >nul || goto fail_stop\r
-)\r
-for /L %%I in (1,1,20) do (\r
-  sc.exe query "$appHelperService" | findstr /R /C:"STATE.*: 1" >nul && goto delete_service\r
-  timeout /t 1 /nobreak >nul\r
-)\r
-goto fail_stop\r
-:delete_service\r
-sc.exe delete "$appHelperService" >nul 2>&1 || goto fail_delete\r
-for /L %%I in (1,1,20) do (\r
-  sc.exe query "$appHelperService" >nul 2>&1 || goto create_service\r
-  timeout /t 1 /nobreak >nul\r
-)\r
-goto fail_delete\r
-:create_service\r
-sc.exe create "$appHelperService" binPath= "$batchQuotedHelper" start= demand DisplayName= "HarborProxy Helper Service" >nul\r
-if errorlevel 1 goto fail_create\r
-sc.exe start "$appHelperService" >nul\r
-if errorlevel 1 goto fail_start\r
->"%STATUS%" echo success\r
-exit /b 0\r
-:fail_stop\r
->"%STATUS%" echo service_stop_failed\r
-exit /b 10\r
-:fail_delete\r
->"%STATUS%" echo service_delete_failed\r
-exit /b 11\r
-:fail_create\r
->"%STATUS%" echo service_create_failed\r
-exit /b 12\r
-:fail_start\r
->"%STATUS%" echo service_start_failed\r
-exit /b 13\r
-''';
-
-    final scriptFile = File(scriptPath);
-    final statusFile = File(statusPath);
-    try {
-      await scriptFile.writeAsString(script, flush: true);
-      final launched = runas('cmd.exe', '/d /c ""$scriptPath""');
-      if (!launched) {
-        return AuthorizeCode.uacCancelled;
-      }
-      String? stage;
-      for (var attempt = 0; attempt < 60; attempt++) {
-        if (await statusFile.exists()) {
-          stage = (await statusFile.readAsString()).trim();
-          break;
-        }
-        await Future<void>.delayed(const Duration(seconds: 1));
-      }
-      final stageCode = switch (stage) {
-        'service_stop_failed' => AuthorizeCode.serviceStopFailed,
-        'service_delete_failed' => AuthorizeCode.serviceDeleteFailed,
-        'service_create_failed' => AuthorizeCode.serviceCreateFailed,
-        'service_start_failed' => AuthorizeCode.serviceStartFailed,
-        'success' => null,
-        _ => AuthorizeCode.serviceCreateFailed,
-      };
-      if (stageCode != null) return stageCode;
-      final retryStatus = await retry(
-        task: checkService,
-        maxAttempts: 15,
-        retryIf: (value) =>
-            value == WindowsHelperServiceStatus.presence ||
-            value == WindowsHelperServiceStatus.helperUnreachable,
-        delay: const Duration(milliseconds: 500),
-      );
-      return switch (retryStatus) {
-        WindowsHelperServiceStatus.running => AuthorizeCode.success,
-        WindowsHelperServiceStatus.imagePathMismatch =>
-          AuthorizeCode.imagePathMismatch,
-        WindowsHelperServiceStatus.helperUnreachable =>
-          AuthorizeCode.helperUnreachable,
-        WindowsHelperServiceStatus.helperTokenMismatch =>
-          AuthorizeCode.helperTokenMismatch,
-        WindowsHelperServiceStatus.coreHashMismatch =>
-          AuthorizeCode.coreHashMismatch,
-        _ => AuthorizeCode.serviceStartFailed,
-      };
-    } finally {
-      try {
-        await scriptFile.delete();
-      } catch (_) {}
-      try {
-        await statusFile.delete();
-      } catch (_) {}
-    }
-  }
 
   Future<bool> registerTask(String appName) async {
     final taskXml =

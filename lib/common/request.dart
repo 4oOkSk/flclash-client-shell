@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -9,7 +8,6 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 
 class Request {
   late final Dio dio;
@@ -144,66 +142,6 @@ class Request {
     return res;
   }
 
-  Future<WindowsHelperPingStatus> checkHelperPing() async {
-    if (kDebugMode) return WindowsHelperPingStatus.success;
-    try {
-      final response = await dio
-          .get(
-            'http://$localhost:$helperPort/ping',
-            options: Options(responseType: ResponseType.plain),
-          )
-          .timeout(const Duration(milliseconds: 2000));
-      if (response.statusCode != HttpStatus.ok) {
-        return WindowsHelperPingStatus.unreachable;
-      }
-      return (response.data as String) == globalState.coreSHA256
-          ? WindowsHelperPingStatus.success
-          : WindowsHelperPingStatus.tokenMismatch;
-    } catch (_) {
-      return WindowsHelperPingStatus.unreachable;
-    }
-  }
-
-  Future<bool> pingHelper() async {
-    return await checkHelperPing() == WindowsHelperPingStatus.success;
-  }
-
-  Future<bool> startCoreByHelper(String arg) async {
-    try {
-      final response = await dio
-          .post(
-            'http://$localhost:$helperPort/start',
-            data: json.encode({'path': appPath.corePath, 'arg': arg}),
-            options: Options(responseType: ResponseType.plain),
-          )
-          .timeout(const Duration(milliseconds: 2000));
-      if (response.statusCode != HttpStatus.ok) {
-        return false;
-      }
-      final data = response.data as String;
-      return data.isEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> stopCoreByHelper() async {
-    try {
-      final response = await dio
-          .post(
-            'http://$localhost:$helperPort/stop',
-            options: Options(responseType: ResponseType.plain),
-          )
-          .timeout(const Duration(milliseconds: 2000));
-      if (response.statusCode != HttpStatus.ok) {
-        return false;
-      }
-      final data = response.data as String;
-      return data.isEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
 }
 
 final request = Request();

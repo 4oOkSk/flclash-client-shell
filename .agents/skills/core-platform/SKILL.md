@@ -1,13 +1,14 @@
 ---
 name: core-platform
-description: Use when changing FlClash core integration, platform managers, Go core communication, desktop/mobile platform behavior, or Windows helper flow.
+description: Use when changing FlClash core integration, platform managers, Go core communication, desktop/mobile platform behavior, or Windows elevated core flow.
 ---
 
 # Core And Platform
 
 ## When To Use
 
-Use this for changes touching `lib/core/`, `lib/manager/`, `core/`, `services/helper/`, build hooks, system proxy, tray, VPN, TUN, or platform-specific desktop/mobile behavior.
+Use this for changes touching `lib/core/`, `lib/manager/`, `core/`, build hooks,
+system proxy, tray, VPN, TUN, or platform-specific desktop/mobile behavior.
 
 ## Workflow
 
@@ -24,10 +25,12 @@ Use this for changes touching `lib/core/`, `lib/manager/`, `core/`, `services/he
 
 ## Reference Files
 
-Read `.agents/architecture.md` for the current core modes, manager stack, build hooks, local plugins, and Windows helper notes.
+Read `.agents/architecture.md` for the current core modes, manager stack, build
+hooks, local plugins, and Windows direct-core notes.
 
 ## Pitfalls
 
-- Debug Windows helper auth differs from release token verification.
+- Windows starts the core directly from an elevated GUI and verifies the
+  release core hash before launch.
 - `plugins/setup/` is a build harness, not a Dart API plugin.
-- Build hooks can trigger Go or Rust compilation indirectly through Flutter platform builds.
+- Build hooks can trigger Go compilation indirectly through Flutter platform builds.

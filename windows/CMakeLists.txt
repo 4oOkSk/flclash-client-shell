@@ -89,6 +89,12 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     COMPONENT Runtime)
 endif()
 
+# Remove the retired helper from incremental build/install directories. Fresh
+# packages never contain it, but older local bundles may still have a copy.
+install(CODE "
+  file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/HarborProxyHelperService.exe\")
+  " COMPONENT Runtime)
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"

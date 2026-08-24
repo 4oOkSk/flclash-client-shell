@@ -85,16 +85,14 @@ class CoreService extends CoreHandlerInterface {
     );
   }
 
-  Future<void> start() async {
+  Future<String> start() async {
     if (_process != null) {
       await shutdown(false);
     }
-    if (system.isWindows && await system.checkIsAdmin()) {
-      final isSuccess = await request.startCoreByHelper(_transport.address);
-      if (isSuccess) {
-        await _transport.connectionCompleter.future;
-        return;
-      }
+    if (system.isWindows && !await system.coreBinaryMatchesExpectedHash()) {
+      commonPrint.log('core_hash_mismatch', logLevel: LogLevel.error);
+      _handleInvokeCrashEvent();
+      return 'core_hash_mismatch';
     }
     try {
       _process = await Process.start(appPath.corePath, [_transport.address]);
@@ -104,7 +102,7 @@ class CoreService extends CoreHandlerInterface {
         logLevel: LogLevel.error,
       );
       _handleInvokeCrashEvent();
-      return;
+      return 'core_start_failed';
     }
     _process?.stdout.listen((_) {});
     _process?.stderr.listen((e) {
@@ -114,6 +112,7 @@ class CoreService extends CoreHandlerInterface {
       }
     });
     await _transport.connectionCompleter.future;
+    return '';
   }
 
   @override
@@ -131,12 +130,15 @@ class CoreService extends CoreHandlerInterface {
   @override
   Future<bool> shutdown(bool isUser) async {
     _shutdownCompleter = Completer();
-    if (system.isWindows) {
-      await request.stopCoreByHelper();
-    }
     _transport.disconnected();
-    _process?.kill();
+    final process = _process;
     _process = null;
+    if (process != null) {
+      process.kill();
+      try {
+        await process.exitCode.timeout(const Duration(seconds: 5));
+      } catch (_) {}
+    }
     _clearCompleter();
     if (isUser) {
       return _shutdownCompleter.future;
@@ -153,8 +155,7 @@ class CoreService extends CoreHandlerInterface {
 
   @override
   Future<String> preload() async {
-    await start();
-    return '';
+    return start();
   }
 
   @override
@@ -165,8 +166,7 @@ class CoreService extends CoreHandlerInterface {
     } catch (_) {}
     return collectDesktopPlatformDiagnostics(
       coreProcessRunning:
-          _process != null ||
-          (system.isWindows && _transport.connectionCompleter.isCompleted),
+          _process != null && _transport.connectionCompleter.isCompleted,
       transportConnected: _transport.connectionCompleter.isCompleted,
       isAdmin: isAdmin,
     );

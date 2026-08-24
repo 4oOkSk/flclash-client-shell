@@ -4,6 +4,4 @@ core_dir: core
 core_name: HarborProxyCore
 lib_name: libclash
 output_dir: libclash
-helper_dir: services/helper
-helper_name: HarborProxyHelperService
 dist_dir: dist

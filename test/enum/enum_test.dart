@@ -40,28 +40,7 @@ void main() {
   });
 
   group('AuthorizeCodeExt', () {
-    test('keeps stable Windows TUN failure stage codes', () {
-      expect(AuthorizeCode.uacCancelled.diagnosticCode, 'uac_cancelled');
-      expect(
-        AuthorizeCode.serviceCreateFailed.diagnosticCode,
-        'service_create_failed',
-      );
-      expect(
-        AuthorizeCode.serviceStartFailed.diagnosticCode,
-        'service_start_failed',
-      );
-      expect(
-        AuthorizeCode.imagePathMismatch.diagnosticCode,
-        'imagepath_mismatch',
-      );
-      expect(
-        AuthorizeCode.helperUnreachable.diagnosticCode,
-        'helper_unreachable',
-      );
-      expect(
-        AuthorizeCode.helperTokenMismatch.diagnosticCode,
-        'helper_token_mismatch',
-      );
+    test('keeps the direct-core integrity failure code stable', () {
       expect(
         AuthorizeCode.coreHashMismatch.diagnosticCode,
         'core_hash_mismatch',

@@ -29,6 +29,24 @@ void ActivateExistingWindow() {
   }
 }
 
+HANDLE CreateProcessLifetimeJob() {
+  HANDLE job = ::CreateJobObject(nullptr, nullptr);
+  if (job == nullptr) {
+    return nullptr;
+  }
+
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
+  limits.BasicLimitInformation.LimitFlags =
+      JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+  if (!::SetInformationJobObject(job, JobObjectExtendedLimitInformation,
+                                 &limits, sizeof(limits)) ||
+      !::AssignProcessToJobObject(job, ::GetCurrentProcess())) {
+    ::CloseHandle(job);
+    return nullptr;
+  }
+  return job;
+}
+
 }  // namespace
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
@@ -49,6 +67,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::CloseHandle(single_instance);
     return EXIT_SUCCESS;
   }
+
+  // HarborProxyCore.exe is a direct elevated child. Keep the job handle open for
+  // the GUI lifetime so Windows also terminates the core after an abnormal GUI
+  // exit. A normal shutdown still asks Dart's Process object to stop it first.
+  HANDLE process_lifetime_job = CreateProcessLifetimeJob();
+  (void)process_lifetime_job;
 
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.

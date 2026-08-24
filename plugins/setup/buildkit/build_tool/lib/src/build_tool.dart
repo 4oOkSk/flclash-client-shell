@@ -5,12 +5,10 @@ import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import 'environment.dart';
 import 'error.dart';
 import 'go_builder.dart';
 import 'logging.dart';
 import 'options.dart';
-import 'rust_builder.dart';
 import 'target.dart';
 import 'util.dart';
 
@@ -140,12 +138,11 @@ class BuildWindowsCommand extends BuildCommand {
   final name = 'windows';
 
   @override
-  final description = 'Build Windows Go core + Rust helper';
+  final description = 'Build Windows Go core';
 
   @override
   Future<void> runBuildCommand() async {
     final archName = argResults?['arch'] as String?;
-    final debug = Environment.isDebug;
     final config = BuildConfig.load(rootDir: _rootDir);
 
     final arch = archName ?? await _hostGoArch();
@@ -159,25 +156,21 @@ class BuildWindowsCommand extends BuildCommand {
 
     final goBuilder = GoBuilder(rootDir: _rootDir, config: config);
     final corePaths = await goBuilder.buildAll(targets);
-
-    _log.info('Build mode: ${debug ? 'debug' : 'release'}');
-
-    if (debug) {
-      await Process.run('taskkill', [
-        '/F',
-        '/IM',
-        '${config.helperName}${targets.first.executableExtension}',
-      ]);
-      final rustBuilder = RustBuilder(rootDir: _rootDir, config: config);
-      await rustBuilder.build(targets.first, '', release: false);
-    } else {
-      final coreSha256 = await calcSha256(corePaths.first);
-      final rustBuilder = RustBuilder(rootDir: _rootDir, config: config);
-      await rustBuilder.build(targets.first, coreSha256);
-      await File(
-        p.join(_rootDir, 'core_sha256.json'),
-      ).writeAsString(jsonEncode({'CORE_SHA256': coreSha256}));
+    final legacyHelper = File(
+      p.join(
+        _rootDir,
+        config.outputDir,
+        'windows',
+        'HarborProxyHelperService.exe',
+      ),
+    );
+    if (legacyHelper.existsSync()) {
+      legacyHelper.deleteSync();
     }
+    final coreSha256 = await calcSha256(corePaths.first);
+    await File(
+      p.join(_rootDir, 'core_sha256.json'),
+    ).writeAsString(jsonEncode({'CORE_SHA256': coreSha256}));
 
     _log.info('Build complete: $corePaths');
   }

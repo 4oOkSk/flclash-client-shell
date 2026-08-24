@@ -5,8 +5,6 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Net;
-using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -20,7 +18,13 @@ internal static class Program
     private const string HelperServiceName = "HarborProxyHelperService";
     private const uint ProcessQueryLimitedInformation = 0x1000;
 
-    private static readonly string[] ManagedExecutableNames = new string[]
+    private static readonly string[] InstallExecutableNames = new string[]
+    {
+        "HarborProxy.exe",
+        "HarborProxyCore.exe"
+    };
+
+    private static readonly string[] ManagedProcessNames = new string[]
     {
         "HarborProxy.exe",
         "HarborProxyCore.exe",
@@ -542,7 +546,7 @@ internal static class Program
             Directory.Move(stage, target);
             newMoved = true;
 
-            ConfigureAndVerifyHelperService(target);
+            RemoveLegacyHelperService();
 
             string appPath = Path.Combine(target, "HarborProxy.exe");
             if (options.CreateShortcut)
@@ -686,7 +690,7 @@ internal static class Program
         {
             return false;
         }
-        foreach (string executable in ManagedExecutableNames)
+        foreach (string executable in InstallExecutableNames)
         {
             if (!File.Exists(Path.Combine(directory, executable)))
             {
@@ -833,7 +837,7 @@ internal static class Program
     {
         List<ManagedProcess> result = new List<ManagedProcess>();
         HashSet<int> seen = new HashSet<int>();
-        foreach (string executableName in ManagedExecutableNames)
+        foreach (string executableName in ManagedProcessNames)
         {
             string processName = Path.GetFileNameWithoutExtension(executableName);
             Process[] processes;
@@ -977,116 +981,27 @@ internal static class Program
         throw new InvalidOperationException("service_stop_failed");
     }
 
-    private static void ConfigureAndVerifyHelperService(string target)
+    private static void RemoveLegacyHelperService()
     {
-        string helperPath = Path.Combine(target, "HarborProxyHelperService.exe");
-        string corePath = Path.Combine(target, "HarborProxyCore.exe");
-        if (!File.Exists(helperPath) || !File.Exists(corePath))
+        StopHelperServiceIfPresent();
+        if (!ServiceExists())
         {
-            throw new InvalidDataException("core_hash_mismatch");
+            return;
         }
-        string quotedHelper = QuoteServiceBinaryPathArgument(helperPath);
-        int exitCode;
-        if (ServiceExists())
+        if (RunSc("delete " + HelperServiceName) != 0 && ServiceExists())
         {
-            exitCode = RunSc(
-                "config " + HelperServiceName + " binPath= "
-                    + quotedHelper + " start= demand"
-            );
+            throw new InvalidOperationException("service_delete_failed");
         }
-        else
-        {
-            exitCode = RunSc(
-                "create " + HelperServiceName + " binPath= "
-                    + quotedHelper
-                    + " start= demand DisplayName= "
-                    + QuoteArgument("HarborProxy Helper Service")
-            );
-        }
-        if (exitCode != 0)
-        {
-            throw new InvalidOperationException("service_create_failed");
-        }
-        if (!PathsEqual(GetHelperServiceBinaryPath(), helperPath))
-        {
-            throw new InvalidOperationException("imagepath_mismatch");
-        }
-        exitCode = RunSc("start " + HelperServiceName);
-        if (exitCode != 0 && !IsHelperServiceRunning())
-        {
-            throw new InvalidOperationException("service_start_failed");
-        }
-        Stopwatch timer = Stopwatch.StartNew();
-        while (timer.ElapsedMilliseconds < 15000 && !IsHelperServiceRunning())
-        {
-            System.Threading.Thread.Sleep(200);
-        }
-        if (!IsHelperServiceRunning())
-        {
-            throw new InvalidOperationException("service_start_failed");
-        }
-        VerifyHelperPing(corePath);
-    }
-
-    private static void VerifyHelperPing(string corePath)
-    {
-        string expectedHash = CalculateSha256(corePath);
-        Exception lastError = null;
         Stopwatch timer = Stopwatch.StartNew();
         while (timer.ElapsedMilliseconds < 15000)
         {
-            try
+            if (!ServiceExists())
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
-                    "http://127.0.0.1:47890/ping"
-                );
-                request.Proxy = null;
-                request.Timeout = 1000;
-                request.ReadWriteTimeout = 1000;
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                using (StreamReader reader = new StreamReader(response.GetResponseStream()))
-                {
-                    string actualHash = reader.ReadToEnd();
-                    if (String.Equals(
-                        actualHash,
-                        expectedHash,
-                        StringComparison.OrdinalIgnoreCase
-                    ))
-                    {
-                        return;
-                    }
-                    throw new InvalidOperationException("helper_token_mismatch");
-                }
+                return;
             }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception error)
-            {
-                lastError = error;
-                System.Threading.Thread.Sleep(250);
-            }
+            System.Threading.Thread.Sleep(200);
         }
-        throw new InvalidOperationException(
-            "helper_unreachable",
-            lastError
-        );
-    }
-
-    private static string CalculateSha256(string path)
-    {
-        using (SHA256 algorithm = SHA256.Create())
-        using (FileStream stream = File.OpenRead(path))
-        {
-            byte[] digest = algorithm.ComputeHash(stream);
-            StringBuilder output = new StringBuilder(digest.Length * 2);
-            foreach (byte value in digest)
-            {
-                output.Append(value.ToString("x2"));
-            }
-            return output.ToString();
-        }
+        throw new InvalidOperationException("service_delete_failed");
     }
 
     private static void RestoreHelperService(HelperServiceSnapshot snapshot)
