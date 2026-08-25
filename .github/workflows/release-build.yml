@@ -51,27 +51,14 @@ jobs:
       - name: Verify public source boundary
         run: python3 tool/public_source_gate.py .
 
+      - name: Verify recursive artifact gate
+        run: bash .github/scripts/ci-sensitive-gate.sh self-test
+
       - name: Restore and apply release overlay
         shell: bash
         env:
           RELEASE_PAYLOAD_KEY: ${{ secrets.RELEASE_PAYLOAD_KEY }}
-        run: |
-          set +x
-          payload="$RUNNER_TEMP/release-payload"
-          archive="$RUNNER_TEMP/release-payload.tar.gz"
-          trap 'rm -f "$archive"' EXIT
-          test -n "$RELEASE_PAYLOAD_KEY"
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
-            -pass env:RELEASE_PAYLOAD_KEY \
-            -in tool/release_payload.enc \
-            -out "$archive"
-          python3 tool/restore_release_payload.py "$archive" "$payload"
-          python3 tool/apply_release_overlay.py \
-            --root . \
-            --manifest "$payload/manifest.json" \
-            --icon "$payload/icon-master.png" \
-            --github-env "$GITHUB_ENV"
-          python3 tool/generate_branding_assets.py
+        run: bash tool/prepare_release_source.sh
 
       - name: Verify requested build
         shell: bash
@@ -151,23 +138,7 @@ jobs:
         shell: bash
         env:
           RELEASE_PAYLOAD_KEY: ${{ secrets.RELEASE_PAYLOAD_KEY }}
-        run: |
-          set +x
-          payload="$RUNNER_TEMP/release-payload"
-          archive="$RUNNER_TEMP/release-payload.tar.gz"
-          trap 'rm -f "$archive"' EXIT
-          test -n "$RELEASE_PAYLOAD_KEY"
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
-            -pass env:RELEASE_PAYLOAD_KEY \
-            -in tool/release_payload.enc \
-            -out "$archive"
-          python3 tool/restore_release_payload.py "$archive" "$payload"
-          python3 tool/apply_release_overlay.py \
-            --root . \
-            --manifest "$payload/manifest.json" \
-            --icon "$payload/icon-master.png" \
-            --github-env "$GITHUB_ENV"
-          python3 tool/generate_branding_assets.py
+        run: bash tool/prepare_release_source.sh
 
       - name: Verify requested build
         shell: bash
@@ -348,7 +319,6 @@ jobs:
         run: |
           set +x
           test -n "$OUTPUT_PASSPHRASE"
-          bash .github/scripts/ci-sensitive-gate.sh self-test
           bash .github/scripts/ci-sensitive-gate.sh artifacts "$RUNNER_TEMP/sealed-package-stage"
           mkdir sealed
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \

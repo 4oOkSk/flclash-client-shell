@@ -14,75 +14,8 @@ print_paths() {
   done
 }
 
-scan_source() {
-  local path pattern
-  local -a forbidden_paths=()
-  local -a matches=()
-  local -a patterns=(
-    '/(link|sub|subscribe)/[A-Za-z0-9._~-]{20,}'
-    '(vless|vmess|trojan|ssr|hysteria2?|tuic)://[^[:space:]<>]{20,}'
-    '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'
-    'PRIVATE_CLIENT_ENROLL_BLOB[[:space:]]*[:=][[:space:]]*[A-Za-z0-9+/=_-]{24,}'
-    'enroll(ClientBlobPriv|ClientBlobPub|PanelSigPub|CacheKey)=[A-Za-z0-9+/=_-]{16,}'
-  )
-
-  shopt -s nocasematch
-  while IFS= read -r -d '' path; do
-    case "$path" in
-      .env|.env.*|*/.env|*/.env.*|env.json|*/env.json|local.properties|*/local.properties|\
-      *.jks|*.keystore|*.p12|*.pfx|*.mobileprovision|*.provisionprofile)
-        forbidden_paths+=("$path")
-        ;;
-    esac
-  done < <(git ls-files -z)
-  shopt -u nocasematch
-
-  if ((${#forbidden_paths[@]})); then
-    printf 'sensitive gate: forbidden tracked build inputs found:\n' >&2
-    print_paths "${forbidden_paths[@]}"
-    exit 1
-  fi
-
-  for pattern in "${patterns[@]}"; do
-    matches=()
-    while IFS= read -r path; do
-      matches+=("$path")
-    done < <(
-      git grep -I -l -E -e "$pattern" -- . \
-        ':(exclude).github/scripts/ci-sensitive-gate.sh' || true
-    )
-    if ((${#matches[@]})); then
-      printf 'sensitive gate: high-risk literal found in tracked source:\n' >&2
-      print_paths "${matches[@]}"
-      exit 1
-    fi
-  done
-
-  if git grep -I -q -E '\$\{\{[[:space:]]*secrets\.' -- \
-    .github/workflows/private-client-test-build.yml; then
-    fail 'test-build workflow must not consume repository or environment secrets'
-  fi
-
-  printf 'sensitive gate: tracked source passed\n'
-}
-
-validate_release_settings() {
-  local value
-  local api_base=${PRIVATE_CLIENT_API_BASE:-}
-  [[ "$api_base" == https://* ]] || fail 'client API base must use HTTPS'
-  [[ "$api_base" != https://example.invalid* ]] || fail 'release API base is a placeholder'
-  [[ -n "${PRIVATE_CLIENT_API_USER_AGENT:-}" ]] || fail 'client API user agent is missing'
-  for value in \
-    "${PRIVATE_CLIENT_LOGIN_PATH:-}" \
-    "${PRIVATE_CLIENT_CONFIG_PATH:-}" \
-    "${PRIVATE_CLIENT_LOGOUT_PATH:-}"; do
-    [[ "$value" == /* ]] || fail 'client API paths must be absolute paths'
-    [[ "$value" != *[$'\r\n\t ']* ]] || fail 'client API paths must not contain whitespace'
-  done
-}
-
 scan_artifacts() {
-  local artifact_root=${2:-dist}
+  local artifact_root=${1:-dist}
   local path pattern destination
   local -a forbidden_paths=()
   local -a raw_matches=()
@@ -197,27 +130,21 @@ with zipfile.ZipFile(sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as archive:
     archive.write(sys.argv[1], 'should-fail.txt')
 PY
   set +e
-  (scan_artifacts generated "$temp_root/artifacts") >/dev/null 2>&1
+  (scan_artifacts "$temp_root/artifacts") >/dev/null 2>&1
   status=$?
   set -e
   [[ "$status" -ne 0 ]] || fail 'recursive artifact gate did not reject the injected sample'
   printf 'sensitive gate: recursive archive self-test passed\n'
 }
 
-case "${1:-source}" in
-  source)
-    scan_source
-    ;;
-  release-settings)
-    validate_release_settings
-    ;;
+case "${1:-}" in
   artifacts)
-    scan_artifacts "$@"
+    scan_artifacts "${2:-dist}"
     ;;
   self-test)
     self_test
     ;;
   *)
-    fail 'usage: ci-sensitive-gate.sh source | release-settings | artifacts [dir] | self-test'
+    fail 'usage: ci-sensitive-gate.sh artifacts [dir] | self-test'
     ;;
 esac
