@@ -290,7 +290,11 @@ void main() {
   });
 
   test('theme and simple derived providers cover fallback branches', () {
+    container
+        .read(themeSettingProvider.notifier)
+        .update((state) => state.copyWith(themeMode: ThemeMode.dark));
     expect(container.read(currentBrightnessProvider), Brightness.dark);
+
     container
         .read(systemBrightnessProvider.notifier)
         .update((_) => Brightness.light);
