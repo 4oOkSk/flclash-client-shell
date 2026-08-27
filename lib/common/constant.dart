@@ -16,7 +16,10 @@ const coreManifestName = 'manifest.json';
 const coreName = 'clash.meta';
 const browserUa =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const packageName = 'com.example.harborproxy';
+
+/// Stable MethodChannel namespace; intentionally independent of the Android
+/// applicationId used by branded release packages.
+const packageName = 'com.follow.clash';
 final unixSocketPath = '/tmp/HarborProxySocket_${Random().nextInt(10000)}.sock';
 final windowsPipeName = '\\\\.\\pipe\\HarborProxyCore_${_randomPipeId()}';
 const maxTextScale = 1.4;

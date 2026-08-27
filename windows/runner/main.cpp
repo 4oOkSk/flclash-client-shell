@@ -72,7 +72,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // for the GUI lifetime so Windows also terminates the Core after an abnormal
   // GUI exit. A normal shutdown still asks Dart's Process object to stop it.
   HANDLE process_lifetime_job = CreateProcessLifetimeJob();
-  (void)process_lifetime_job;
+  if (process_lifetime_job == nullptr) {
+    ::CloseHandle(single_instance);
+    return EXIT_FAILURE;
+  }
 
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
