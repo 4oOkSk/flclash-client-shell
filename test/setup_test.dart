@@ -83,6 +83,18 @@ void main() {
       expect(args, ['dart-define-from-file=/tmp/private-client/defines.json']);
     });
 
+    test('uses only supported flutter_distributor package arguments', () {
+      final args = setup.createDistributorPackageArgs(
+        platform: 'linux',
+        targets: 'deb',
+        flutterBuildArgs: ['dart-define-from-file=env.json'],
+      );
+
+      expect(args, containsAllInOrder(['--platform', 'linux']));
+      expect(args, containsAllInOrder(['--targets', 'deb']));
+      expect(args, isNot(contains('--description')));
+    });
+
     test('defaults macOS release builds to Universal 2', () {
       final arch = setup.resolveBuildArch(platform: 'macos', hostArch: 'arm64');
 

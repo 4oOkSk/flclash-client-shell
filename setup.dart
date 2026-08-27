@@ -150,6 +150,30 @@ List<String> createFlutterBuildArgs({
   return flutterBuildArgs;
 }
 
+List<String> createDistributorPackageArgs({
+  required String platform,
+  required String targets,
+  required List<String> flutterBuildArgs,
+  String? androidArch,
+}) {
+  return [
+    'pub',
+    'global',
+    'run',
+    'flutter_distributor:main',
+    'package',
+    '--skip-clean',
+    '--platform',
+    platform,
+    '--targets',
+    targets,
+    if (androidArch != null)
+      '--build-target-platform=${_androidFlutterTarget[androidArch]!}',
+    if (flutterBuildArgs.isNotEmpty)
+      '--flutter-build-args=${flutterBuildArgs.join(',')}',
+  ];
+}
+
 Map<String, String> createBuildEnvironment(String env) {
   return {'APP_ENV': env};
 }
@@ -238,11 +262,6 @@ Future<int> _package(
       splitAndroid: splitAndroid,
       defineFile: defineFile.path,
     );
-    final descriptionArgs = <String>[];
-    if (platform != 'android') {
-      descriptionArgs.addAll(['--description', arch]);
-    }
-
     final depExit = await _ensureDependencies(platform, arch);
     if (depExit != 0) return depExit;
 
@@ -265,23 +284,12 @@ Future<int> _package(
 
     final process = await Process.start(
       Platform.resolvedExecutable,
-      [
-        'pub',
-        'global',
-        'run',
-        'flutter_distributor:main',
-        'package',
-        '--skip-clean',
-        '--platform',
-        platform,
-        '--targets',
-        targets,
-        if (androidArch != null)
-          '--build-target-platform=${_androidFlutterTarget[androidArch]!}',
-        if (flutterBuildArgs.isNotEmpty)
-          '--flutter-build-args=${flutterBuildArgs.join(',')}',
-        ...descriptionArgs,
-      ],
+      createDistributorPackageArgs(
+        platform: platform,
+        targets: targets,
+        flutterBuildArgs: flutterBuildArgs,
+        androidArch: androidArch,
+      ),
       includeParentEnvironment: true,
       environment: {'ANDROID_ARCH': ?androidArch},
       runInShell: false,
