@@ -13,21 +13,20 @@ val localProperties = Properties().apply {
     }
 }
 
-val mStoreFile: File = file(localProperties.getProperty("storeFile", "keystore.jks"))
-val mStoreType: String = localProperties.getProperty("storeType", "JKS")
-val mStorePassword: String? = localProperties.getProperty("storePassword")
-val mKeyAlias: String? = localProperties.getProperty("keyAlias")
-val mKeyPassword: String? = localProperties.getProperty("keyPassword")
-val isRelease =
-    mStoreFile.exists() && mStorePassword != null && mKeyAlias != null && mKeyPassword != null
-
+val releaseStoreFile = file(localProperties.getProperty("storeFile", "keystore.jks"))
+val releaseStoreType = localProperties.getProperty("storeType", "JKS")
+val releaseStorePassword = localProperties.getProperty("storePassword")
+val releaseKeyAlias = localProperties.getProperty("keyAlias")
+val releaseKeyPassword = localProperties.getProperty("keyPassword")
+val hasReleaseSigning = releaseStoreFile.exists() &&
+    releaseStorePassword != null &&
+    releaseKeyAlias != null &&
+    releaseKeyPassword != null
 
 android {
     namespace = "com.follow.clash"
     compileSdk = libs.versions.compileSdk.get().toInt()
     ndkVersion = libs.versions.ndkVersion.get()
-
-
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -43,13 +42,13 @@ android {
     }
 
     signingConfigs {
-        if (isRelease) {
+        if (hasReleaseSigning) {
             create("release") {
-                storeFile = mStoreFile
-                storeType = mStoreType
-                storePassword = mStorePassword
-                keyAlias = mKeyAlias
-                keyPassword = mKeyPassword
+                storeFile = releaseStoreFile
+                storeType = releaseStoreType
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
@@ -69,7 +68,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            if (isRelease) {
+            if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
                 signingConfig = signingConfigs.getByName("debug")
@@ -77,7 +76,8 @@ android {
             }
 
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
             )
         }
     }
@@ -93,10 +93,10 @@ flutter {
     source = "../.."
 }
 
-
 dependencies {
     implementation(project(":service"))
     implementation(project(":common"))
+    implementation(project(":core"))
     implementation(libs.core.splashscreen)
     implementation(libs.gson)
     implementation(libs.smali.dexlib2) {

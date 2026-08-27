@@ -211,23 +211,14 @@ NavigationState navigationState(Ref ref) {
 }
 
 @riverpod
-double contentWidth(Ref ref) {
-  final viewWidth = ref.watch(viewWidthProvider);
-  final sideWidth = ref.watch(sideWidthProvider);
-  return viewWidth - sideWidth;
-}
-
-@riverpod
 DashboardState dashboardState(Ref ref) {
   final configuredWidgets = ref.watch(
     appSettingProvider.select((state) => state.dashboardWidgets),
   );
-  final contentWidth = ref.watch(contentWidthProvider);
   return DashboardState(
     dashboardWidgets: kPrivateClientMode
         ? privateClientDashboardWidgets(configuredWidgets)
         : genericDashboardWidgets(configuredWidgets),
-    contentWidth: contentWidth,
   );
 }
 
@@ -251,14 +242,7 @@ ProxiesActionsState proxiesActionsState(Ref ref) {
 ProfilesState profilesState(Ref ref) {
   final currentProfileId = ref.watch(currentProfileIdProvider);
   final profiles = ref.watch(profilesProvider);
-  final columns = ref.watch(
-    contentWidthProvider.select((state) => utils.getProfilesColumns(state)),
-  );
-  return ProfilesState(
-    profiles: profiles,
-    currentProfileId: currentProfileId,
-    columns: columns,
-  );
+  return ProfilesState(profiles: profiles, currentProfileId: currentProfileId);
 }
 
 @riverpod
@@ -289,13 +273,10 @@ ProxiesListState proxiesListState(Ref ref) {
   final cardType = ref.watch(
     proxiesStyleSettingProvider.select((state) => state.cardType),
   );
-
-  final columns = ref.watch(proxiesColumnsProvider);
   return ProxiesListState(
     groups: currentGroups.value,
     currentUnfoldSet: currentUnfoldSet,
     proxyCardType: cardType,
-    columns: columns,
   );
 }
 
@@ -309,12 +290,10 @@ ProxiesTabState proxiesTabState(Ref ref) {
   final cardType = ref.watch(
     proxiesStyleSettingProvider.select((state) => state.cardType),
   );
-  final columns = ref.watch(proxiesColumnsProvider);
   return ProxiesTabState(
     groups: currentGroups.value,
     currentGroupName: currentGroupName,
     proxyCardType: cardType,
-    columns: columns,
   );
 }
 
@@ -348,7 +327,6 @@ ProxyGroupSelectorState proxyGroupSelectorState(
     ),
   );
   final sortNum = ref.watch(sortNumProvider);
-  final columns = ref.watch(proxiesColumnsProvider);
   final lowQuery = query.toLowerCase();
   final proxies =
       group?.all.where((item) {
@@ -362,7 +340,6 @@ ProxyGroupSelectorState proxyGroupSelectorState(
     sortNum: sortNum,
     groupType: group?.type ?? GroupType.Selector,
     proxies: proxies,
-    columns: columns,
   );
 }
 
@@ -478,15 +455,6 @@ Profile? currentProfile(Ref ref) {
 }
 
 @riverpod
-int proxiesColumns(Ref ref) {
-  final contentWidth = ref.watch(contentWidthProvider);
-  final proxiesLayout = ref.watch(
-    proxiesStyleSettingProvider.select((state) => state.layout),
-  );
-  return utils.getProxiesColumns(contentWidth, proxiesLayout);
-}
-
-@riverpod
 SelectedProxyState realSelectedProxyState(Ref ref, String proxyName) {
   final groups = ref.watch(groupsProvider);
   final selectedMap = ref.watch(selectedMapProvider);
@@ -554,9 +522,6 @@ ColorScheme genColorScheme(
     ),
   );
   if (color == null && (ignoreConfig == true || vm2.a == null)) {
-    // if (globalState.corePalette != null) {
-    //   return globalState.corePalette!.toColorScheme(brightness: brightness);
-    // }
     return ColorScheme.fromSeed(
       seedColor:
           globalState.corePalette
@@ -590,11 +555,16 @@ Brightness currentBrightness(Ref ref) {
 @riverpod
 VM2<bool, bool> autoSetSystemDnsState(Ref ref) {
   final isStart = ref.watch(runTimeProvider.select((state) => state != null));
-  final realTunEnable = ref.watch(realTunEnableProvider);
+  final tunEnable = ref.watch(
+    patchClashConfigProvider.select((state) => state.tun.enable),
+  );
+  final authorizationState = ref.watch(authorizedTunEnableProvider);
   final autoSetSystemDns = ref.watch(
     networkSettingProvider.select((state) => state.autoSetSystemDns),
   );
-  return VM2(isStart ? realTunEnable : false, autoSetSystemDns);
+  final effectiveTunEnable =
+      tunEnable && authorizationState == TunAuthorizationState.authorized;
+  return VM2(isStart ? effectiveTunEnable : false, autoSetSystemDns);
 }
 
 @riverpod
@@ -633,7 +603,9 @@ SharedState sharedState(Ref ref) {
   );
   final vpnSetting = ref.watch(vpnSettingProvider);
   final currentProfileName = currentProfileVM2.a;
-  final selectedMap = currentProfileVM2.b;
+  final selectedMap = kPrivateClientMode
+      ? ref.watch(selectedMapProvider)
+      : currentProfileVM2.b;
   final onlyStatisticsProxy = appSettingVM3.a;
   final crashlytics = appSettingVM3.b;
   final testUrl = appSettingVM3.c;
@@ -651,7 +623,7 @@ SharedState sharedState(Ref ref) {
     isAndroid: system.isAndroid,
   );
   return SharedState(
-    currentProfileName: currentProfileName,
+    currentProfileName: kPrivateClientMode ? appName : currentProfileName,
     onlyStatisticsProxy: onlyStatisticsProxy,
     stopText: currentAppLocalizations.stop,
     crashlytics: crashlytics,

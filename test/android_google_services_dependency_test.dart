@@ -16,10 +16,10 @@ void main() {
       'android/settings.gradle.kts',
       'android/gradle/libs.versions.toml',
       'android/common/src/main/java/com/follow/clash/common/GlobalState.kt',
-      'android/app/src/main/kotlin/com/follow/clash/State.kt',
-      'android/app/src/main/kotlin/com/follow/clash/Service.kt',
-      'android/service/src/main/java/com/follow/clash/service/RemoteService.kt',
-      'android/service/src/main/aidl/com/follow/clash/service/IRemoteInterface.aidl',
+      'android/app/src/main/kotlin/com/follow/clash/FlClashApplication.kt',
+      'android/app/src/main/kotlin/com/follow/clash/ServiceState.kt',
+      'android/app/src/main/kotlin/com/follow/clash/plugins/AppPlugin.kt',
+      'android/app/src/main/kotlin/com/follow/clash/plugins/ServicePlugin.kt',
     ];
     const forbiddenMarkers = [
       'com.google.firebase',

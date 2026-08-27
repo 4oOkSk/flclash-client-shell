@@ -8,10 +8,7 @@ import 'package:path_provider/path_provider.dart';
 class AppPath {
   static AppPath? _instance;
   Completer<Directory> dataDir = Completer();
-  // Linux (and some headless desktop environments) may not expose a
-  // downloads directory. Keep that platform result nullable and fall back to
-  // the application data directory for file-picker defaults.
-  Completer<Directory?> downloadDir = Completer();
+  late final Future<Directory?> _downloadDir = getDownloadsDirectory();
   Completer<Directory> tempDir = Completer();
   Completer<Directory> cacheDir = Completer();
   late String appDirPath;
@@ -23,9 +20,6 @@ class AppPath {
     });
     getTemporaryDirectory().then((value) {
       tempDir.complete(value);
-    });
-    getDownloadsDirectory().then((value) {
-      downloadDir.complete(value);
     });
     getApplicationCacheDirectory().then((value) {
       cacheDir.complete(value);
@@ -50,9 +44,13 @@ class AppPath {
     return join(executableDirPath, 'HarborProxyCore$executableExtension');
   }
 
+  String get helperPath {
+    return join(executableDirPath, '$appHelperService$executableExtension');
+  }
+
   Future<String> get downloadDirPath async {
-    final directory = await downloadDir.future;
-    return (directory ?? await dataDir.future).path;
+    final directory = await _downloadDir;
+    return directory?.path ?? await homeDirPath;
   }
 
   Future<String> get homeDirPath async {

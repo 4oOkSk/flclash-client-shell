@@ -21,6 +21,6 @@ HarborProxy Go core build harness (FFI plugin).
     :script => 'sh "$PODS_TARGET_SRCROOT/../buildkit/build_pod.sh"',
     :execution_position => :before_compile,
     :input_files => ['${BUILT_PRODUCTS_DIR}/buildkit_phony'],
-    :output_files => ["${SRCROOT}/../libclash/macos/HarborProxyCore"],
+    :output_files => ["${PODS_ROOT}/../../libclash/macos/HarborProxyCore"],
   }
 end

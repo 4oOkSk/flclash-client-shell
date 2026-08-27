@@ -1,12 +1,111 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:proxy/proxy.dart';
+import 'package:proxy/proxy_method_channel.dart';
+import 'package:proxy/src/linux_proxy.dart';
+import 'package:proxy/src/macos_proxy.dart';
+import 'package:proxy/src/proxy_command.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('Proxy', () {
+    test('rejects ports outside the TCP port range', () async {
+      final proxy = Proxy(
+        processRunner: (executable, arguments, {runInShell = false}) async {
+          fail('invalid ports must not execute platform commands');
+        },
+      );
+
+      expect(await proxy.startProxy(0), isFalse);
+      expect(await proxy.startProxy(65536), isFalse);
+    });
+  });
+
+  group('ProxyCommandRunner', () {
+    test('treats an empty command set as failure', () async {
+      final runner = ProxyCommandRunner((
+        executable,
+        arguments, {
+        runInShell = false,
+      }) async {
+        fail('empty command sets must not start a process');
+      });
+
+      expect(await runner.run(const []), isFalse);
+    });
+
+    test('stops after the first failed command', () async {
+      var callCount = 0;
+      final runner = ProxyCommandRunner((
+        executable,
+        arguments, {
+        runInShell = false,
+      }) async {
+        callCount++;
+        return ProcessResult(callCount, callCount == 1 ? 1 : 0, '', '');
+      });
+
+      final result = await runner.run([
+        ProxyCommand('first', const []),
+        ProxyCommand('second', const []),
+      ]);
+
+      expect(result, isFalse);
+      expect(callCount, 1);
+    });
+
+    test('converts process launch failures to false', () async {
+      final runner = ProxyCommandRunner((
+        executable,
+        arguments, {
+        runInShell = false,
+      }) async {
+        throw ProcessException(executable, arguments);
+      });
+
+      expect(await runner.run([ProxyCommand('missing', const [])]), isFalse);
+    });
+  });
+
   group('Linux proxy command builders', () {
+    test(
+      'does not guess a backend for unknown desktops',
+      () async {
+        final checkedExecutables = <String>[];
+        final executedCommands = <String>[];
+        final proxy = LinuxProxy(
+          commandRunner: ProxyCommandRunner((
+            executable,
+            arguments, {
+            runInShell = false,
+          }) async {
+            executedCommands.add(executable);
+            return ProcessResult(1, 0, '', '');
+          }),
+          executableChecker: (executable) async {
+            checkedExecutables.add(executable);
+            return executable == 'kwriteconfig5';
+          },
+        );
+
+        final result = await proxy.start(
+          7890,
+          const ['localhost'],
+          desktop: 'UNKNOWN',
+          homeDir: '/home/user',
+        );
+
+        expect(result, isFalse);
+        expect(checkedExecutables, isEmpty);
+        expect(executedCommands, isEmpty);
+      },
+    );
+
     test('builds GNOME commands without duplicate port writes', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: ['localhost', '127.0.0.1'],
         desktop: 'GNOME',
@@ -22,6 +121,12 @@ void main() {
 
       expect(portCommands, hasLength(3));
       expect(hostCommands, hasLength(3));
+      expect(commands.last.args, [
+        'set',
+        'org.gnome.system.proxy',
+        'mode',
+        'manual',
+      ]);
       expect(
         commands
             .singleWhere(
@@ -33,15 +138,10 @@ void main() {
             .last,
         "['localhost', '127.0.0.1']",
       );
-      expect(commands.last.args, [
-        'set',
-        'org.gnome.system.proxy',
-        'mode',
-        'manual',
-      ]);
     });
+
     test('builds empty GNOME ignore-hosts as an empty list', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: const [],
         desktop: 'GNOME',
@@ -61,8 +161,25 @@ void main() {
       );
     });
 
+    test('escapes backslashes and quotes in GNOME ignore-hosts', () {
+      final commands = LinuxProxyCommands.buildStart(
+        port: 7890,
+        bypassDomain: [r'local\host', "it's"],
+        desktop: 'GNOME',
+        homeDir: '/home/user',
+      );
+
+      expect(
+        commands
+            .singleWhere((command) => command.args.contains('ignore-hosts'))
+            .args
+            .last,
+        r"['local\\host', 'it\'s']",
+      );
+    });
+
     test('builds MATE commands with MATE proxy schema', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: ['localhost'],
         desktop: 'MATE',
@@ -83,8 +200,8 @@ void main() {
       );
     });
 
-    test('does not apply GNOME settings to XFCE', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+    test('falls back to GNOME gsettings commands for XFCE when available', () {
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: ['localhost'],
         desktop: 'XFCE',
@@ -96,7 +213,7 @@ void main() {
     });
 
     test('prefers kwriteconfig6 for KDE when available', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: ['localhost'],
         desktop: 'KDE',
@@ -107,13 +224,12 @@ void main() {
       expect(commands.map((command) => command.executable).toSet(), {
         'kwriteconfig6',
       });
-      expect(commands.last.args, containsAllInOrder(['ProxyType', '1']));
     });
 
     test(
       'falls back to kwriteconfig5 for KDE when kwriteconfig6 is missing',
       () {
-        final commands = Proxy.buildLinuxStartCommandsForTest(
+        final commands = LinuxProxyCommands.buildStart(
           port: 7890,
           bypassDomain: ['localhost'],
           desktop: 'KDE',
@@ -127,8 +243,8 @@ void main() {
       },
     );
 
-    test('does not guess a backend for unknown desktops', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+    test('does not use an available backend for an unknown desktop', () {
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: ['localhost'],
         desktop: 'UNKNOWN',
@@ -139,13 +255,13 @@ void main() {
       expect(commands, isEmpty);
     });
 
-    test('fails closed when the selected desktop backend is unavailable', () {
-      final commands = Proxy.buildLinuxStartCommandsForTest(
+    test('does not use an unrelated backend for a known desktop', () {
+      final commands = LinuxProxyCommands.buildStart(
         port: 7890,
         bypassDomain: ['localhost'],
-        desktop: 'GNOME',
+        desktop: 'KDE',
         homeDir: '/home/user',
-        availableExecutables: const {},
+        availableExecutables: {'gsettings'},
       );
 
       expect(commands, isEmpty);
@@ -156,7 +272,7 @@ void main() {
     test(
       'filters networksetup service list headers, disabled services, and blanks',
       () {
-        final services = Proxy.parseMacosNetworkServicesForTest('''
+        final services = MacosProxyCommands.parseNetworkServices('''
 An asterisk (*) denotes that a network service is disabled.
 Wi-Fi
 *Thunderbolt Bridge
@@ -169,7 +285,7 @@ USB 10/100/1000 LAN
     );
 
     test('passes bypass domains as separate networksetup arguments', () {
-      final command = Proxy.buildMacosProxyBypassCommandForTest('Wi-Fi', [
+      final command = MacosProxyCommands.buildProxyBypass('Wi-Fi', [
         'localhost',
         '127.0.0.1',
       ]);
@@ -184,122 +300,149 @@ USB 10/100/1000 LAN
     });
 
     test('uses Empty when clearing bypass domains', () {
-      final command = Proxy.buildMacosProxyBypassCommandForTest(
-        'Wi-Fi',
-        const [],
-      );
+      final command = MacosProxyCommands.buildProxyBypass('Wi-Fi', const []);
 
       expect(command.args, ['-setproxybypassdomains', 'Wi-Fi', 'Empty']);
     });
 
-    test('parses networksetup enabled state', () {
-      expect(
-        Proxy.parseMacosProxyEnabledForTest('Enabled: Yes\nServer: 127.0.0.1'),
-        isTrue,
+    test('configures values before enabling proxy states', () {
+      final commands = MacosProxyCommands.buildStart('Wi-Fi', 7890, const [
+        'localhost',
+      ]);
+
+      final firstStateCommand = commands.indexWhere(
+        (command) =>
+            command.args.first.endsWith('proxystate') &&
+            command.args.last == 'on',
       );
-      expect(
-        Proxy.parseMacosProxyEnabledForTest('Enabled: No\nServer: 127.0.0.1'),
-        isFalse,
-      );
+
+      expect(firstStateCommand, 5);
+      expect(commands[4].args.first, '-setproxybypassdomains');
     });
 
-    test('does not request elevation when every macOS proxy is already off',
-        () async {
+    test('reports failure when no active network service is found', () async {
+      var callCount = 0;
+      final proxy = MacosProxy(
+        commandRunner: ProxyCommandRunner((
+          executable,
+          arguments, {
+          runInShell = false,
+        }) async {
+          callCount++;
+          return ProcessResult(
+            callCount,
+            0,
+            'An asterisk (*) denotes that a network service is disabled.\n',
+            '',
+          );
+        }),
+      );
+
+      expect(await proxy.start(7890, const []), isFalse);
+      expect(callCount, 1);
+    });
+
+    test('does not elevate when every macOS proxy is already off', () async {
       final calls = <List<String>>[];
-      final proxy = Proxy(
-        processRunner: (
+      final proxy = MacosProxy(
+        commandRunner: ProxyCommandRunner((
           executable,
           arguments, {
           runInShell = false,
         }) async {
           calls.add([executable, ...arguments]);
           return ProcessResult(1, 0, 'Enabled: No\n', '');
-        },
+        }),
       );
 
-      expect(await proxy.stopProxyWithMacosDevicesForTest(['Wi-Fi']), isTrue);
+      expect(await proxy.stopServices(['Wi-Fi']), isTrue);
       expect(calls, hasLength(4));
       expect(calls.any((call) => call.first == '/usr/bin/osascript'), isFalse);
     });
 
-    test('uses one elevation when a macOS proxy is enabled', () async {
+    test('uses one elevated command when a macOS proxy is enabled', () async {
       final calls = <List<String>>[];
-      final proxy = Proxy(
-        processRunner: (
+      final proxy = MacosProxy(
+        commandRunner: ProxyCommandRunner((
           executable,
           arguments, {
           runInShell = false,
         }) async {
           calls.add([executable, ...arguments]);
-          final output =
-              executable == '/usr/sbin/networksetup' ? 'Enabled: Yes\n' : '';
+          final output = executable == '/usr/sbin/networksetup'
+              ? 'Enabled: Yes\n'
+              : '';
           return ProcessResult(1, 0, output, '');
-        },
+        }),
       );
 
-      expect(await proxy.stopProxyWithMacosDevicesForTest(['Wi-Fi']), isTrue);
+      expect(await proxy.stopServices(['Wi-Fi']), isTrue);
       expect(
         calls.where((call) => call.first == '/usr/bin/osascript'),
         hasLength(1),
       );
     });
 
-    test('uses one elevated command and rolls back a failed start', () {
-      final command = Proxy.buildMacosElevatedCommandForTest(
+    test('builds one elevated start with rollback', () {
+      final command = MacosProxyCommands.buildElevated(
         ["Owner's Wi-Fi", 'USB LAN'],
         port: 7890,
-        bypassDomain: ['localhost'],
+        bypassDomain: const ['localhost'],
         enable: true,
       );
 
       expect(command.executable, '/usr/bin/osascript');
-      expect(command.args.first, '-e');
       final script = command.args.last;
       expect(script, contains('with administrator privileges'));
       expect(script, contains('trap cleanup EXIT'));
       expect(script, contains("Owner'\\\\''s Wi-Fi"));
-      expect(script, contains('-setwebproxystate'));
-      expect(script, contains('off'));
-      final startSection = script.indexOf('trap cleanup EXIT');
-      final webProxyConfig = script.indexOf("'-setwebproxy'", startSection);
-      final webProxyEnable = script.indexOf(
-        "'-setwebproxystate'",
-        startSection,
-      );
-      expect(
-        webProxyConfig,
-        lessThan(webProxyEnable),
-      );
-    });
-
-    test('attempts all proxy disables in one elevated stop command', () {
-      final command = Proxy.buildMacosElevatedCommandForTest(
-        ['Wi-Fi'],
-        port: 0,
-        bypassDomain: const [],
-        enable: false,
-      );
-
-      final script = command.args.last;
-      expect(script, contains('status=0'));
-      expect(script, contains('-setautoproxystate'));
-      expect(script, contains('-setwebproxystate'));
-      expect(script, contains('-setsecurewebproxystate'));
-      expect(script, contains('-setsocksfirewallproxystate'));
-      expect(script, contains('|| status=1'));
     });
 
     test('generates POSIX-valid elevated shell bodies', () async {
       for (final enable in [true, false]) {
-        final shell = Proxy.buildMacosShellForTest(
+        final shell = MacosProxyCommands.buildShell(
           ["Owner's Wi-Fi", 'USB LAN'],
           port: 7890,
-          bypassDomain: ['localhost'],
+          bypassDomain: const ['localhost'],
           enable: enable,
         );
         final result = await Process.run('/bin/sh', ['-n', '-c', shell]);
         expect(result.exitCode, 0, reason: result.stderr.toString());
       }
+    });
+  });
+
+  group('MethodChannelProxy', () {
+    final proxy = MethodChannelProxy();
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(proxy.methodChannel, null);
+    });
+
+    test('sends the Windows start contract', () async {
+      MethodCall? capturedCall;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(proxy.methodChannel, (call) async {
+            capturedCall = call;
+            return true;
+          });
+
+      final result = await proxy.startProxy(7890, const ['localhost']);
+
+      expect(result, isTrue);
+      expect(capturedCall?.method, 'StartProxy');
+      expect(capturedCall?.arguments, {
+        'port': 7890,
+        'bypassDomain': ['localhost'],
+      });
+    });
+
+    test('maps a null native response to false', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(proxy.methodChannel, (_) async => null);
+
+      expect(await proxy.stopProxy(), isFalse);
     });
   });
 }

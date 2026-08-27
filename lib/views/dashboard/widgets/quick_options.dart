@@ -220,7 +220,7 @@ class VpnButton extends StatelessWidget {
                       if (privateAndroidClient) {
                         await ref
                             .read(setupActionProvider.notifier)
-                            .updateStatus(value);
+                            .setRunning(value);
                         return;
                       }
                       ref

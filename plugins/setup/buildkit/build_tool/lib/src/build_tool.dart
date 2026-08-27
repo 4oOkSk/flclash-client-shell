@@ -1,14 +1,16 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import 'environment.dart';
 import 'error.dart';
+import 'build_cache.dart';
 import 'go_builder.dart';
 import 'logging.dart';
 import 'options.dart';
+import 'rust_builder.dart';
 import 'target.dart';
 import 'util.dart';
 
@@ -43,6 +45,16 @@ Future<String> _hostGoArch() async {
 }
 
 abstract class BuildCommand extends Command {
+  BuildCommand() {
+    argParser.addFlag(
+      'force',
+      negatable: false,
+      help: 'Rebuild requested artifacts even when inputs are unchanged',
+    );
+  }
+
+  bool get force => argResults?['force'] as bool? ?? false;
+
   Future<void> runBuildCommand();
 
   @override
@@ -82,10 +94,21 @@ class BuildAndroidCommand extends BuildCommand {
       flutterTargetPlatforms: flutterTargetPlatforms,
     );
 
-    final builder = GoBuilder(rootDir: _rootDir, config: config);
-    final corePaths = await builder.buildAll(targets);
+    final cache = BuildCache(rootDir: _rootDir);
+    final notice = BuildNotice();
+    final builder = GoBuilder(
+      rootDir: _rootDir,
+      config: config,
+      cache: cache,
+      notice: notice,
+    );
+    final results = await builder.buildAll(targets, force: force);
 
-    _log.info('Build complete: $corePaths');
+    if (results.any((result) => result.rebuilt)) {
+      _log.info(
+        'Build complete: ${results.map((result) => result.primaryOutput)}',
+      );
+    }
   }
 }
 
@@ -118,10 +141,21 @@ class BuildLinuxCommand extends BuildCommand {
       throw BuildException('Invalid arch: $arch');
     }
 
-    final builder = GoBuilder(rootDir: _rootDir, config: config);
-    final corePaths = await builder.buildAll(targets);
+    final cache = BuildCache(rootDir: _rootDir);
+    final notice = BuildNotice();
+    final builder = GoBuilder(
+      rootDir: _rootDir,
+      config: config,
+      cache: cache,
+      notice: notice,
+    );
+    final results = await builder.buildAll(targets, force: force);
 
-    _log.info('Build complete: $corePaths');
+    if (results.any((result) => result.rebuilt)) {
+      _log.info(
+        'Build complete: ${results.map((result) => result.primaryOutput)}',
+      );
+    }
   }
 }
 
@@ -154,25 +188,52 @@ class BuildWindowsCommand extends BuildCommand {
       throw BuildException('Invalid arch: $arch');
     }
 
-    final goBuilder = GoBuilder(rootDir: _rootDir, config: config);
-    final corePaths = await goBuilder.buildAll(targets);
-    final legacyHelper = File(
-      p.join(
+    final cache = BuildCache(rootDir: _rootDir);
+    final notice = BuildNotice();
+    final goBuilder = GoBuilder(
+      rootDir: _rootDir,
+      config: config,
+      cache: cache,
+      notice: notice,
+    );
+    final coreResults = await goBuilder.buildAll(targets, force: force);
+    final corePaths =
+        coreResults.map((result) => result.primaryOutput).toList();
+    final rustBuilder = RustBuilder(
+      rootDir: _rootDir,
+      config: config,
+      cache: cache,
+      notice: notice,
+    );
+    final coreSha256 = await calcSha256(corePaths.first);
+    final helperResult = await rustBuilder.build(
+      targets.first,
+      coreSha256,
+      force: force,
+      beforeBuild: debug
+          ? () async {
+              await Process.run('taskkill', [
+                '/F',
+                '/IM',
+                '${config.helperName}${targets.first.executableExtension}',
+              ]);
+            }
+          : null,
+    );
+
+    writeCoreManifest(
+      path: p.join(
         _rootDir,
         config.outputDir,
-        'windows',
-        'HarborProxyHelperService.exe',
+        targets.first.platformDir,
+        coreManifestName,
       ),
+      coreSha256: coreSha256,
     );
-    if (legacyHelper.existsSync()) {
-      legacyHelper.deleteSync();
-    }
-    final coreSha256 = await calcSha256(corePaths.first);
-    await File(
-      p.join(_rootDir, 'core_sha256.json'),
-    ).writeAsString(jsonEncode({'CORE_SHA256': coreSha256}));
 
-    _log.info('Build complete: $corePaths');
+    if (helperResult.rebuilt || coreResults.any((result) => result.rebuilt)) {
+      _log.info('Build complete: $corePaths');
+    }
   }
 }
 
@@ -196,10 +257,22 @@ class BuildMacosCommand extends BuildCommand {
     final archName = argResults?['arch'] as String?;
     final config = BuildConfig.load(rootDir: _rootDir);
     final targets = Target.resolveMacosTargets(archName: archName);
-    final builder = GoBuilder(rootDir: _rootDir, config: config);
+
+    final cache = BuildCache(rootDir: _rootDir);
+    final notice = BuildNotice();
+    final builder = GoBuilder(
+      rootDir: _rootDir,
+      config: config,
+      cache: cache,
+      notice: notice,
+    );
     if (targets.length == 1) {
-      final corePaths = await builder.buildAll(targets);
-      _log.info('Build complete: $corePaths');
+      final results = await builder.buildAll(targets, force: force);
+      if (results.any((result) => result.rebuilt)) {
+        _log.info(
+          'Build complete: ${results.map((result) => result.primaryOutput)}',
+        );
+      }
       return;
     }
 
@@ -207,15 +280,14 @@ class BuildMacosCommand extends BuildCommand {
     String? universalPath;
     try {
       for (final target in targets) {
-        final builtPath = await builder.build(target);
-        universalPath ??= builtPath;
-        final slice = File('$builtPath.${target.goarch}');
-        if (slice.existsSync()) {
-          slice.deleteSync();
-        }
-        slices.add(File(builtPath).renameSync(slice.path));
+        // Both architectures normally share one output path. Force each slice
+        // so a cached universal output cannot be mistaken for an architecture.
+        final result = await builder.build(target, force: true);
+        universalPath ??= result.primaryOutput;
+        final slice = File('${result.primaryOutput}.${target.goarch}');
+        if (slice.existsSync()) slice.deleteSync();
+        slices.add(File(result.primaryOutput).renameSync(slice.path));
       }
-
       if (universalPath == null || slices.length != 2) {
         throw BuildException('macOS Universal 2 core slices are incomplete');
       }
@@ -225,8 +297,8 @@ class BuildMacosCommand extends BuildCommand {
         '-output',
         universalPath,
       ]);
-      final archResult = runCommand('lipo', ['-archs', universalPath]);
-      final archs = (archResult.stdout as String).trim().split(RegExp(r'\s+'));
+      final result = runCommand('lipo', ['-archs', universalPath]);
+      final archs = (result.stdout as String).trim().split(RegExp(r'\s+'));
       if (archs.toSet().length != 2 ||
           !archs.contains('arm64') ||
           !archs.contains('x86_64')) {
@@ -235,13 +307,10 @@ class BuildMacosCommand extends BuildCommand {
           'macOS core is not Universal 2: ${archs.join(' ')}',
         );
       }
-
       _log.info('Universal 2 build complete: $universalPath');
     } finally {
       for (final slice in slices) {
-        if (slice.existsSync()) {
-          slice.deleteSync();
-        }
+        if (slice.existsSync()) slice.deleteSync();
       }
     }
   }

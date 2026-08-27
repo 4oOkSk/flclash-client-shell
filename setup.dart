@@ -84,7 +84,7 @@ ArgParser createSetupArgParser() {
     ..addOption(
       'env',
       defaultsTo: 'pre',
-      allowed: ['pre', 'stable'],
+      allowed: ['dev', 'pre', 'stable'],
       help: 'Application environment',
     )
     ..addOption(
@@ -150,6 +150,10 @@ List<String> createFlutterBuildArgs({
   return flutterBuildArgs;
 }
 
+Map<String, String> createBuildEnvironment(String env) {
+  return {'APP_ENV': env};
+}
+
 String _getTargets(String platform, String arch, String? customTargets) {
   if (customTargets != null) return customTargets;
   if (platform == 'linux' && arch == 'amd64') return 'deb,appimage,rpm';
@@ -183,7 +187,6 @@ Future<int> _package(
   final generatedGoFile = File(
     p.join(rootDir, 'core', 'client_build_config_generated.go'),
   );
-
   try {
     final goBuildConfig = createPrivateClientGoBuildConfig(
       Platform.environment,
@@ -192,14 +195,7 @@ Future<int> _package(
       await generatedGoFile.writeAsString(goBuildConfig, flush: true);
     }
 
-    final coreSha256 = platform == 'windows'
-        ? await _buildGoCore(rootDir)
-        : null;
-
-    final buildDefines = <String, Object?>{
-      'APP_ENV': env,
-      'CORE_SHA256': ?coreSha256,
-    };
+    final buildDefines = <String, Object?>{'APP_ENV': env};
     final privateApiBase = Platform.environment['PRIVATE_CLIENT_API_BASE']
         ?.trim();
     if (privateApiBase != null && privateApiBase.isNotEmpty) {
@@ -207,7 +203,7 @@ Future<int> _package(
         privateApiBase,
       );
     }
-    for (final key in [
+    for (final key in const [
       'PRIVATE_CLIENT_ENROLL_BLOB',
       'PRIVATE_CLIENT_WEBSITE_URL',
     ]) {
@@ -231,6 +227,10 @@ Future<int> _package(
       splitAndroid: splitAndroid,
       defineFile: defineFile.path,
     );
+    final descriptionArgs = <String>[];
+    if (platform != 'android') {
+      descriptionArgs.addAll(['--description', arch]);
+    }
 
     final depExit = await _ensureDependencies(platform, arch);
     if (depExit != 0) return depExit;
@@ -243,8 +243,6 @@ Future<int> _package(
       'git',
       'https://github.com/chen08209/flutter_distributor.git',
       '--git-ref',
-      // Pin the packaging code used by CI/test builds. A mutable branch here
-      // would execute whatever the upstream branch contains at build time.
       '84cdf665fb35158eda01ffb40e3423273f334409',
       '--git-path',
       'packages/flutter_distributor',
@@ -271,18 +269,14 @@ Future<int> _package(
           '--build-target-platform=${_androidFlutterTarget[androidArch]!}',
         if (flutterBuildArgs.isNotEmpty)
           '--flutter-build-args=${flutterBuildArgs.join(',')}',
+        ...descriptionArgs,
       ],
       includeParentEnvironment: true,
       environment: {'ANDROID_ARCH': ?androidArch},
       runInShell: false,
     );
-
-    process.stdout.listen((data) {
-      stdout.add(data);
-    });
-    process.stderr.listen((data) {
-      stderr.add(data);
-    });
+    process.stdout.listen(stdout.add);
+    process.stderr.listen(stderr.add);
     return await process.exitCode;
   } finally {
     if (generatedGoFile.existsSync()) {
@@ -310,32 +304,6 @@ String createPrivateClientGoBuildConfig(Map<String, String> environment) {
   }
   if (assignments.isEmpty) return '';
   return 'package main\n\nfunc init() {\n${assignments.join('\n')}\n}\n';
-}
-
-Future<String?> _buildGoCore(String rootDir) async {
-  final buildToolDir = p.join(
-    rootDir,
-    'plugins',
-    'setup',
-    'buildkit',
-    'build_tool',
-  );
-  final result = await Process.run('dart', [
-    'run',
-    'build_tool',
-    'windows',
-    '--root-dir',
-    rootDir,
-  ], workingDirectory: buildToolDir);
-  if (result.exitCode != 0) {
-    stderr.write(result.stderr);
-    return null;
-  }
-  final shaFile = File(p.join(rootDir, 'core_sha256.json'));
-  if (!shaFile.existsSync()) return null;
-  final content =
-      jsonDecode(shaFile.readAsStringSync()) as Map<String, dynamic>;
-  return content['CORE_SHA256'] as String?;
 }
 
 String _detectArch() {
@@ -386,6 +354,7 @@ Future<int> _ensureLinuxDependencies(String arch) async {
     ['ninja-build', 'libgtk-3-dev'],
     ['libayatana-appindicator3-dev'],
     ['libkeybinder-3.0-dev'],
+    ['libsecret-1-dev'],
     ['locate'],
   ];
   if (arch == 'amd64') {

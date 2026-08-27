@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="FlClash">HarborProxy</string>
+    <string name="app_name">HarborProxy</string>
+    <string name="service_channel_name">HarborProxy Service</string>
 </resources>

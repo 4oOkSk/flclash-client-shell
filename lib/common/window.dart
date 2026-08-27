@@ -32,7 +32,6 @@ class Window {
       protocol.register('harborproxy');
     }
     await windowManager.ensureInitialized();
-    // kDebugMode ? Size(680, 580) :
     final WindowOptions windowOptions = WindowOptions(
       size: props.size,
       minimumSize: const Size(380, 400),

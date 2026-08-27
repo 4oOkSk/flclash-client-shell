@@ -21,17 +21,18 @@ function(apply_buildkit)
 
   # The output files the build_tool produces
   if(WIN32)
-    set(_output "${PROJECT_ROOT}/libclash/windows/HarborProxyCore.exe")
+    set(_outputs
+      "${PROJECT_ROOT}/libclash/windows/HarborProxyCore.exe"
+      "${PROJECT_ROOT}/libclash/windows/HarborProxyHelperService.exe"
+      "${PROJECT_ROOT}/libclash/windows/manifest.json"
+    )
     set(_platform_args "windows")
   else()
-    set(_output "${PROJECT_ROOT}/libclash/linux/HarborProxyCore")
+    set(_outputs "${PROJECT_ROOT}/libclash/linux/HarborProxyCore")
     set(_platform_args "linux")
   endif()
+  set(_phony "${CMAKE_CURRENT_BINARY_DIR}/buildkit_phony")
 
-  # The generated core binary is checked into the working tree, so merely
-  # declaring it as an OUTPUT lets CMake reuse a stale binary forever. Track
-  # the Go module and build-tool inputs explicitly so client/core changes are
-  # always present in the package being assembled.
   file(GLOB_RECURSE _core_sources CONFIGURE_DEPENDS
     "${PROJECT_ROOT}/core/*.go"
   )
@@ -50,14 +51,16 @@ function(apply_buildkit)
   )
 
   add_custom_command(
-    OUTPUT ${_output}
+    OUTPUT ${_outputs} "${_phony}"
     COMMAND ${CMAKE_COMMAND} -E env ${BUILDKIT_ENV}
     "${_launcher}" ${_platform_args}
     DEPENDS ${_core_sources} ${_build_tool_sources} "${_launcher}"
     WORKING_DIRECTORY "${PROJECT_ROOT}"
-    COMMENT "Building Go core via buildkit..."
     VERBATIM
   )
 
-  add_custom_target(setup_buildkit_build DEPENDS ${_output})
+  # Match Cargokit's symbolic-output and ALL-target structure so the native
+  # generator reevaluates this build rule on each build.
+  set_source_files_properties("${_phony}" PROPERTIES SYMBOLIC TRUE)
+  add_custom_target(setup_buildkit_build ALL DEPENDS ${_outputs})
 endfunction()

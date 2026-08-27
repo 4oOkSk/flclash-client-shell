@@ -68,9 +68,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     return EXIT_SUCCESS;
   }
 
-  // HarborProxyCore.exe is a direct elevated child. Keep the job handle open for
-  // the GUI lifetime so Windows also terminates the core after an abnormal GUI
-  // exit. A normal shutdown still asks Dart's Process object to stop it first.
+  // Keep any direct fallback Core child in the GUI lifetime job. The normal
+  // privileged path is owned by HarborProxyHelperService and is unaffected.
   HANDLE process_lifetime_job = CreateProcessLifetimeJob();
   (void)process_lifetime_job;
 

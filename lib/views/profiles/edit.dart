@@ -50,15 +50,11 @@ class _EditProfileViewState extends State<EditProfileView> {
 
   Future<void> _updateFileInfo() async {
     final file = await widget.profile.file;
-    if (!await file.exists()) {
-      return;
-    }
-    final lastModified = await file.lastModified();
-    final size = await file.length();
+    final fileInfo = await file.getFileInfo();
     if (!mounted) {
       return;
     }
-    _fileInfoNotifier.value = FileInfo(size: size, lastModified: lastModified);
+    _fileInfoNotifier.value = fileInfo;
   }
 
   Future<void> _handleConfirm() async {
@@ -234,15 +230,37 @@ class _EditProfileViewState extends State<EditProfileView> {
         ),
       ),
       if (widget.profile.type == ProfileType.url) ...[
-        // 入册模式: 移除订阅 URL 编辑框，避免展示/修改订阅域名。
-        ListItem.switchItem(
-          title: Text(appLocalizations.autoUpdate),
-          delegate: SwitchDelegate<bool>(
+        if (!kPrivateClientMode)
+          ListItem(
+          title: TextFormField(
+            textInputAction: TextInputAction.next,
+            keyboardType: TextInputType.url,
+            controller: _urlController,
+            inputFormatters: TextInputLimits.limit(TextInputLimits.url),
+            maxLines: 5,
+            minLines: 1,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: appLocalizations.url,
+            ),
+            validator: (String? value) {
+              if (value == null || value.isEmpty) {
+                return appLocalizations.profileUrlNullValidationDesc;
+              }
+              if (!value.isUrl) {
+                return appLocalizations.profileUrlInvalidValidationDesc;
+              }
+              return null;
+            },
+          ),
+        ),
+        if (!kPrivateClientMode)
+          ListItem.toggle(
+            title: Text(appLocalizations.autoUpdate),
             value: _autoUpdate,
             onChanged: _setAutoUpdate,
           ),
-        ),
-        if (_autoUpdate)
+        if (!kPrivateClientMode && _autoUpdate)
           ListItem(
             title: TextFormField(
               textInputAction: TextInputAction.next,
@@ -308,36 +326,40 @@ class _EditProfileViewState extends State<EditProfileView> {
         },
       ),
     ];
-    return CommonPopScope(
-      onPop: (context) {
-        if (_fileData == null) {
-          return true;
-        }
-        _handleBack();
-        return false;
-      },
-      child: FloatLayout(
-        floatingWidget: FloatWrapper(
-          child: FloatingActionButton.extended(
-            heroTag: null,
-            onPressed: _handleConfirm,
-            label: Text(appLocalizations.save),
-            icon: const Icon(Icons.save),
-          ),
-        ),
-        child: Form(
-          key: _formKey,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ListView.separated(
-              padding: kMaterialListPadding.copyWith(bottom: 72),
-              itemBuilder: (_, index) {
-                return items[index];
-              },
-              separatorBuilder: (_, _) {
-                return const SizedBox(height: 24);
-              },
-              itemCount: items.length,
+    return FocusTraversalGroup(
+      policy: PageTraversalPolicy(),
+      child: PageFocusScope(
+        child: CommonPopScope(
+          onPop: (context) {
+            if (_fileData == null) {
+              return true;
+            }
+            _handleBack();
+            return false;
+          },
+          child: FloatLayout(
+            floatingWidget: FloatWrapper(
+              child: CommonFloatingActionButton(
+                onPressed: _handleConfirm,
+                icon: const Icon(Icons.save),
+                label: appLocalizations.save,
+              ),
+            ),
+            child: Form(
+              key: _formKey,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: ListView.separated(
+                  padding: kMaterialListPadding.copyWith(bottom: 72),
+                  itemBuilder: (_, index) {
+                    return items[index];
+                  },
+                  separatorBuilder: (_, _) {
+                    return const SizedBox(height: 24);
+                  },
+                  itemCount: items.length,
+                ),
+              ),
             ),
           ),
         ),

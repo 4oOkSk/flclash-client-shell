@@ -20,11 +20,6 @@ add_executable(${BINARY_NAME} WIN32
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
 
-# runner.exe.manifest is the single authority for the GUI elevation level.
-# Disable the linker's default asInvoker UAC fragment so mt.exe does not have
-# to merge two conflicting requestedExecutionLevel declarations.
-target_link_options(${BINARY_NAME} PRIVATE "/MANIFESTUAC:NO")
-
 # Add preprocessor definitions for the build version.
 if(NOT "${FLUTTER_VERSION_BUILD}" MATCHES "^([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])$")
   message(FATAL_ERROR

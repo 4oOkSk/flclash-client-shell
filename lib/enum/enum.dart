@@ -146,10 +146,6 @@ enum RestoreOption { all, onlyProfiles }
 enum ChipType { action, delete }
 
 enum CommonCardType { plain, filled }
-//
-// extension CommonCardTypeExt on CommonCardType {
-//   CommonCardType get variant => CommonCardType.plain;
-// }
 
 enum ProxiesType { tab, list }
 
@@ -219,12 +215,6 @@ enum FontFamily {
 
 enum RouteMode { bypassPrivate, config }
 
-/// The effective managed-client routing policy.
-///
-/// [directAllLegacy] preserves the fourth state produced by older releases
-/// that exposed two independent bypass toggles. The current UI deliberately
-/// offers only the first three modes, but collapsing a persisted legacy value
-/// would silently change its running route after an upgrade.
 enum ManagedRouteMode {
   @JsonValue('global')
   global,
@@ -238,24 +228,20 @@ enum ManagedRouteMode {
   static ManagedRouteMode fromLegacyFlags({
     required bool bypassMainland,
     required bool bypassOverseas,
-  }) {
-    return switch ((bypassMainland, bypassOverseas)) {
-      (false, false) => ManagedRouteMode.global,
-      (true, false) => ManagedRouteMode.bypassMainland,
-      (false, true) => ManagedRouteMode.bypassOverseas,
-      (true, true) => ManagedRouteMode.directAllLegacy,
-    };
-  }
+  }) => switch ((bypassMainland, bypassOverseas)) {
+    (false, false) => ManagedRouteMode.global,
+    (true, false) => ManagedRouteMode.bypassMainland,
+    (false, true) => ManagedRouteMode.bypassOverseas,
+    (true, true) => ManagedRouteMode.directAllLegacy,
+  };
 
-  static ManagedRouteMode? tryParse(Object? value) {
-    return switch (value) {
-      'global' => ManagedRouteMode.global,
-      'bypass-mainland' => ManagedRouteMode.bypassMainland,
-      'bypass-overseas' => ManagedRouteMode.bypassOverseas,
-      'direct-all' => ManagedRouteMode.directAllLegacy,
-      _ => null,
-    };
-  }
+  static ManagedRouteMode? tryParse(Object? value) => switch (value) {
+    'global' => ManagedRouteMode.global,
+    'bypass-mainland' => ManagedRouteMode.bypassMainland,
+    'bypass-overseas' => ManagedRouteMode.bypassOverseas,
+    'direct-all' => ManagedRouteMode.directAllLegacy,
+    _ => null,
+  };
 
   String get wireValue => switch (this) {
     ManagedRouteMode.global => 'global',
@@ -264,74 +250,20 @@ enum ManagedRouteMode {
     ManagedRouteMode.directAllLegacy => 'direct-all',
   };
 
-  bool get bypassesMainland => switch (this) {
-    ManagedRouteMode.bypassMainland || ManagedRouteMode.directAllLegacy => true,
-    ManagedRouteMode.global || ManagedRouteMode.bypassOverseas => false,
-  };
+  bool get bypassesMainland =>
+      this == ManagedRouteMode.bypassMainland ||
+      this == ManagedRouteMode.directAllLegacy;
 
-  bool get bypassesOverseas => switch (this) {
-    ManagedRouteMode.bypassOverseas || ManagedRouteMode.directAllLegacy => true,
-    ManagedRouteMode.global || ManagedRouteMode.bypassMainland => false,
-  };
+  bool get bypassesOverseas =>
+      this == ManagedRouteMode.bypassOverseas ||
+      this == ManagedRouteMode.directAllLegacy;
 
-  /// Keeps the old two-toggle UI projection: both enabled appeared as global.
-  ManagedRouteMode get visibleMode => switch (this) {
-    ManagedRouteMode.directAllLegacy => ManagedRouteMode.global,
-    _ => this,
-  };
+  ManagedRouteMode get visibleMode => this == ManagedRouteMode.directAllLegacy
+      ? ManagedRouteMode.global
+      : this;
 }
 
-enum ActionMethod {
-  message,
-  initClash,
-  getIsInit,
-  forceGc,
-  shutdown,
-  validateConfig,
-  updateConfig,
-  getConfig,
-  getProxies,
-  changeProxy,
-  getTraffic,
-  getTotalTraffic,
-  resetTraffic,
-  asyncTestDelay,
-  getConnections,
-  closeConnections,
-  resetConnections,
-  closeConnection,
-  getExternalProviders,
-  getExternalProvider,
-  updateGeoData,
-  updateExternalProvider,
-  sideLoadExternalProvider,
-  startLog,
-  stopLog,
-  startListener,
-  stopListener,
-  getCountryCode,
-  getMemory,
-  crash,
-  setupConfig,
-  setupFromEnroll,
-  deleteFile,
-
-  ///Android,
-  setState,
-  startTun,
-  stopTun,
-  getRunTime,
-  updateDns,
-  getAndroidVpnOptions,
-  getCurrentProfileName,
-}
-
-enum AuthorizeCode {
-  none,
-  success,
-  error,
-  coreHashMismatch,
-}
+enum AuthorizeCode { none, success, error, coreHashMismatch }
 
 extension AuthorizeCodeExt on AuthorizeCode {
   String get diagnosticCode => switch (this) {
@@ -342,10 +274,11 @@ extension AuthorizeCodeExt on AuthorizeCode {
   };
 }
 
+enum TunAuthorizationState { none, authorized, unauthorized }
+
 enum FunctionTag {
   updateConfig,
   setupConfig,
-  updateStatus,
   updateGroups,
   addCheckIpNum,
   applyProfile,
@@ -417,9 +350,9 @@ enum GeoResource {
   MMDB,
   @JsonValue('asn')
   ASN,
-  @JsonValue('geo-ip')
+  @JsonValue('geoip')
   GEOIP,
-  @JsonValue('geo-site')
+  @JsonValue('geosite')
   GEOSITE;
 
   static GeoResource fromJson(String value) {
@@ -434,12 +367,12 @@ enum GeoResource {
 }
 
 extension GeoResourceExt on GeoResource {
-  String get value {
+  String get configKey {
     return switch (this) {
       GeoResource.MMDB => 'mmdb',
       GeoResource.ASN => 'asn',
-      GeoResource.GEOIP => 'geo-ip',
-      GeoResource.GEOSITE => 'geo-site',
+      GeoResource.GEOIP => 'geoip',
+      GeoResource.GEOSITE => 'geosite',
     };
   }
 
@@ -564,12 +497,7 @@ extension RuleActionExt on RuleAction {
 
 enum OverrideRuleType { override, added }
 
-enum OverwriteType {
-  // none,
-  standard,
-  script,
-  custom,
-}
+enum OverwriteType { standard, script, custom }
 
 enum RuleTarget {
   DIRECT,
@@ -577,13 +505,6 @@ enum RuleTarget {
 
   static Set<String> get baseTargets =>
       RuleTarget.values.map((item) => item.name).toSet();
-
-  // static bool isBaseRuleTarget(String? target) {
-  //   return RuleTarget.values.indexWhere(
-  //         (item) => item.name == target?.toUpperCase(),
-  //       ) !=
-  //       -1;
-  // }
 }
 
 enum RestoreStrategy { compatible, override }

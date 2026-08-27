@@ -13,6 +13,7 @@ icon: ./assets/images/icon.png
 dependencies:
   - libayatana-appindicator3-1
   - libkeybinder-3.0-0
+  - libsecret-1-0
 
 keywords:
   - HarborProxy

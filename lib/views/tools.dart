@@ -37,11 +37,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       subtitle: navigationItem.description != null
           ? Text(Intl.message(navigationItem.description!))
           : null,
-      delegate: OpenDelegate(
-        widget: navigationItem.builder(context),
-        maxWidth: 400,
-        forceFull: false,
-      ),
+      widget: navigationItem.builder(context),
+      maxWidth: 400,
+      forceFull: false,
     );
   }
 
@@ -143,7 +141,7 @@ class _ClientClearItem extends ConsumerWidget {
     try {
       await globalState.container
           .read(setupActionProvider.notifier)
-          .updateStatus(false);
+          .setRunning(false);
     } catch (_) {
       // Android keeps the VPN core in a service process.  Clearing the
       // session and merely exiting the Flutter UI otherwise leaves the old
@@ -191,17 +189,15 @@ class _LocaleItem extends ConsumerWidget {
       leading: const Icon(Icons.language_outlined),
       title: Text(context.appLocalizations.language),
       subtitle: Text(Intl.message(subTitle)),
-      delegate: OptionsDelegate(
-        title: context.appLocalizations.language,
-        options: [null, ...AppLocalizations.delegate.supportedLocales],
-        onChanged: (Locale? locale) {
-          ref
-              .read(appSettingProvider.notifier)
-              .update((state) => state.copyWith(locale: locale?.toString()));
-        },
-        textBuilder: (locale) => _getLocaleString(context, locale),
-        value: currentLocale,
-      ),
+      dialogTitle: context.appLocalizations.language,
+      options: [null, ...AppLocalizations.delegate.supportedLocales],
+      onChanged: (Locale? locale) {
+        ref
+            .read(appSettingProvider.notifier)
+            .update((state) => state.copyWith(locale: locale?.toString()));
+      },
+      textBuilder: (locale) => _getLocaleString(context, locale),
+      value: currentLocale,
     );
   }
 }
@@ -215,7 +211,7 @@ class _ThemeItem extends StatelessWidget {
       leading: const Icon(Icons.style),
       title: Text(context.appLocalizations.theme),
       subtitle: Text(context.appLocalizations.themeDesc),
-      delegate: const OpenDelegate(widget: ThemeView()),
+      widget: const ThemeView(),
     );
   }
 }
@@ -229,7 +225,7 @@ class _BackupItem extends StatelessWidget {
       leading: const Icon(Icons.cloud_sync),
       title: Text(context.appLocalizations.backupAndRestore),
       subtitle: Text(context.appLocalizations.backupAndRestoreDesc),
-      delegate: const OpenDelegate(widget: BackupAndRestore()),
+      widget: const BackupAndRestore(),
     );
   }
 }
@@ -243,7 +239,7 @@ class _HotkeyItem extends StatelessWidget {
       leading: const Icon(Icons.keyboard),
       title: Text(context.appLocalizations.hotkeyManagement),
       subtitle: Text(context.appLocalizations.hotkeyManagementDesc),
-      delegate: const OpenDelegate(widget: HotKeyView()),
+      widget: const HotKeyView(),
     );
   }
 }
@@ -276,7 +272,7 @@ class _AccessItem extends StatelessWidget {
       leading: const Icon(Icons.view_list),
       title: Text(context.appLocalizations.accessControl),
       subtitle: Text(context.appLocalizations.accessControlDesc),
-      delegate: const OpenDelegate(widget: AccessView()),
+      widget: const AccessView(),
     );
   }
 }
@@ -290,7 +286,7 @@ class _ConfigItem extends StatelessWidget {
       leading: const Icon(Icons.edit),
       title: Text(context.appLocalizations.basicConfig),
       subtitle: Text(context.appLocalizations.basicConfigDesc),
-      delegate: const OpenDelegate(widget: ConfigView()),
+      widget: const ConfigView(),
     );
   }
 }
@@ -304,7 +300,7 @@ class _AdvancedConfigItem extends StatelessWidget {
       leading: const Icon(Icons.build),
       title: Text(context.appLocalizations.advancedConfig),
       subtitle: Text(context.appLocalizations.advancedConfigDesc),
-      delegate: const OpenDelegate(widget: AdvancedConfigView()),
+      widget: const AdvancedConfigView(),
     );
   }
 }
@@ -318,7 +314,7 @@ class _SettingItem extends StatelessWidget {
       leading: const Icon(Icons.settings),
       title: Text(context.appLocalizations.application),
       subtitle: Text(context.appLocalizations.applicationDesc),
-      delegate: const OpenDelegate(widget: ApplicationSettingView()),
+      widget: const ApplicationSettingView(),
     );
   }
 }
@@ -349,7 +345,7 @@ class _InfoItem extends StatelessWidget {
     return ListItem.open(
       leading: const Icon(Icons.info),
       title: Text(context.appLocalizations.about),
-      delegate: const OpenDelegate(widget: AboutView()),
+      widget: const AboutView(),
     );
   }
 }
@@ -362,7 +358,7 @@ class _DeveloperItem extends StatelessWidget {
     return ListItem.open(
       leading: const Icon(Icons.developer_board),
       title: Text(context.appLocalizations.developerMode),
-      delegate: const OpenDelegate(widget: DeveloperView()),
+      widget: const DeveloperView(),
     );
   }
 }

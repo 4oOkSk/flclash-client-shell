@@ -89,7 +89,7 @@ class Tray {
     final startMenuItem = MenuItem.checkbox(
       label: trayState.isStart ? appLocalizations.stop : appLocalizations.start,
       onClick: (_) async {
-        commonAction.updateStart();
+        commonAction.toggleRunning();
       },
       checked: false,
     );

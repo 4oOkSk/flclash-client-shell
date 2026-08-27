@@ -12,5 +12,7 @@ get_filename_component(PROJECT_ROOT "${CMAKE_SOURCE_DIR}" DIRECTORY)
 
 set(setup_bundled_libraries
   "${PROJECT_ROOT}/libclash/windows/HarborProxyCore.exe"
+  "${PROJECT_ROOT}/libclash/windows/HarborProxyHelperService.exe"
+  "${PROJECT_ROOT}/libclash/windows/manifest.json"
   PARENT_SCOPE
 )

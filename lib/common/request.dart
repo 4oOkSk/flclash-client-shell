@@ -142,7 +142,6 @@ class Request {
     token.cancel();
     return res;
   }
-
 }
 
 final request = Request();
