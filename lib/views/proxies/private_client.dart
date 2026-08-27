@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -81,7 +83,9 @@ class PrivateClientProxiesView extends ConsumerWidget {
     final proxyCardType = ref.watch(
       proxiesStyleSettingProvider.select((state) => state.cardType),
     );
-    final columns = ref.watch(proxiesColumnsProvider);
+    final proxiesLayout = ref.watch(
+      proxiesStyleSettingProvider.select((state) => state.layout),
+    );
     final isLoading = ref.watch(loadingProvider(LoadingTag.proxies));
     final selected = primaryGroup == null
         ? null
@@ -102,10 +106,15 @@ class PrivateClientProxiesView extends ConsumerWidget {
                 context,
                 CommonScaffold(
                   title: localizations.serverSelection,
-                  body: ProxyGroupView(
-                    group: primaryGroup,
-                    columns: columns,
-                    cardType: proxyCardType,
+                  body: LayoutBuilder(
+                    builder: (_, constraints) => ProxyGroupView(
+                      group: primaryGroup,
+                      columns: utils.getProxiesColumns(
+                        max(constraints.maxWidth - 32, 0),
+                        proxiesLayout,
+                      ),
+                      cardType: proxyCardType,
+                    ),
                   ),
                 ),
               );
@@ -146,14 +155,12 @@ class PrivateClientProxiesView extends ConsumerWidget {
                   minTileHeight: 42,
                   minVerticalPadding: 0,
                   title: Text(mode.label(context)),
-                  delegate: RadioDelegate(
-                    value: mode,
-                    onTab: () {
-                      if (mode != routingMode) {
-                        _updateRouting(ref, mode);
-                      }
-                    },
-                  ),
+                  value: mode,
+                  onTap: () {
+                    if (mode != routingMode) {
+                      _updateRouting(ref, mode);
+                    }
+                  },
                 ),
             ],
           ),

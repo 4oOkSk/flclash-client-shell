@@ -7,6 +7,7 @@ import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
+import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,21 @@ import 'widgets/core_status_button.dart';
 import 'widgets/start_button.dart';
 
 typedef _IsEditWidgetBuilder = Widget Function(bool isEdit);
+
+List<DashboardWidget> dashboardWidgetsFromGridItems(
+  Iterable<GridItem> children,
+) {
+  final dashboardWidgets = <DashboardWidget>[];
+  for (final child in children) {
+    for (final dashboardWidget in DashboardWidget.values) {
+      if (dashboardWidget.widget == child) {
+        dashboardWidgets.add(dashboardWidget);
+        break;
+      }
+    }
+  }
+  return dashboardWidgets;
+}
 
 const _maxCrossAxisCount = 16;
 const _maxGridWidth = 280.0 * _maxCrossAxisCount / 4;

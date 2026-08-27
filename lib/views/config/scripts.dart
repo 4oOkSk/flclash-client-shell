@@ -283,19 +283,17 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                         '${appLocalizations.privateRouteScriptDesc}\n'
                         '${activeScript?.label ?? appLocalizations.privateRouteScriptDisabled}',
                       ),
-                      delegate: OptionsDelegate<int>(
-                        title: appLocalizations.privateRouteScript,
-                        options: [-1, ...scripts.map((item) => item.id)],
-                        textBuilder: (value) => value == -1
-                            ? appLocalizations.privateRouteScriptDisabled
-                            : scripts.get(value)?.label ??
-                                  appLocalizations.privateRouteScriptDisabled,
-                        value: activeScript?.id ?? -1,
-                        onChanged: (value) {
-                          if (value == null) return;
-                          _setActivePrivateScript(value == -1 ? null : value);
-                        },
-                      ),
+                      dialogTitle: appLocalizations.privateRouteScript,
+                      options: [-1, ...scripts.map((item) => item.id)],
+                      textBuilder: (value) => value == -1
+                          ? appLocalizations.privateRouteScriptDisabled
+                          : scripts.get(value)?.label ??
+                                appLocalizations.privateRouteScriptDisabled,
+                      value: activeScript?.id ?? -1,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        _setActivePrivateScript(value == -1 ? null : value);
+                      },
                     )
                   else
                     const LinearProgressIndicator(),

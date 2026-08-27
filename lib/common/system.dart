@@ -88,6 +88,10 @@ class System {
     return "'${value.replaceAll("'", "'\\''")}'";
   }
 
+  static String _escapeAppleScriptString(String value) {
+    return value.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+  }
+
   Future<AuthorizeCode> authorizeCore() async {
     if (system.isAndroid) {
       return AuthorizeCode.error;
