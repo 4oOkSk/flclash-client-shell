@@ -34,12 +34,6 @@ class App {
     return methodChannel.invokeMethod<bool>('moveTaskToBack');
   }
 
-  Future<bool> backgroundPendingQuickStart() async {
-    if (!Platform.isAndroid) return false;
-    return await methodChannel.invokeMethod<bool>('backgroundPendingQuickStart') ??
-        false;
-  }
-
   Future<List<Package>> getPackages() async {
     final packagesString = await methodChannel.invokeMethod<String>(
       'getPackages',
@@ -118,12 +112,6 @@ class App {
       'initShortcuts',
       currentAppLocalizations.toggle,
     );
-  }
-
-  Future<bool> consumePendingQuickStart() async {
-    if (!Platform.isAndroid) return false;
-    return await methodChannel.invokeMethod<bool>('consumePendingQuickStart') ??
-        false;
   }
 
   Future<bool?> updateExcludeFromRecents(bool value) async {

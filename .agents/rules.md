@@ -63,7 +63,7 @@ the invariant hard to break beats prose that asks the next reader not to break i
 
 ## Core API Safety
 
-- Do not expose direct filesystem deletion APIs through Core or helper IPC; use
+- Do not expose direct filesystem deletion APIs through Core IPC; use
   a scope-specific cleanup API instead.
 - Keep the shared `CoreMethodCall`/`CoreMethodResponse` JSON envelope structurally identical across Dart, Go, JNI, and
   desktop IPC. Do not double-encode `arguments`, `result`, or event batches.

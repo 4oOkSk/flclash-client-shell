@@ -76,6 +76,40 @@ void main() {
     expect(firstResult.exitConfirmed, isFalse);
     expect(secondResult.exitConfirmed, isTrue);
   });
+
+  test('direct launcher rejects a mismatched executable before spawn', () async {
+    var started = false;
+    final launcher = DirectCoreLauncher(
+      startProcess: (_, _) async {
+        started = true;
+        return _FakeProcess(pid: 42, exitCode: Future.value(0));
+      },
+      verifyExecutable: () async => false,
+      corePath: 'FlClashCore',
+    );
+
+    await expectLater(
+      launcher.start(
+        sessionId: '0123456789abcdef0123456789abcdef',
+        address: 'test-address',
+      ),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          'core_hash_mismatch',
+        ),
+      ),
+    );
+    expect(started, isFalse);
+  });
+
+  test('fixed resolver always returns the direct launcher', () async {
+    final launcher = DirectCoreLauncher(corePath: 'FlClashCore');
+    final resolver = FixedCoreLauncherResolver(launcher);
+
+    expect(await resolver.resolve(), same(launcher));
+  });
 }
 
 class _FakeProcess implements Process {

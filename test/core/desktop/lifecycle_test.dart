@@ -36,12 +36,12 @@ void main() {
   );
 
   test(
-    'restart stops the App-owned lease before resolving Helper ownership',
+    'restart stops the App-owned lease before resolving replacement ownership',
     () async {
       final transport = FakeDesktopCoreTransport();
       final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-      final helper = FakeLauncher(
-        owner: CoreProcessOwner.windowsHelper,
+      final replacement = FakeLauncher(
+        owner: CoreProcessOwner.direct,
         pid: 84,
       );
       final resolver = MutableLauncherResolver(direct);
@@ -50,27 +50,27 @@ void main() {
         resolver: resolver,
       );
       await _startConnected(lifecycle, transport, direct, pid: 42);
-      resolver.launcher = helper;
+      resolver.launcher = replacement;
 
       final restart = lifecycle.restart();
       await direct.lease.stopStarted;
-      expect(helper.startCount, 0);
+      expect(replacement.startCount, 0);
       transport.disconnect(1);
-      await helper.started;
+      await replacement.started;
       transport.connect(pid: 84, generation: 2);
 
       final result = await restart;
       expect(direct.lease.stopCount, 1);
-      expect(result.session?.owner, CoreProcessOwner.windowsHelper);
-      expect(helper.lease.stopCount, 0);
-      await _closeRunning(lifecycle, transport, helper.lease, 2);
+      expect(result.session?.owner, CoreProcessOwner.direct);
+      expect(replacement.lease.stopCount, 0);
+      await _closeRunning(lifecycle, transport, replacement.lease, 2);
     },
   );
 
   test('concurrent restarts coalesce behind one replacement', () async {
     final transport = FakeDesktopCoreTransport();
     final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-    final helper = FakeLauncher(owner: CoreProcessOwner.windowsHelper, pid: 84);
+    final replacement = FakeLauncher(owner: CoreProcessOwner.direct, pid: 84);
     final resolver = MutableLauncherResolver(direct);
     final lifecycle = _createLifecycle(
       transport: transport,
@@ -78,7 +78,7 @@ void main() {
     );
     await _startConnected(lifecycle, transport, direct, pid: 42);
     direct.lease.stopGate = Completer<void>();
-    resolver.launcher = helper;
+    resolver.launcher = replacement;
 
     final first = lifecycle.restart();
     await direct.lease.stopStarted;
@@ -88,15 +88,15 @@ void main() {
 
     transport.disconnect(1);
     direct.lease.stopGate!.complete();
-    await helper.started;
+    await replacement.started;
     transport.connect(pid: 84, generation: 2);
 
     final results = await Future.wait([first, second]);
-    expect(helper.startCount, 1);
+    expect(replacement.startCount, 1);
     expect(results[0].session, same(results[1].session));
     expect(results[0].outcome, CoreLifecycleOutcome.coalesced);
     expect(results[1].outcome, CoreLifecycleOutcome.applied);
-    await _closeRunning(lifecycle, transport, helper.lease, 2);
+    await _closeRunning(lifecycle, transport, replacement.lease, 2);
   });
 
   test('close supersedes an in-flight start and cleans its lease', () async {
@@ -202,7 +202,7 @@ void main() {
   test('start queued behind a failing stop keeps one Core', () async {
     final transport = FakeDesktopCoreTransport();
     final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-    final helper = FakeLauncher(owner: CoreProcessOwner.windowsHelper, pid: 84);
+    final replacement = FakeLauncher(owner: CoreProcessOwner.direct, pid: 84);
     final resolver = MutableLauncherResolver(direct);
     final lifecycle = _createLifecycle(
       transport: transport,
@@ -214,7 +214,7 @@ void main() {
       exitConfirmed: false,
     );
     direct.lease.stopGate = Completer<void>();
-    resolver.launcher = helper;
+    resolver.launcher = replacement;
 
     final stop = lifecycle.stop();
     await direct.lease.stopStarted;
@@ -223,7 +223,7 @@ void main() {
 
     await expectLater(stop, throwsA(_hasCode('process_exit_unconfirmed')));
     await expectLater(start, throwsA(_hasCode('process_exit_unconfirmed')));
-    expect(helper.startCount, 0);
+    expect(replacement.startCount, 0);
     expect(direct.lease.stopCount, 2);
     expect(lifecycle.state, isA<DesktopCoreFailed>());
     await lifecycle.close();
@@ -232,7 +232,7 @@ void main() {
   test('start after a failed stop keeps one Core', () async {
     final transport = FakeDesktopCoreTransport();
     final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-    final helper = FakeLauncher(owner: CoreProcessOwner.windowsHelper, pid: 84);
+    final replacement = FakeLauncher(owner: CoreProcessOwner.direct, pid: 84);
     final resolver = MutableLauncherResolver(direct);
     final lifecycle = _createLifecycle(
       transport: transport,
@@ -243,7 +243,7 @@ void main() {
       stopped: true,
       exitConfirmed: false,
     );
-    resolver.launcher = helper;
+    resolver.launcher = replacement;
 
     await expectLater(
       lifecycle.stop(),
@@ -254,7 +254,7 @@ void main() {
       throwsA(_hasCode('process_exit_unconfirmed')),
     );
 
-    expect(helper.startCount, 0);
+    expect(replacement.startCount, 0);
     expect(direct.lease.stopCount, 2);
     await lifecycle.close();
   });
@@ -272,8 +272,8 @@ void main() {
       }
 
       final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-      final helper = FakeLauncher(
-        owner: CoreProcessOwner.windowsHelper,
+      final replacement = FakeLauncher(
+        owner: CoreProcessOwner.direct,
         pid: 84,
       );
       final resolver = MutableLauncherResolver(direct);
@@ -306,14 +306,14 @@ void main() {
         exitConfirmed: true,
       );
       direct.lease.stopGate = Completer<void>();
-      resolver.launcher = helper;
+      resolver.launcher = replacement;
 
       final start = lifecycle.start();
       await pumpEventQueue();
       expect(direct.lease.stopCount, 2);
-      expect(helper.startCount, 0);
+      expect(replacement.startCount, 0);
       direct.lease.stopGate!.complete();
-      await helper.started;
+      await replacement.started;
       final activeTransport = transports.last;
       if (activeTransport.state != DesktopTransportState.ready &&
           activeTransport.state != DesktopTransportState.connected) {
@@ -323,7 +323,7 @@ void main() {
       activeTransport.connect(pid: 84, generation: generation);
       await start;
       final transportCount = transports.length;
-      await _closeRunning(lifecycle, activeTransport, helper.lease, generation);
+      await _closeRunning(lifecycle, activeTransport, replacement.lease, generation);
 
       expect(transportCount, 1);
     },
@@ -452,18 +452,18 @@ void main() {
   test('stale disconnect generation cannot stop the current session', () async {
     final transport = FakeDesktopCoreTransport();
     final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-    final helper = FakeLauncher(owner: CoreProcessOwner.windowsHelper, pid: 84);
+    final replacement = FakeLauncher(owner: CoreProcessOwner.direct, pid: 84);
     final resolver = MutableLauncherResolver(direct);
     final lifecycle = _createLifecycle(
       transport: transport,
       resolver: resolver,
     );
     await _startConnected(lifecycle, transport, direct, pid: 42);
-    resolver.launcher = helper;
+    resolver.launcher = replacement;
     final restart = lifecycle.restart();
     await direct.lease.stopStarted;
     transport.disconnect(1);
-    await helper.started;
+    await replacement.started;
     transport.connect(pid: 84, generation: 2);
     await restart;
 
@@ -471,8 +471,8 @@ void main() {
     await pumpEventQueue();
 
     expect(lifecycle.state, isA<DesktopCoreRunning>());
-    expect(helper.lease.stopCount, 0);
-    await _closeRunning(lifecycle, transport, helper.lease, 2);
+    expect(replacement.lease.stopCount, 0);
+    await _closeRunning(lifecycle, transport, replacement.lease, 2);
   });
 
   test('unconfirmed process exit blocks replacement start', () async {
@@ -482,14 +482,14 @@ void main() {
       stopped: true,
       exitConfirmed: false,
     );
-    final helper = FakeLauncher(owner: CoreProcessOwner.windowsHelper, pid: 84);
+    final replacement = FakeLauncher(owner: CoreProcessOwner.direct, pid: 84);
     final resolver = MutableLauncherResolver(direct);
     final lifecycle = _createLifecycle(
       transport: transport,
       resolver: resolver,
     );
     await _startConnected(lifecycle, transport, direct, pid: 42);
-    resolver.launcher = helper;
+    resolver.launcher = replacement;
 
     await expectLater(
       lifecycle.restart(),
@@ -502,7 +502,7 @@ void main() {
       ),
     );
 
-    expect(helper.startCount, 0);
+    expect(replacement.startCount, 0);
     expect(lifecycle.state, isA<DesktopCoreFailed>());
     await lifecycle.close();
   });
@@ -556,8 +556,8 @@ void main() {
       }
 
       final direct = FakeLauncher(owner: CoreProcessOwner.direct, pid: 42);
-      final helper = FakeLauncher(
-        owner: CoreProcessOwner.windowsHelper,
+      final replacement = FakeLauncher(
+        owner: CoreProcessOwner.direct,
         pid: 84,
       );
       final resolver = MutableLauncherResolver(direct);
@@ -574,7 +574,7 @@ void main() {
       );
       final firstTransport = transports.single;
       await _startConnected(lifecycle, firstTransport, direct, pid: 42);
-      resolver.launcher = helper;
+      resolver.launcher = replacement;
 
       final restart = lifecycle.restart();
       await direct.lease.stopStarted;
@@ -588,13 +588,13 @@ void main() {
           activeTransport.state != DesktopTransportState.connected) {
         activeTransport.ready();
       }
-      await helper.started;
+      await replacement.started;
       final generation = identical(activeTransport, firstTransport) ? 2 : 1;
       activeTransport.connect(pid: 84, generation: generation);
 
       final result = await restart;
-      expect(result.session?.owner, CoreProcessOwner.windowsHelper);
-      await _closeRunning(lifecycle, activeTransport, helper.lease, generation);
+      expect(result.session?.owner, CoreProcessOwner.direct);
+      await _closeRunning(lifecycle, activeTransport, replacement.lease, generation);
       expect(transports, hasLength(2));
       expect(firstTransport.closeCount, 1);
       expect(replacedBeforeDisconnectionTimeout, isTrue);
@@ -640,7 +640,7 @@ void main() {
   test('PID mismatch cleans the launched lease', () async {
     final transport = FakeDesktopCoreTransport();
     final launcher = FakeLauncher(
-      owner: CoreProcessOwner.windowsHelper,
+      owner: CoreProcessOwner.direct,
       pid: 42,
     );
     final lifecycle = _createLifecycle(

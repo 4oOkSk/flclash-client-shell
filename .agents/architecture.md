@@ -26,8 +26,8 @@ Desktop core mode:
   applies a three-minute default method timeout, unwraps `CoreMethodResponse`, and fails all pending calls when transport
   disconnects or closes.
 - `lib/core/desktop/lifecycle.dart` serializes process intents and owns the authoritative desktop state machine.
-- `lib/core/desktop/launcher.dart` abstracts direct child-process and Windows Helper ownership through idempotent process
-  leases. `lib/core/desktop/helper_client.dart` is the typed loopback HTTP client for the privileged Helper.
+- `lib/core/desktop/launcher.dart` owns direct child-process launch through idempotent process leases. Windows supplies
+  a pre-spawn executable verifier and runs the elevated GUI/Core pair inside one kill-on-close Job Object.
 
 `lib/core/controller.dart` (`CoreController`) selects the implementation based on platform. `lib/core/interface.dart` defines the shared `CoreHandlerInterface`.
 
@@ -77,7 +77,7 @@ caller, and uses a three-second watchdog as an emergency application-exit path. 
   that won from one satisfied or replaced by a newer compatible intent.
 - Startup opens or replaces the IPC transport, resolves a launcher, generates a 128-bit lowercase hexadecimal session ID,
   launches Core, and waits for the matching connection. Windows additionally verifies that the named-pipe peer PID equals
-  the process PID returned by the Helper lease.
+  the direct child PID.
 - Each running session retains its process owner, lease, PID, session ID, and transport connection generation. Stop waits
   for both process-exit confirmation and the matching disconnect generation; a missing disconnect replaces the transport
   before later starts.
@@ -87,8 +87,8 @@ caller, and uses a three-second watchdog as an emergency application-exit path. 
 - An unexpected disconnect or transport failure while running is converted to `DesktopCoreFailure`, the owned process is
   cleaned up, and `CoreService` emits a Core crash event for the normal UI recovery path.
 
-Direct launch is used on macOS/Linux and as the Windows fallback when the privileged Helper is not ready. When the Helper
-is ready on Windows, the Helper owns the Core child and Dart owns it through a session-scoped lease.
+Direct launch is used on every desktop platform. On Windows the GUI is already elevated, verifies the packaged Core hash
+before each spawn, and owns the direct child through both the Dart lease and the runner Job Object.
 
 ### Android Service Lifecycle
 
@@ -246,7 +246,7 @@ Shared:
 
 `setup.dart` is the release build orchestrator:
 
-1. Writes `env.json` (`APP_ENV`).
+1. Writes a private temporary Dart define file. Windows first builds the Core and embeds its exact SHA256.
 2. Activates `flutter_distributor` for packaging.
 3. Relies on the platform build hook to build the required Core artifacts before
    the native application is linked.
@@ -263,37 +263,33 @@ Platform build hooks inside `flutter build` trigger `build_tool` automatically:
 ### Setup Build Harness Plugin
 
 `plugins/setup/` is a build-time Flutter plugin, not a runtime Dart or FFI API. Its plugin shape exists so Flutter's native
-build graphs can run the Go/Rust build harness before platform consumers need the generated artifacts. Application code
+build graphs can run the Go build harness before platform consumers need the generated artifacts. Application code
 must not import or call it.
 
 Responsibilities are deliberately split:
 
-- CocoaPods, Gradle, and CMake hooks schedule a lightweight check on every native build. They do not decide which Go or
-  Rust files are stale.
+- CocoaPods, Gradle, and CMake hooks schedule a lightweight check on every native build. They do not decide which Go files
+  are stale.
 - `buildkit/build_tool/` owns target resolution, input fingerprinting, compilation, output copying, and cache validation.
-- `core/` and `services/helper/` remain source owners; `libclash/` and Android `jniLibs`/header directories are generated
+- `core/` remains the source owner; `libclash/` and Android `jniLibs`/header directories are generated
   output locations.
-- `setup.dart` remains the release/package orchestrator and does not pre-build
-  platform artifacts or use `dart-define` for Core integrity data. The Windows
-  build tool writes the runtime `manifest.json` beside the Core output, and the
-  Windows bundle copies it beside the application executable.
+- `setup.dart` remains the release/package orchestrator. For Windows it pre-builds the Core, reads the generated
+  `manifest.json`, and injects that SHA256 with `dart-define` before Flutter compilation. The native Windows hook then
+  reuses the same cached Core and bundles both artifacts.
 
 Platform outputs remain explicit:
 
 - Android builds the Go core as `c-shared`, then copies `libclash.so` and generated headers into the `:core` Android module.
 - macOS and Linux build a standalone `FlClashCore` process used by the desktop socket integration.
-- Windows builds `FlClashCore.exe`, the Rust `FlClashHelperService.exe` privileged helper, and a
-  `manifest.json` containing only `coreSha256`.
+- Windows builds `HarborProxyCore.exe` and a `manifest.json` containing only `coreSha256`.
 
-The hooks follow rust_api/Cargokit's phony-output scheduling pattern, but setup uses its own cache because it builds both a
-Go core and, on Windows, a separate Rust helper. Per-target records live under `.dart_tool/setup_build_cache/v1/`:
+The hooks follow rust_api/Cargokit's phony-output scheduling pattern, but setup uses its own Go-core cache. Per-target
+records live under `.dart_tool/setup_build_cache/v1/`:
 
 - Go fingerprints cover the target-specific `go list -deps` inputs inside `core/` and `Clash.Meta`, module files, effective
   build configuration, build-tool sources, target flags, Go environment/toolchain, and Android NDK compiler details.
-- Windows helper fingerprints cover its Rust sources and manifests, Cargo/Rust
-  toolchains and flags, and the expected Core SHA256.
 - A cache hit requires the fingerprint and every recorded output's path, size, and modification state to match. It exits
-  silently without Go/Cargo compilation, output copying, or Windows `taskkill`.
+  silently without Go compilation or output copying.
 - Cache records are written only after a successful build and protected by per-target process/file locks. Missing outputs,
   changed inputs, cache-schema changes, or `--force` rebuild only the affected target.
 - `flutter clean` removes `.dart_tool`, so the next native build performs one full core rebuild. Manual builds can bypass
@@ -302,41 +298,26 @@ Go core and, on Windows, a separate Rust helper. Per-target records live under `
 This differs from `rust_api`: rust_api is a runtime Flutter Rust Bridge integration whose Cargokit hooks produce its native
 FFI library, while setup is only the build and packaging bridge for FlClash's external core artifacts.
 
-Windows helper integrity/version check:
+Windows direct-Core integrity:
 
-- The build tool constructs the Core first, calculates its SHA256, and always
-  builds the Rust Helper with release hardening and that expected hash.
-- Flutter reads the Core SHA256 from the bundled `manifest.json` and sends it with `/ping`. Debug, Profile, and Release
-  builds use the same Helper protocol and may use TUN through the same flow.
-- `/ping` is loopback-only and requires no request token. The Helper compares the requested SHA256 with its embedded value
-  and checks that the fixed `FlClashCore.exe` beside it exists; `/start` performs the actual Core SHA256 verification before
-  every launch. The response includes the running Helper path and protocol header; Dart checks both against the current
-  installation. The launcher selects the Helper only when `/ping` reports ready; any other readiness (missing manifest,
-  unavailable Helper, or a Helper built for a different Core) falls back to the direct Core without requesting elevation.
-  If `/start` reports a pre-spawn failure — `coreVerificationFailed` (the on-disk Core no longer matches the SHA the
-  Helper and manifest agree on) or `processLaunchFailed` (the Core process could not be spawned) — the launcher degrades
-  to the direct Core rather than failing the launch. `/start` releases the previously managed Core before it verifies,
-  so the Helper owns no Core when either code is reported and the direct retry cannot race a Helper-managed Core.
-  A mismatched Helper is reinstalled through the explicit TUN authorization flow, not at startup.
-- TUN is not a required run condition. A direct Core runs unelevated and cannot bring up TUN, so any degrade to the
-  direct Core — an unready Helper at resolve time, or a pre-spawn `/start` failure — silently drops TUN and keeps the
-  Core running. Degrading is preferred over failing the launch: an unverified Core carries no privilege the direct
-  launch path did not already have. `manifestMissing` is the one readiness that is surfaced to the user, because it
-  means the installation itself is incomplete.
-- Flutter creates a 128-bit lowercase-hex session ID and uses it as the random named-pipe suffix. `/start` receives only
-  that address and session ID, validates the fixed `FlClashCore_<session>` namespace, starts the fixed Core beside the
-  Helper, and returns the same session ID plus the spawned PID. Flutter verifies both the session and named-pipe peer PID.
-- `/stop` requires the same session ID. A missing process returns `notRunning`; a different owner returns
-  `sessionMismatch` without terminating that process. Session IDs are ownership tokens for lifecycle safety, not a claim
-  that the loopback HTTP endpoints are authenticated.
+- The build tool constructs the Core first and writes its SHA256 to `manifest.json`; `setup.dart` embeds the same value in
+  the Flutter application before packaging.
+- The GUI manifest requests administrator privileges for the whole interactive lifecycle. There is no helper service and
+  no unelevated fallback.
+- Authorization and `DirectCoreLauncher` both fail closed when the packaged Core does not match the embedded SHA256. The
+  launcher checks immediately before `Process.start` so a mismatched executable is never spawned elevated.
+- Flutter creates a random named-pipe address per start and verifies the connected peer PID against its direct child PID.
+- The Windows runner assigns itself to a kill-on-close Job Object. Because the Core is its direct child, an abnormal GUI
+  exit cannot leave the elevated Core behind. Installers only retain helper references to remove retired installations.
 
 Build configuration defaults live in `build_tool/lib/src/options.dart` and can be overridden via a root `build_config.yaml`.
 
-Architecture detection is automatic. The `--description` flag passed to `flutter_distributor` adds arch suffixes to artifact names, such as `FlClash-0.8.93-macos-arm64.dmg`.
+Architecture detection is automatic; macOS release packaging defaults to Universal 2 (`arm64` + `x86_64`). The
+`--description` flag adds architecture suffixes to artifacts.
 
 ## Local Plugins
 
-- `setup`: build-time harness for Go core artifacts and the Windows Rust helper; no runtime Dart API.
+- `setup`: build-time harness for Go core artifacts; no runtime Dart API.
 - `proxy`: system proxy configuration.
 - `rust_api`: runtime Flutter Rust Bridge FFI plugin built through Cargokit.
 - `tray_manager`: system tray fork/customization.
@@ -344,40 +325,9 @@ Architecture detection is automatic. The `--description` flag passed to `flutter
 - `window_ext`: window extensions.
 - `flutter_distributor`: app packaging/distribution.
 
-## Rust Helper Service
+## Windows Privilege Boundary
 
-`services/helper/` is a Windows-only privileged helper for starting the core as admin and managing TUN. It is built with:
-
-```bash
-make core-windows
-```
-
-The build tool always compiles the Helper in Rust release mode after calculating
-the SHA256 of the Core produced for the active Flutter configuration.
-
-The helper owns its Windows Service Control Manager lifecycle through two elevated commands:
-
-- `FlClashHelperService.exe install` stops and removes any stale registration, creates the auto-start service for the
-  current executable path, starts it, and waits for the running state.
-- `FlClashHelperService.exe uninstall` stops the service, waits for shutdown, removes its registration, and is also used
-  by the Windows package uninstaller.
-
-The Dart layer only launches the helper's `install` command through `ShellExecuteW`; it does not compose `sc.exe`,
-`taskkill`, or `cmd.exe` command lines.
-
-In every Flutter build mode `/start` opens the fixed Core executable beside the Helper without write/delete sharing,
-validates it against the SHA256 embedded only in the Helper, and keeps that handle open through process creation.
-`/ping` only compares the requested `coreSha256` with the Helper's embedded value and checks the fixed Core path exists;
-it never hashes the Core. Protocol version 6 uses 32-character lowercase-hex session ownership:
-
-- `GET /ping?coreSha256=...` returns the current Helper executable path with `x-flclash-helper-protocol` when the
-  requested SHA matches.
-- `POST /start` rejects unknown JSON fields, validates `{address, sessionId}`, then releases any previously managed Core
-  before verifying the Core — so every outcome, including a rejected one, leaves the Helper owning no Core — and returns
-  `{sessionId, pid}`.
-- `POST /stop` validates `{sessionId}` and only stops the matching managed Core. A session mismatch is HTTP 409.
-- `GET /logs` exposes the bounded recent Helper/Core stderr buffer with `no-store` caching.
-
-All endpoints bind only to `127.0.0.1:47890` and do not use request-token authentication. Lifecycle safety comes from the
-fixed executable/hash, strict pipe namespace, session-scoped stop contract, and Dart-side peer-PID verification. When the
-Helper service itself shuts down, it unconditionally stops the Core process it owns.
+The Windows runner is the only privilege boundary. It is elevated by the application manifest, starts only the packaged
+`HarborProxyCore.exe` after Dart verifies the embedded release hash, and owns the child lifetime through its Job Object.
+Fresh packages contain no helper binary or service. The installer and SFX updater stop and delete the retired
+`HarborProxyHelperService` only to clean upgrades from older releases.

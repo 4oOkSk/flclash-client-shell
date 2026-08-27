@@ -22,8 +22,23 @@ void main() {
       expect(results['env'], 'dev');
     });
 
-    test('Flutter build environment does not depend on Core SHA256', () {
+    test('process build environment contains only application mode', () {
       expect(setup.createBuildEnvironment('dev'), {'APP_ENV': 'dev'});
+    });
+
+    test('accepts only a lowercase SHA256 from the Core manifest', () {
+      const hash =
+          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
+      expect(
+        setup.parseCoreManifestSha256('{"coreSha256":"$hash"}'),
+        hash,
+      );
+      expect(
+        setup.parseCoreManifestSha256('{"coreSha256":"NOT-A-HASH"}'),
+        isNull,
+      );
+      expect(setup.parseCoreManifestSha256('invalid-json'), isNull);
     });
 
     test('omits verbose from flutter build args by default', () {

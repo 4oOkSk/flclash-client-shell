@@ -5,7 +5,6 @@ import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:ffi/ffi.dart';
 import 'package:fl_clash/common/common.dart';
-import 'package:fl_clash/core/desktop/helper_client.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:fl_clash/state.dart';
@@ -64,8 +63,7 @@ class System {
   Future<bool> checkIsAdmin() async {
     final corePath = appPath.corePath.replaceAll(' ', '\\\\ ');
     if (system.isWindows) {
-      return await windowsHelperClient.readiness() ==
-          WindowsHelperReadiness.ready;
+      return windows?.isUserAnAdmin() ?? false;
     } else if (system.isMacOS) {
       final result = await Process.run('stat', ['-f', '%Su:%Sg %Sp', corePath]);
       final output = result.stdout.trim();
@@ -96,12 +94,16 @@ class System {
     if (system.isAndroid) {
       return AuthorizeCode.error;
     }
-    if (system.isWindows) {
-      return await windows?.registerService() ?? AuthorizeCode.error;
-    }
     final isAdmin = await checkIsAdmin();
     if (isAdmin) {
+      if (system.isWindows && !await coreBinaryMatchesExpectedHash()) {
+        return AuthorizeCode.coreHashMismatch;
+      }
       return AuthorizeCode.none;
+    }
+
+    if (system.isWindows) {
+      return AuthorizeCode.error;
     }
 
     if (system.isMacOS) {
@@ -256,68 +258,6 @@ class Windows {
       return false;
     }
     return true;
-  }
-
-  Future<AuthorizeCode> registerService() async {
-    final readiness = await windowsHelperClient.readiness();
-    switch (readiness) {
-      case WindowsHelperReadiness.ready:
-        commonPrint.log('helper service is ready');
-        return AuthorizeCode.none;
-      case WindowsHelperReadiness.manifestMissing:
-        commonPrint.log(
-          'Core manifest is missing or invalid; Helper service unavailable, '
-          'falling back to direct Core',
-          logLevel: LogLevel.warning,
-        );
-        globalState.showNotifier(currentAppLocalizations.helperCorruptTip);
-        return AuthorizeCode.error;
-      case WindowsHelperReadiness.notReady:
-        break;
-    }
-
-    commonPrint.log(
-      'helper service is unavailable, requesting elevated installation',
-      logLevel: LogLevel.warning,
-    );
-    if (!runas(appPath.helperPath, 'install')) {
-      commonPrint.log(
-        'failed to launch elevated helper installation',
-        logLevel: LogLevel.error,
-      );
-      return AuthorizeCode.error;
-    }
-
-    final isRunning = await _waitForHelperService();
-    commonPrint.log(
-      isRunning
-          ? 'helper service installation completed'
-          : 'helper service did not become ready after installation',
-      logLevel: isRunning ? LogLevel.info : LogLevel.error,
-    );
-    return isRunning ? AuthorizeCode.success : AuthorizeCode.error;
-  }
-
-  Future<bool> _waitForHelperService() async {
-    const timeout = Duration(seconds: 6);
-    const interval = Duration(seconds: 1);
-    const maxAttempts = 6;
-    final stopwatch = Stopwatch()..start();
-    for (var attempt = 0; attempt < maxAttempts; attempt++) {
-      final remaining = timeout - stopwatch.elapsed;
-      if (remaining <= Duration.zero) return false;
-      final isRunning =
-          await windowsHelperClient.readiness(
-            timeout: remaining,
-            logFailure: false,
-          ) ==
-          WindowsHelperReadiness.ready;
-      if (isRunning) return true;
-      final delay = timeout - stopwatch.elapsed;
-      if (delay <= Duration.zero || attempt == maxAttempts - 1) return false;
-      await Future.delayed(delay < interval ? delay : interval);
-    }
-    return false;
   }
 
   Future<bool> registerTask(String appName) async {

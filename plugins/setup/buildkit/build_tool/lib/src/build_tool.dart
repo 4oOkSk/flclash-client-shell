@@ -10,7 +10,6 @@ import 'build_cache.dart';
 import 'go_builder.dart';
 import 'logging.dart';
 import 'options.dart';
-import 'rust_builder.dart';
 import 'target.dart';
 import 'util.dart';
 
@@ -199,27 +198,7 @@ class BuildWindowsCommand extends BuildCommand {
     final coreResults = await goBuilder.buildAll(targets, force: force);
     final corePaths =
         coreResults.map((result) => result.primaryOutput).toList();
-    final rustBuilder = RustBuilder(
-      rootDir: _rootDir,
-      config: config,
-      cache: cache,
-      notice: notice,
-    );
     final coreSha256 = await calcSha256(corePaths.first);
-    final helperResult = await rustBuilder.build(
-      targets.first,
-      coreSha256,
-      force: force,
-      beforeBuild: debug
-          ? () async {
-              await Process.run('taskkill', [
-                '/F',
-                '/IM',
-                '${config.helperName}${targets.first.executableExtension}',
-              ]);
-            }
-          : null,
-    );
 
     writeCoreManifest(
       path: p.join(
@@ -231,7 +210,7 @@ class BuildWindowsCommand extends BuildCommand {
       coreSha256: coreSha256,
     );
 
-    if (helperResult.rebuilt || coreResults.any((result) => result.rebuilt)) {
+    if (coreResults.any((result) => result.rebuilt)) {
       _log.info('Build complete: $corePaths');
     }
   }

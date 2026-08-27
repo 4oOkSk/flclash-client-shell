@@ -195,7 +195,18 @@ Future<int> _package(
       await generatedGoFile.writeAsString(goBuildConfig, flush: true);
     }
 
-    final buildDefines = <String, Object?>{'APP_ENV': env};
+    final coreSha256 = platform == 'windows'
+        ? await _buildWindowsCoreSha256(rootDir)
+        : null;
+    if (platform == 'windows' && coreSha256 == null) {
+      stderr.writeln('Windows Core build did not produce a valid SHA256.');
+      return 1;
+    }
+
+    final buildDefines = <String, Object?>{
+      'APP_ENV': env,
+      'CORE_SHA256': ?coreSha256,
+    };
     final privateApiBase = Platform.environment['PRIVATE_CLIENT_API_BASE']
         ?.trim();
     if (privateApiBase != null && privateApiBase.isNotEmpty) {
@@ -304,6 +315,47 @@ String createPrivateClientGoBuildConfig(Map<String, String> environment) {
   }
   if (assignments.isEmpty) return '';
   return 'package main\n\nfunc init() {\n${assignments.join('\n')}\n}\n';
+}
+
+String? parseCoreManifestSha256(String content) {
+  try {
+    final value = jsonDecode(content);
+    if (value is! Map) return null;
+    final coreSha256 = value['coreSha256'];
+    if (coreSha256 is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(coreSha256)) {
+      return null;
+    }
+    return coreSha256;
+  } on FormatException {
+    return null;
+  }
+}
+
+Future<String?> _buildWindowsCoreSha256(String rootDir) async {
+  final buildToolDir = p.join(
+    rootDir,
+    'plugins',
+    'setup',
+    'buildkit',
+    'build_tool',
+  );
+  final result = await Process.run('dart', [
+    'run',
+    'build_tool',
+    'windows',
+    '--root-dir',
+    rootDir,
+  ], workingDirectory: buildToolDir);
+  if (result.exitCode != 0) {
+    stderr.write(result.stderr);
+    return null;
+  }
+  final manifest = File(
+    p.join(rootDir, 'libclash', 'windows', 'manifest.json'),
+  );
+  if (!manifest.existsSync()) return null;
+  return parseCoreManifestSha256(await manifest.readAsString());
 }
 
 String _detectArch() {

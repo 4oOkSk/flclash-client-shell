@@ -7,7 +7,6 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/core.dart';
 import 'package:flutter/foundation.dart';
 
-import 'desktop/helper_client.dart';
 import 'desktop/launcher.dart';
 import 'desktop/lifecycle.dart';
 import 'desktop/model.dart';
@@ -31,16 +30,15 @@ class CoreService extends CoreHandlerInterface {
 
   factory CoreService._create() {
     final address = system.isWindows ? windowsPipeName : unixSocketPath;
-    final directLauncher = DirectCoreLauncher();
+    final directLauncher = DirectCoreLauncher(
+      verifyExecutable: system.isWindows
+          ? system.coreBinaryMatchesExpectedHash
+          : null,
+    );
 
     final lifecycle = DesktopCoreLifecycle(
       transportFactory: () => IPCCoreTransport(address: address),
-      launcherResolver: WindowsHelperLauncherResolver(
-        isWindows: system.isWindows,
-        directLauncher: directLauncher,
-        helperLauncher: WindowsHelperLauncher(windowsHelperClient),
-        helperReady: () => windowsHelperClient.readiness(),
-      ),
+      launcherResolver: FixedCoreLauncherResolver(directLauncher),
       verifyPeerPid: system.isWindows,
     );
     return CoreService._(

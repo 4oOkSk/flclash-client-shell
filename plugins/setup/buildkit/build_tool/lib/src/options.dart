@@ -13,8 +13,6 @@ class BuildConfig {
   final String coreName;
   final String libName;
   final String outputDir;
-  final String helperDir;
-  final String helperName;
   final String distDir;
 
   const BuildConfig({
@@ -24,8 +22,6 @@ class BuildConfig {
     required this.coreName,
     required this.libName,
     required this.outputDir,
-    required this.helperDir,
-    required this.helperName,
     required this.distDir,
   });
 
@@ -36,8 +32,6 @@ class BuildConfig {
     coreName: 'HarborProxyCore',
     libName: 'libclash',
     outputDir: 'libclash',
-    helperDir: 'services/helper',
-    helperName: 'HarborProxyHelperService',
     distDir: 'dist',
   );
 
@@ -57,8 +51,6 @@ class BuildConfig {
       coreName: yaml['core_name'] as String? ?? _defaults.coreName,
       libName: yaml['lib_name'] as String? ?? _defaults.libName,
       outputDir: yaml['output_dir'] as String? ?? _defaults.outputDir,
-      helperDir: yaml['helper_dir'] as String? ?? _defaults.helperDir,
-      helperName: yaml['helper_name'] as String? ?? _defaults.helperName,
       distDir: yaml['dist_dir'] as String? ?? _defaults.distDir,
     );
   }
@@ -70,8 +62,6 @@ class BuildConfig {
         'core_name': coreName,
         'lib_name': libName,
         'output_dir': outputDir,
-        'helper_dir': helperDir,
-        'helper_name': helperName,
         'dist_dir': distDir,
       };
 }

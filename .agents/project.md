@@ -4,7 +4,7 @@ FlClash is a multi-platform proxy client based on ClashMeta (mihomo), built with
 
 ## Version Notes
 
-- Release CI pins Flutter 3.44.4. Local SDK may diverge, so trust the CI
+- Release CI pins Flutter 3.44.8. Local SDK may diverge, so trust the CI
   version as the source of truth for release builds.
 - Dart SDK constraint: `>=3.8.0 <4.0.0`.
 

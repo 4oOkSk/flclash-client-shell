@@ -23,7 +23,6 @@ function(apply_buildkit)
   if(WIN32)
     set(_outputs
       "${PROJECT_ROOT}/libclash/windows/HarborProxyCore.exe"
-      "${PROJECT_ROOT}/libclash/windows/HarborProxyHelperService.exe"
       "${PROJECT_ROOT}/libclash/windows/manifest.json"
     )
     set(_platform_args "windows")

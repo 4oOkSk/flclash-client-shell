@@ -18,6 +18,9 @@ PrivilegesRequired={{PRIVILEGES_REQUIRED}}
 ArchitecturesAllowed={{ARCH}}
 ArchitecturesInstallIn64BitMode={{ARCH}}
 
+[InstallDelete]
+Type: files; Name: "{app}\HarborProxyHelperService.exe"
+
 [Code]
 const
   LegacyHelperService = 'HarborProxyHelperService';
@@ -44,30 +47,60 @@ begin
   end;
 end;
 
-procedure UnregisterHelperService;
+function DeleteLegacyHelperService: Boolean;
 var
-  HelperPath: String;
+  i: Integer;
   ResultCode: Integer;
 begin
-  HelperPath := ExpandConstant('{app}\\HarborProxyHelperService.exe');
-  if FileExists(HelperPath) then
+  Exec(ExpandConstant('{sys}\sc.exe'), 'query ' + LegacyHelperService, '',
+    SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if ResultCode <> 0 then
   begin
-    Exec(HelperPath, 'uninstall', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Result := True;
+    Exit;
   end;
+
+  if not Exec(ExpandConstant('{sys}\sc.exe'), 'delete ' + LegacyHelperService,
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := False;
+    Exit;
+  end;
+  if ResultCode <> 0 then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  for i := 1 to 50 do
+  begin
+    Exec(ExpandConstant('{sys}\sc.exe'), 'query ' + LegacyHelperService, '',
+      SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    if ResultCode <> 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Sleep(200);
+  end;
+  Result := False;
 end;
 
-function PrepareToInstall(var NeedsRestart: Boolean): String;
+function InitializeSetup(): Boolean;
 begin
-  UnregisterHelperService;
+  StopLegacyHelperService;
   KillProcesses;
-  Result := '';
+  Result := DeleteLegacyHelperService;
+  if not Result then
+    MsgBox('Unable to remove the retired HarborProxy Helper service. Restart Windows and retry.',
+      mbError, MB_OK);
 end;
 
 function InitializeUninstall(): Boolean;
 begin
-  UnregisterHelperService;
+  StopLegacyHelperService;
   KillProcesses;
-  Result := True;
+  Result := DeleteLegacyHelperService;
 end;
 
 [Languages]

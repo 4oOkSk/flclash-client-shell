@@ -68,7 +68,6 @@ docs/
 #FlClash
 /libclash/
 /android/app/src/main/jniLibs/
-/services/helper/target
 /macos/**/Package.resolved
 /macos/build/
 /env.json

@@ -105,7 +105,7 @@ flutter test test/widgets/core_status_button_test.dart
 
 What those suites own:
 
-- `test/core/desktop/`: replaceable IPC transport, RPC request correlation/failure, direct/Helper process leases, and
+- `test/core/desktop/`: replaceable IPC transport, RPC request correlation/failure, direct process leases, and
   latest-intent desktop lifecycle convergence.
 - `test/core/service_test.dart`: `CoreService` composition and terminal close behavior.
 - `test/core/protocol_contract_test.dart`: shared Dart/Go method and event-envelope compatibility, including event batches.
@@ -124,17 +124,9 @@ CGO_ENABLED=0 go test .
 CGO_ENABLED=0 go vet .
 ```
 
-The Windows Helper's loopback/session protocol tests are host-independent by default. Windows CI additionally enables its
-service implementation:
-
-```bash
-cargo fmt --manifest-path services/helper/Cargo.toml -- --check
-cargo test --manifest-path services/helper/Cargo.toml
-cargo test --manifest-path services/helper/Cargo.toml --features windows-service
-```
-
-The last command requires Windows for meaningful service coverage. Native Android lifecycle edits should at minimum
-compile the modules they touch; use JDK 17 in this checkout:
+Windows direct-Core launcher and hash checks are covered by `test/core/desktop/launcher_test.dart`; elevation, named-pipe
+peer identity, and Job Object behavior still require a real Windows package smoke test. Native Android lifecycle edits
+should at minimum compile the modules they touch; use JDK 17 in this checkout:
 
 ```bash
 cd android
@@ -160,6 +152,4 @@ Run `flutter analyze` locally before committing when practical.
 The workflow runs only for `v*` tag pushes; pull requests do not trigger it.
 Root analysis excludes `plugins/**`, and root tests do not discover nested
 plugin packages, so CI also validates local Flutter packages, the setup build
-tool, the Go wrapper, and Rust components from their own package directories. A
-separate Windows runner compiles and tests the helper's `windows-service`
-feature before release builds can start.
+tool, the Go wrapper, and native components from their own package directories.

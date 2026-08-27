@@ -53,12 +53,6 @@ class ApplicationState extends ConsumerState<Application> {
       } else {
         exit(0);
       }
-      if (await app?.consumePendingQuickStart() == true) {
-        await app?.backgroundPendingQuickStart();
-        await globalState.container
-            .read(setupActionProvider.notifier)
-            .setRunning(true);
-      }
       _autoUpdateProfilesTask();
       _initLink();
       app?.initShortcuts();

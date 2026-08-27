@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'private_build_input.dart';
 
 const appName = 'HarborProxy';
-const appHelperService = 'HarborProxyHelperService';
 const coreManifestName = 'manifest.json';
 const coreName = 'clash.meta';
 const browserUa =
@@ -20,9 +19,6 @@ const browserUa =
 const packageName = 'com.example.harborproxy';
 final unixSocketPath = '/tmp/HarborProxySocket_${Random().nextInt(10000)}.sock';
 final windowsPipeName = '\\\\.\\pipe\\HarborProxyCore_${_randomPipeId()}';
-const helperPort = 47890;
-const helperProtocolVersionHeader = 'x-flclash-helper-protocol';
-const helperProtocolVersion = '6';
 const maxTextScale = 1.4;
 const minTextScale = 0.8;
 final baseInfoEdgeInsets = EdgeInsets.symmetric(

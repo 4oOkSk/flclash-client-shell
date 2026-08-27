@@ -9,6 +9,7 @@ import 'model.dart';
 
 typedef CoreProcessStarter =
     Future<Process> Function(String executable, List<String> arguments);
+typedef CoreExecutableVerifier = Future<bool> Function();
 
 abstract interface class CoreProcessLauncher {
   Future<CoreProcessLease> start({
@@ -21,12 +22,27 @@ abstract interface class DesktopCoreLauncherResolver {
   Future<CoreProcessLauncher> resolve();
 }
 
+final class FixedCoreLauncherResolver implements DesktopCoreLauncherResolver {
+  final CoreProcessLauncher launcher;
+
+  const FixedCoreLauncherResolver(this.launcher);
+
+  @override
+  Future<CoreProcessLauncher> resolve() async => launcher;
+}
+
 final class DirectCoreLauncher implements CoreProcessLauncher {
   final CoreProcessStarter _startProcess;
+  final CoreExecutableVerifier? _verifyExecutable;
   final String corePath;
 
-  DirectCoreLauncher({CoreProcessStarter? startProcess, String? corePath})
+  DirectCoreLauncher({
+    CoreProcessStarter? startProcess,
+    CoreExecutableVerifier? verifyExecutable,
+    String? corePath,
+  })
     : _startProcess = startProcess ?? Process.start,
+      _verifyExecutable = verifyExecutable,
       corePath = corePath ?? appPath.corePath;
 
   @override
@@ -34,6 +50,10 @@ final class DirectCoreLauncher implements CoreProcessLauncher {
     required String sessionId,
     required String address,
   }) async {
+    final verifyExecutable = _verifyExecutable;
+    if (verifyExecutable != null && !await verifyExecutable()) {
+      throw StateError('core_hash_mismatch');
+    }
     final process = await _startProcess(corePath, [address]);
     process.stdout.listen((_) {});
     process.stderr.listen((data) {
