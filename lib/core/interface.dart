@@ -6,6 +6,9 @@ import 'package:fl_clash/models/models.dart';
 import 'desktop/model.dart';
 import 'method.dart';
 
+const _clientLocalMethodTimeout = Duration(seconds: 10);
+const _clientNetworkMethodTimeout = Duration(seconds: 30);
+
 mixin CoreInterface {
   Future<CoreLifecycleResult> start();
 
@@ -217,12 +220,22 @@ abstract class CoreHandlerInterface with CoreInterface {
         '';
   }
 
-  Future<String> _invokeEnroll(Map<String, Object?> arguments) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.setupFromEnroll,
-          arguments: arguments,
-        ) ??
-        '';
+  Future<String> _invokeEnroll(
+    Map<String, Object?> arguments, {
+    Duration timeout = _clientNetworkMethodTimeout,
+  }) async {
+    final result = await _invokeMethod<String>(
+      method: CoreMethod.setupFromEnroll,
+      arguments: arguments,
+      timeout: timeout,
+    );
+    if (result == null) {
+      throw const CoreMethodException(
+        code: 'empty_result',
+        message: 'Core returned an empty client response',
+      );
+    }
+    return result;
   }
 
   @override
@@ -270,25 +283,35 @@ abstract class CoreHandlerInterface with CoreInterface {
 
   @override
   Future<bool> clientHasSession() async =>
-      (await _invokeEnroll({'mode': 'client-state'})).isEmpty;
+      (await _invokeEnroll(
+        {'mode': 'client-state'},
+        timeout: _clientLocalMethodTimeout,
+      )).isEmpty;
 
   @override
-  Future<String> clientAccountInfo() =>
-      _invokeEnroll({'mode': 'client-info'});
+  Future<String> clientAccountInfo() => _invokeEnroll(
+    {'mode': 'client-info'},
+    timeout: _clientLocalMethodTimeout,
+  );
 
   @override
-  Future<String> clientDiagnostics() =>
-      _invokeEnroll({'mode': 'client-diagnostics'});
+  Future<String> clientDiagnostics() => _invokeEnroll(
+    {'mode': 'client-diagnostics'},
+    timeout: _clientLocalMethodTimeout,
+  );
 
   @override
   Future<String> configureClientSecureStorage({
     required String key,
     required String source,
-  }) => _invokeEnroll({
-    'mode': 'client-secure-storage',
-    'secure-cache-key': key,
-    'secure-cache-key-source': source,
-  });
+  }) => _invokeEnroll(
+    {
+      'mode': 'client-secure-storage',
+      'secure-cache-key': key,
+      'secure-cache-key-source': source,
+    },
+    timeout: _clientLocalMethodTimeout,
+  );
 
   @override
   Future<String> clientClear({required String endpoint}) => _invokeEnroll({

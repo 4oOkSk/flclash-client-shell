@@ -347,7 +347,15 @@ class GlobalState {
     await _showCrashRecoveryTip();
     await container.read(coreActionProvider.notifier).startCore();
     if (!_didCrashOnPreviousExecution) {
-      await container.read(setupActionProvider.notifier).initStatus();
+      try {
+        await container.read(setupActionProvider.notifier).initStatus();
+      } catch (error) {
+        if (!kPrivateClientMode) rethrow;
+        commonPrint.log(
+          'Private client initial restore failed: ${error.runtimeType}',
+          logLevel: LogLevel.warning,
+        );
+      }
     }
     container.read(initProvider.notifier).value = true;
     permissions.check();

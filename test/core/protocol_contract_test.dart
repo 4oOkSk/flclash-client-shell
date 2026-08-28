@@ -124,6 +124,27 @@ class _EmptyConfigCoreHandler extends _RecordingCoreHandler {
   }
 }
 
+class _EmptyClientCoreHandler extends _RecordingCoreHandler {
+  final List<Duration?> timeouts = [];
+
+  @override
+  Future<T?> invokeMethod<T>({
+    required CoreMethod method,
+    Object? arguments,
+    Duration? timeout,
+  }) async {
+    if (method == CoreMethod.setupFromEnroll) {
+      timeouts.add(timeout);
+      return null;
+    }
+    return super.invokeMethod(
+      method: method,
+      arguments: arguments,
+      timeout: timeout,
+    );
+  }
+}
+
 void main() {
   test('method call keeps structured arguments', () async {
     final fixture =
@@ -249,6 +270,45 @@ void main() {
           'empty_result',
         ),
       ),
+    );
+  });
+
+  test('private client methods reject empty transport results', () async {
+    final handler = _EmptyClientCoreHandler();
+    final operations = <Future<Object?> Function()>[
+      handler.clientHasSession,
+      () => handler.clientLogin(
+        endpoint: 'https://example.com/client',
+        email: 'user@example.com',
+        password: 'password',
+        code: '',
+      ),
+      () => handler.setupFromClient(
+        endpoint: 'https://example.com/client',
+        refreshInterval: const Duration(days: 1),
+      ),
+    ];
+
+    for (final operation in operations) {
+      await expectLater(
+        operation(),
+        throwsA(
+          isA<CoreMethodException>().having(
+            (error) => error.code,
+            'code',
+            'empty_result',
+          ),
+        ),
+      );
+    }
+
+    expect(
+      handler.timeouts,
+      const [
+        Duration(seconds: 10),
+        Duration(seconds: 30),
+        Duration(seconds: 30),
+      ],
     );
   });
 

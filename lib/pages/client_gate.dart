@@ -30,6 +30,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
   bool? _hasSession;
   bool _submitting = false;
   bool _restoring = false;
+  bool _restoreFailed = false;
 
   @override
   void initState() {
@@ -58,6 +59,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
         if (!mounted) return;
         setState(() {
           _hasSession = false;
+          _restoreFailed = false;
         });
         return;
       }
@@ -69,13 +71,33 @@ class _ClientGateState extends ConsumerState<ClientGate> {
         // local session. Enter the app and keep using the last successful cache;
         // only an explicit authentication failure returns to the login form.
         _hasSession = !needsLogin;
+        _restoreFailed = false;
       });
       if (message.isNotEmpty && !needsLogin) {
         context.showSnackBar(message);
       }
+    } catch (error) {
+      commonPrint.log(
+        'Client restore failed: ${error.runtimeType}',
+        logLevel: LogLevel.warning,
+      );
+      if (!mounted) return;
+      setState(() {
+        _restoreFailed = true;
+      });
     } finally {
       _restoring = false;
     }
+  }
+
+  void _retryRestore() {
+    if (_restoring) return;
+    setState(() {
+      _hasSession = null;
+      _restoreFailed = false;
+    });
+    _restoring = true;
+    unawaited(_loadState());
   }
 
   Future<String> _setupClientConfig() async {
@@ -97,30 +119,43 @@ class _ClientGateState extends ConsumerState<ClientGate> {
     setState(() {
       _submitting = true;
     });
-    final message = await coreController.clientLogin(
-      endpoint: kClientApiBase,
-      email: email,
-      password: password,
-      code: _codeController.text.trim(),
-    );
-    if (!mounted) return;
-    if (message.isNotEmpty) {
+    try {
+      final message = await coreController.clientLogin(
+        endpoint: kClientApiBase,
+        email: email,
+        password: password,
+        code: _codeController.text.trim(),
+      );
+      if (!mounted) return;
+      if (message.isNotEmpty) {
+        setState(() {
+          _submitting = false;
+          _hasSession = false;
+        });
+        context.showSnackBar(message);
+        return;
+      }
+      final setupMessage = await _setupClientConfig();
+      if (!mounted) return;
+      final needsLogin = setupMessage == _loginRequiredMessage;
+      setState(() {
+        _submitting = false;
+        _hasSession = !needsLogin;
+      });
+      if (setupMessage.isNotEmpty && !needsLogin) {
+        context.showSnackBar(setupMessage);
+      }
+    } catch (error) {
+      commonPrint.log(
+        'Client login setup failed: ${error.runtimeType}',
+        logLevel: LogLevel.warning,
+      );
+      if (!mounted) return;
       setState(() {
         _submitting = false;
         _hasSession = false;
       });
-      context.showSnackBar(message);
-      return;
-    }
-    final setupMessage = await _setupClientConfig();
-    if (!mounted) return;
-    final needsLogin = setupMessage == _loginRequiredMessage;
-    setState(() {
-      _submitting = false;
-      _hasSession = !needsLogin;
-    });
-    if (setupMessage.isNotEmpty && !needsLogin) {
-      context.showSnackBar(setupMessage);
+      context.showSnackBar(context.appLocalizations.unknownNetworkError);
     }
   }
 
@@ -128,6 +163,42 @@ class _ClientGateState extends ConsumerState<ClientGate> {
   Widget build(BuildContext context) {
     if (_hasSession == true) {
       return widget.child;
+    }
+    if (_restoreFailed) {
+      final l10n = context.appLocalizations;
+      return Scaffold(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 56,
+                    color: context.colorScheme.error,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.restoreException,
+                    textAlign: TextAlign.center,
+                    style: context.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: _retryRestore,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(l10n.restore),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
     }
     if (_hasSession == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

@@ -72,6 +72,49 @@ void main() {
     expect(find.text('home'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
   });
+
+  testWidgets('offers a retry when existing-session restoration fails', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    var setupAttempts = 0;
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _TestApp(
+          child: ClientGate(
+            sessionCheck: () async => true,
+            configSetup: () async {
+              setupAttempts += 1;
+              if (setupAttempts == 1) {
+                throw StateError('restore failed');
+              }
+              return '';
+            },
+            child: const Text('home'),
+          ),
+        ),
+      ),
+    );
+
+    container.read(initProvider.notifier).value = true;
+    await tester.pumpAndSettle();
+
+    expect(setupAttempts, 1);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(find.byIcon(Icons.refresh), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(setupAttempts, 2);
+    expect(find.text('home'), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsNothing);
+  });
 }
 
 class _TestApp extends StatelessWidget {
