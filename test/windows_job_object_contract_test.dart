@@ -17,4 +17,20 @@ void main() {
       isTrue,
     );
   });
+
+  test('Windows runner has one linker-owned UAC execution level', () {
+    final cmake = File('windows/runner/CMakeLists.txt').readAsStringSync();
+    final manifest = File(
+      'windows/runner/runner.exe.manifest',
+    ).readAsStringSync();
+
+    expect(
+      cmake,
+      contains(
+        "/MANIFESTUAC:level='requireAdministrator' uiAccess='false'",
+      ),
+    );
+    expect(manifest, isNot(contains('<requestedExecutionLevel')));
+    expect(manifest, isNot(contains('<trustInfo')));
+  });
 }

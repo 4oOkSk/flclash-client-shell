@@ -174,9 +174,114 @@ jobs:
           esac
           printf 'value=%s\n' "$value" >> "$GITHUB_OUTPUT"
 
+  verify_windows:
+    name: Native Windows release preflight
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - name: Checkout public source without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify public source boundary
+        run: python3 tool/public_source_gate.py .
+
+      - name: Restore and apply release overlay
+        shell: bash
+        env:
+          RELEASE_PAYLOAD_KEY: ${{ secrets.RELEASE_PAYLOAD_KEY }}
+        run: bash tool/prepare_release_source.sh
+
+      - name: Verify requested build
+        shell: bash
+        run: |
+          [[ '${{ inputs.build }}' =~ ^[0-9]{10}$ ]]
+          grep -Eq '^version:[[:space:]]*0[.]0[.]1[+]${{ inputs.build }}[[:space:]]*$' pubspec.yaml
+
+      - name: Enable Windows long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: |
+            core/go.sum
+            core/Clash.Meta/go.sum
+
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Build native Windows release package
+        run: dart setup.dart windows --env stable --targets zip --verbose
+
+      - name: Verify packaged Windows UAC manifest
+        shell: pwsh
+        run: |
+          $packages = @(Get-ChildItem dist -File -Filter '*.zip' -Recurse)
+          if ($packages.Count -ne 1) { throw 'Expected exactly one Windows ZIP.' }
+
+          $executables = @(
+            Get-ChildItem 'build/windows/x64/runner/Release' -File -Filter '*.exe' |
+              Where-Object { $_.Name -notlike '*Core.exe' }
+          )
+          if ($executables.Count -ne 1) {
+            throw 'Expected exactly one Windows GUI executable.'
+          }
+
+          $manifestTool = @(
+            Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/mt.exe" -File
+          ) | Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1
+          if ($null -eq $manifestTool) { throw 'Windows manifest tool was not found.' }
+
+          $manifest = Join-Path $env:RUNNER_TEMP 'windows-runner.manifest'
+          & $manifestTool.FullName `
+            "-inputresource:$($executables[0].FullName);#1" `
+            "-out:$manifest"
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to extract the Windows manifest.' }
+
+          $content = Get-Content -LiteralPath $manifest -Raw
+          $requests = [regex]::Matches(
+            $content,
+            '<requestedExecutionLevel\b[^>]*/?>'
+          )
+          if ($requests.Count -ne 1) {
+            throw 'Expected exactly one requestedExecutionLevel element.'
+          }
+          $request = $requests[0].Value
+          if ($request -notmatch 'level\s*=\s*["'']requireAdministrator["'']') {
+            throw 'Windows GUI does not require administrator elevation.'
+          }
+          if ($request -notmatch 'uiAccess\s*=\s*["'']false["'']') {
+            throw 'Windows GUI has an unexpected uiAccess value.'
+          }
+
+      - name: Remove plaintext preflight inputs and outputs
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
+          Remove-Item -Force `
+            core_sha256.json, `
+            core/client_build_config_generated.go `
+            -ErrorAction SilentlyContinue
+
   build:
     name: Build sealed ${{ matrix.platform }} package
-    needs: verify
+    needs: [verify, verify_windows]
     if: inputs.platform != 'verify'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120

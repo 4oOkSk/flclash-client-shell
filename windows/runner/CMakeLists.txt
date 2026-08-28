@@ -20,6 +20,12 @@ add_executable(${BINARY_NAME} WIN32
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
 
+# Let the linker generate the single UAC fragment. Declaring the execution
+# level in runner.exe.manifest as well would conflict with link.exe's default
+# asInvoker fragment when mt.exe merges the manifests.
+target_link_options(${BINARY_NAME} PRIVATE
+  "/MANIFESTUAC:level='requireAdministrator' uiAccess='false'")
+
 # Add preprocessor definitions for the build version.
 if(NOT "${FLUTTER_VERSION_BUILD}" MATCHES "^([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])$")
   message(FATAL_ERROR
