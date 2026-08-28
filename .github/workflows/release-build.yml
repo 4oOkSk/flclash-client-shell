@@ -234,12 +234,19 @@ jobs:
           $packages = @(Get-ChildItem dist -File -Filter '*.zip' -Recurse)
           if ($packages.Count -ne 1) { throw 'Expected exactly one Windows ZIP.' }
 
-          $executables = @(
-            Get-ChildItem 'build/windows/x64/runner/Release' -File -Filter '*.exe' |
-              Where-Object { $_.Name -notlike '*Core.exe' }
+          $cmake = Get-Content -LiteralPath 'windows/CMakeLists.txt' -Raw
+          $binaryName = [regex]::Match(
+            $cmake,
+            '(?m)^set\(BINARY_NAME "([^"]+)"\)\s*$'
           )
-          if ($executables.Count -ne 1) {
-            throw 'Expected exactly one Windows GUI executable.'
+          if (-not $binaryName.Success) {
+            throw 'Unable to resolve the Windows GUI executable name.'
+          }
+          $executable = Join-Path `
+            'build/windows/x64/runner/Release' `
+            ($binaryName.Groups[1].Value + '.exe')
+          if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw 'Windows GUI executable is missing.'
           }
 
           $manifestTool = @(
@@ -249,7 +256,7 @@ jobs:
 
           $manifest = Join-Path $env:RUNNER_TEMP 'windows-runner.manifest'
           & $manifestTool.FullName `
-            "-inputresource:$($executables[0].FullName);#1" `
+            "-inputresource:$executable;#1" `
             "-out:$manifest"
           if ($LASTEXITCODE -ne 0) { throw 'Unable to extract the Windows manifest.' }
 
