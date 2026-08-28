@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -126,15 +125,11 @@ rules:
 	}
 
 	groupName, proxyName := "managed-main", "node-a"
-	payload, err := json.Marshal(&ChangeProxyParams{
-		GroupName: &groupName,
-		ProxyName: &proxyName,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	result := make(chan string, 1)
-	handleChangeProxy(string(payload), func(message string) {
+	handleChangeProxy(&ChangeProxyParams{
+		GroupName: groupName,
+		ProxyName: proxyName,
+	}, func(message string) {
 		result <- message
 	})
 	select {

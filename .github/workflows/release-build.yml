@@ -13,6 +13,7 @@ on:
         default: all
         type: choice
         options:
+          - verify
           - all
           - android
           - linux
@@ -66,6 +67,14 @@ jobs:
           [[ '${{ inputs.build }}' =~ ^[0-9]{10}$ ]]
           grep -Eq '^version:[[:space:]]*0[.]0[.]1[+]${{ inputs.build }}[[:space:]]*$' pubspec.yaml
 
+      - name: Set up Android NDK r28c for core verification
+        id: verify_ndk
+        uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779
+        with:
+          ndk-version: r28c
+          add-to-path: false
+          link-to-sdk: false
+
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
@@ -74,9 +83,50 @@ jobs:
             core/go.sum
             core/Clash.Meta/go.sum
 
-      - name: Test core integration
+      - name: Verify exact core module graph and builds
         working-directory: core
-        run: go test ./tun
+        shell: bash
+        env:
+          VERIFY_ANDROID_NDK: ${{ steps.verify_ndk.outputs.ndk-path }}
+        run: |
+          set -euo pipefail
+          tidy_diff=$(go mod tidy -diff)
+          test -z "$tidy_diff" || {
+            printf '%s\n' "$tidy_diff"
+            exit 1
+          }
+          CGO_ENABLED=0 go list -deps -tags=with_gvisor ./... >/dev/null
+          CGO_ENABLED=0 go test -tags=with_gvisor ./...
+
+          build_desktop_core() {
+            local goos=$1
+            local goarch=$2
+            local output="$RUNNER_TEMP/core-$goos-$goarch"
+            if [[ $goos == windows ]]; then
+              output+=.exe
+            fi
+            GOOS=$goos GOARCH=$goarch CGO_ENABLED=0 go build \
+              -ldflags='-w -s' -tags=with_gvisor -o "$output"
+            test -s "$output"
+          }
+          build_desktop_core linux amd64
+          build_desktop_core windows amd64
+          build_desktop_core darwin amd64
+          build_desktop_core darwin arm64
+
+          android_toolchain="$VERIFY_ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          build_android_core() {
+            local goarch=$1
+            local compiler=$2
+            local output="$RUNNER_TEMP/libclash-$goarch.so"
+            GOOS=android GOARCH=$goarch CGO_ENABLED=1 CC="$android_toolchain/$compiler" \
+              CFLAGS='-O3 -Werror' go build -buildmode=c-shared \
+              -ldflags='-w -s' -tags=with_gvisor -o "$output"
+            test -s "$output"
+          }
+          build_android_core arm armv7a-linux-androideabi21-clang
+          build_android_core arm64 aarch64-linux-android21-clang
+          build_android_core amd64 x86_64-linux-android21-clang
 
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
@@ -91,12 +141,20 @@ jobs:
           flutter pub get
           flutter analyze --no-fatal-warnings --no-fatal-infos
           flutter test --reporter expanded
+          (
+            cd plugins/setup/buildkit/build_tool
+            dart pub get
+            dart test
+          )
 
       - name: Select requested build matrix
         id: build_matrix
         shell: bash
         run: |
           case '${{ inputs.platform }}' in
+            verify)
+              value='{"include":[{"platform":"verify","os":"ubuntu-22.04","targets":"none","extension":"none","setup_args":""}]}'
+              ;;
             all)
               value='{"include":[{"platform":"android","os":"ubuntu-22.04","targets":"apk","extension":"apk","setup_args":"--no-split-per-abi"},{"platform":"linux","os":"ubuntu-22.04","targets":"deb","extension":"deb","setup_args":""},{"platform":"windows","os":"windows-2022","targets":"zip","extension":"exe","setup_args":""},{"platform":"macos","os":"macos-15","targets":"dmg","extension":"dmg","setup_args":""}]}'
               ;;
@@ -119,6 +177,7 @@ jobs:
   build:
     name: Build sealed ${{ matrix.platform }} package
     needs: verify
+    if: inputs.platform != 'verify'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     strategy:
