@@ -573,6 +573,30 @@ void main() {
       );
     });
 
+    test(
+      'uses Android VPN consent without desktop core authorization',
+      () async {
+        late _AndroidAuthorizationSetupAction setupAction;
+        final container = ProviderContainer(
+          overrides: [
+            setupActionProvider.overrideWith(() {
+              setupAction = _AndroidAuthorizationSetupAction();
+              return setupAction;
+            }),
+          ],
+        );
+        addTearDown(container.dispose);
+        container.read(setupActionProvider);
+
+        expect(await setupAction.requestAdmin(true), isTrue);
+        expect(setupAction.authorizationRequestCount, 0);
+        expect(
+          container.read(authorizedTunEnableProvider),
+          TunAuthorizationState.authorized,
+        );
+      },
+    );
+
     test('keeps tun disabled while authorization stays unauthorized', () async {
       late _AuthorizationSetupAction setupAction;
       final container = ProviderContainer(
@@ -699,6 +723,13 @@ class _AuthorizationSetupAction extends SetupAction {
   Future<AuthorizeCode> authorizeCore() async {
     return authorizationResults[authorizationRequestCount++];
   }
+}
+
+class _AndroidAuthorizationSetupAction extends _AuthorizationSetupAction {
+  _AndroidAuthorizationSetupAction() : super(const []);
+
+  @override
+  bool get isAndroidPlatform => true;
 }
 
 class _RaceSetupAction extends SetupAction {

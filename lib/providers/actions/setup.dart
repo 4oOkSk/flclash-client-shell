@@ -510,12 +510,27 @@ class SetupAction extends _$SetupAction {
     return system.authorizeCore();
   }
 
+  @protected
+  bool get isAndroidPlatform => system.isAndroid;
+
   @visibleForTesting
   Future<bool> requestAdmin(bool enableTun) async {
     if (!enableTun) {
       return true;
     }
     final authorizationState = ref.read(authorizedTunEnableProvider);
+    final requiresAuthorization = requiresPrivilegedTunCoreAuthorization(
+      isAndroid: isAndroidPlatform,
+      requestedTun: enableTun,
+      effectiveTun: authorizationState == TunAuthorizationState.authorized,
+    );
+    if (!requiresAuthorization) {
+      if (isAndroidPlatform) {
+        ref.read(authorizedTunEnableProvider.notifier).value =
+            TunAuthorizationState.authorized;
+      }
+      return true;
+    }
     if (authorizationState != TunAuthorizationState.none) {
       return true;
     }
