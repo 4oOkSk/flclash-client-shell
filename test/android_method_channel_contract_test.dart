@@ -34,4 +34,27 @@ void main() {
       );
     }
   });
+
+  test('cold quick start restores configuration without showing the app', () {
+    final quickAction = File(
+      'android/app/src/main/kotlin/com/follow/clash/QuickActionActivity.kt',
+    ).readAsStringSync();
+    final serviceState = File(
+      'android/app/src/main/kotlin/com/follow/clash/ServiceState.kt',
+    ).readAsStringSync();
+    final mainActivity = File(
+      'android/app/src/main/kotlin/com/follow/clash/MainActivity.kt',
+    ).readAsStringSync();
+    final application = File('lib/application.dart').readAsStringSync();
+
+    expect(quickAction, contains('prepareFlutterBootstrapStart()'));
+    expect(quickAction, contains('Components.mainActivity.intent'));
+    expect(serviceState, contains('consumePendingFlutterStart()'));
+    expect(mainActivity, contains('updateWindowVisibility(false)'));
+    expect(mainActivity, contains('moveTaskToBack(true)'));
+    expect(mainActivity, contains('if (!moved)'));
+    expect(mainActivity, contains('cancelPendingFlutterStart()'));
+    expect(application, contains('consumePendingQuickStart()'));
+    expect(application, contains('setRunning(true)'));
+  });
 }

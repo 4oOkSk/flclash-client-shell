@@ -17,7 +17,9 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
+import com.follow.clash.MainActivity
 import com.follow.clash.R
+import com.follow.clash.ServiceState
 import com.follow.clash.common.ClientSecureStorage
 import com.follow.clash.common.Components
 import com.follow.clash.common.GlobalState
@@ -69,6 +71,15 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             "moveTaskToBack" -> {
                 activity?.moveTaskToBack(true)
                 result.success(true)
+            }
+
+            "consumePendingQuickStart" -> {
+                result.success(ServiceState.consumePendingFlutterStart())
+            }
+
+            "backgroundPendingQuickStart" -> {
+                val mainActivity = activity as? MainActivity
+                result.success(mainActivity?.backgroundPendingQuickStart() == true)
             }
 
             "updateExcludeFromRecents" -> {

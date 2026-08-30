@@ -38,6 +38,7 @@ object ServiceState {
     private val startPreparationLock = Mutex()
     private val mutableRunState = MutableStateFlow(RunState.STOPPED)
     private val latestRequest = AtomicReference(RunRequest(running = false))
+    private val pendingFlutterStart = AtomicReference<RunRequest?>(null)
 
     @Volatile
     private var sharedState = SharedState()
@@ -64,6 +65,37 @@ object ServiceState {
         if (flutterEngine === engine) {
             flutterEngine = null
         }
+    }
+
+    fun prepareFlutterBootstrapStart(): Boolean {
+        val pending = pendingFlutterStart.get()
+        if (pending != null && isCurrent(pending)) {
+            return true
+        }
+        if (flutterEngine != null || runTimeMillis != 0L) {
+            return false
+        }
+        while (true) {
+            val current = latestRequest.get()
+            if (current.running) {
+                return false
+            }
+            val request = RunRequest(running = true)
+            if (latestRequest.compareAndSet(current, request)) {
+                pendingFlutterStart.set(request)
+                return true
+            }
+        }
+    }
+
+    fun consumePendingFlutterStart(): Boolean {
+        val request = pendingFlutterStart.getAndSet(null) ?: return false
+        return isCurrent(request)
+    }
+
+    fun cancelPendingFlutterStart() {
+        val request = pendingFlutterStart.getAndSet(null) ?: return
+        fail(request)
     }
 
     suspend fun handleToggleAction() {

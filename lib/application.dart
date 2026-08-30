@@ -48,10 +48,15 @@ class ApplicationState extends ConsumerState<Application> {
     super.initState();
     SystemNavigator.setFrameworkHandlesBack(true);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      final pendingQuickStart = await app?.consumePendingQuickStart() == true;
       if (globalState.navigatorKey.currentContext != null) {
         await globalState.attach();
       } else {
         exit(0);
+      }
+      if (pendingQuickStart) {
+        await app?.backgroundPendingQuickStart();
+        await ref.read(setupActionProvider.notifier).setRunning(true);
       }
       _autoUpdateProfilesTask();
       _initLink();

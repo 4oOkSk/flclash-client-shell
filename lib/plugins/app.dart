@@ -34,6 +34,20 @@ class App {
     return methodChannel.invokeMethod<bool>('moveTaskToBack');
   }
 
+  Future<bool> consumePendingQuickStart() async {
+    if (!Platform.isAndroid) return false;
+    return await methodChannel.invokeMethod<bool>('consumePendingQuickStart') ??
+        false;
+  }
+
+  Future<bool> backgroundPendingQuickStart() async {
+    if (!Platform.isAndroid) return false;
+    return await methodChannel.invokeMethod<bool>(
+          'backgroundPendingQuickStart',
+        ) ??
+        false;
+  }
+
   Future<List<Package>> getPackages() async {
     final packagesString = await methodChannel.invokeMethod<String>(
       'getPackages',
