@@ -27,6 +27,13 @@ const (
 	clientMainlandDNSPolicy       = "geosite:cn"
 )
 
+var clientReturnGeoSites = [...]string{
+	"google-cn",
+	"apple-cn",
+	"microsoft@cn",
+	"category-games@cn",
+}
+
 type ClientRouteOverlay struct {
 	Rules         []string                            `json:"rules"`
 	RuleProviders map[string]ClientRuleProviderConfig `json:"rule-providers"`
@@ -359,13 +366,20 @@ func buildClientManagedRules(primaryGroup string, routing *ClientManagedRouting)
 	if routing.effectiveMode().splitPolicy() {
 		rules := []string{
 			"AND,((NETWORK,UDP),(DST-PORT,443)),REJECT",
-			"GEOSITE,google," + targets.Overseas,
-			"GEOSITE,youtube," + targets.Overseas,
-			"GEOSITE,google-play," + targets.Overseas,
+		}
+		if routing.effectiveMode() == clientManagedRouteBypassOverseas {
+			for _, geosite := range clientReturnGeoSites {
+				rules = append(rules, "GEOSITE,"+geosite+","+targets.Mainland)
+			}
+		}
+		rules = append(rules,
+			"GEOSITE,google,"+targets.Overseas,
+			"GEOSITE,youtube,"+targets.Overseas,
+			"GEOSITE,google-play,"+targets.Overseas,
 			"GEOIP,private,DIRECT,no-resolve",
 			"GEOIP,LAN,DIRECT,no-resolve",
 			"GEOSITE,private,DIRECT",
-		}
+		)
 		if routing.RejectIPv6 {
 			rules = append(rules, "IP-CIDR6,::/0,REJECT,no-resolve")
 		}
@@ -458,9 +472,15 @@ func applyClientManagedDocument(document map[string]any, routing *ClientManagedR
 	dns["default-nameserver"] = []any{"223.5.5.5", "119.29.29.29"}
 	dns["proxy-server-nameserver"] = []any{"223.5.5.5", "119.29.29.29"}
 	dns["nameserver"] = []any{clientOtherDNS}
-	dns["nameserver-policy"] = map[string]any{
+	nameServerPolicy := map[string]any{
 		clientMainlandDNSPolicy: []any{clientMainlandDNS},
 	}
+	if routing.effectiveMode() == clientManagedRouteBypassOverseas {
+		for _, geosite := range clientReturnGeoSites {
+			nameServerPolicy["geosite:"+geosite] = []any{clientMainlandDNS}
+		}
+	}
+	dns["nameserver-policy"] = nameServerPolicy
 	for _, key := range []string{
 		"proxy-server-nameserver-policy",
 		"direct-nameserver",

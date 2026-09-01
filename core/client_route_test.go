@@ -320,11 +320,28 @@ func TestManagedDNSUsesSplitTCPResolversAndFollowsIPRules(t *testing.T) {
 			t.Fatalf("routing %#v: managed DNS routing mode = %#v", routing, dns)
 		}
 		policy, ok := dns["nameserver-policy"].(map[string]any)
-		if !ok || len(policy) != 1 {
+		wantPolicySize := 1
+		if mode == clientManagedRouteBypassOverseas {
+			wantPolicySize += len(clientReturnGeoSites)
+		}
+		if !ok || len(policy) != wantPolicySize {
 			t.Fatalf("routing %#v: mainland DNS policy = %#v", routing, dns["nameserver-policy"])
 		}
 		if got := anyStrings(policy[clientMainlandDNSPolicy].([]any)); strings.Join(got, "\x00") != clientMainlandDNS {
 			t.Fatalf("routing %#v: mainland nameserver = %#v", routing, got)
+		}
+		for _, geosite := range clientReturnGeoSites {
+			key := "geosite:" + geosite
+			value, exists := policy[key]
+			if mode != clientManagedRouteBypassOverseas {
+				if exists {
+					t.Fatalf("routing %#v: unexpected return DNS policy %q", routing, key)
+				}
+				continue
+			}
+			if !exists || strings.Join(anyStrings(value.([]any)), "\x00") != clientMainlandDNS {
+				t.Fatalf("routing %#v: return nameserver %q = %#v", routing, key, value)
+			}
 		}
 	}
 }
@@ -652,13 +669,20 @@ func TestBuildClientManagedRulesMatchesV2rayNGSplitPolicy(t *testing.T) {
 		)
 		want := []string{
 			"AND,((NETWORK,UDP),(DST-PORT,443)),REJECT",
-			"GEOSITE,google," + test.overseasTarget,
-			"GEOSITE,youtube," + test.overseasTarget,
-			"GEOSITE,google-play," + test.overseasTarget,
+		}
+		if test.mode == clientManagedRouteBypassOverseas {
+			for _, geosite := range clientReturnGeoSites {
+				want = append(want, "GEOSITE,"+geosite+","+test.mainlandTarget)
+			}
+		}
+		want = append(want,
+			"GEOSITE,google,"+test.overseasTarget,
+			"GEOSITE,youtube,"+test.overseasTarget,
+			"GEOSITE,google-play,"+test.overseasTarget,
 			"GEOIP,private,DIRECT,no-resolve",
 			"GEOIP,LAN,DIRECT,no-resolve",
 			"GEOSITE,private,DIRECT",
-		}
+		)
 		for _, rule := range dnsAddressRules {
 			want = append(want, rule+","+test.mainlandTarget+",no-resolve")
 		}

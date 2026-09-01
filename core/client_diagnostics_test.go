@@ -76,6 +76,18 @@ func TestClientTrackerDiagnosticsExposeOnlyFixedCategories(t *testing.T) {
 			}
 		})
 	}
+	for _, geosite := range clientReturnGeoSites {
+		t.Run("return "+geosite, func(t *testing.T) {
+			info := &statistic.TrackerInfo{
+				Rule:        "GeoSite",
+				RulePayload: geosite,
+			}
+			annotateClientTrackerDiagnostics(info)
+			if info.DiagnosticRule != "domain" || info.DiagnosticPolicy != "mainland-domain" {
+				t.Fatalf("return geosite diagnostics = %q/%q", info.DiagnosticRule, info.DiagnosticPolicy)
+			}
+		})
+	}
 }
 
 func TestClientDiagnosticRouteUsesOnlyFixedCategories(t *testing.T) {

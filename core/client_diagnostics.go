@@ -70,7 +70,7 @@ func clientDiagnosticPolicy(ruleType string, payload string) string {
 		return "overseas-service"
 	case rule == "geosite" && value == "geolocation-!cn":
 		return "overseas-domain"
-	case rule == "geosite" && (value == "cn" || value == "geolocation-cn" || value == "tld-cn"):
+	case rule == "geosite" && (value == "cn" || value == "geolocation-cn" || value == "tld-cn" || clientReturnGeoSite(value)):
 		return "mainland-domain"
 	case rule == "geoip" && value == "cn":
 		return "mainland-ip"
@@ -81,4 +81,13 @@ func clientDiagnosticPolicy(ruleType string, payload string) string {
 	default:
 		return "other"
 	}
+}
+
+func clientReturnGeoSite(value string) bool {
+	for _, geosite := range clientReturnGeoSites {
+		if value == geosite {
+			return true
+		}
+	}
+	return false
 }
