@@ -179,6 +179,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           configured: patchConfig.ipv6,
           privateClientMode: true,
           isAndroid: system.isAndroid,
+          managedRouteMode: network.managedRouteMode,
         ),
         'config.groups': groups.length,
         'selection.mode': selectionMode,

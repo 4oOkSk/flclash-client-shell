@@ -149,7 +149,7 @@ void main() {
     );
   });
 
-  test('managed Android captures IPv6 but keeps managed DNS IPv4-only', () {
+  test('managed Android split routing captures and classifies IPv6', () {
     expect(
       effectiveClientIpv6(
         configured: false,
@@ -163,9 +163,36 @@ void main() {
         configured: true,
         privateClientMode: true,
         isAndroid: true,
+        managedRouteMode: ManagedRouteMode.bypassMainland,
       ),
-      isFalse,
+      isTrue,
     );
+    expect(
+      effectiveClientCoreIpv6(
+        configured: true,
+        privateClientMode: true,
+        isAndroid: true,
+        managedRouteMode: ManagedRouteMode.bypassOverseas,
+      ),
+      isTrue,
+    );
+  });
+
+  test('managed Android global modes retain IPv6 rejection', () {
+    for (final mode in [
+      ManagedRouteMode.global,
+      ManagedRouteMode.directAllLegacy,
+    ]) {
+      expect(
+        effectiveClientCoreIpv6(
+          configured: true,
+          privateClientMode: true,
+          isAndroid: true,
+          managedRouteMode: mode,
+        ),
+        isFalse,
+      );
+    }
   });
 
   test('desktop and generic clients preserve the configured core IPv6', () {
@@ -174,6 +201,7 @@ void main() {
         configured: true,
         privateClientMode: true,
         isAndroid: false,
+        managedRouteMode: ManagedRouteMode.bypassMainland,
       ),
       isTrue,
     );
@@ -182,6 +210,7 @@ void main() {
         configured: false,
         privateClientMode: false,
         isAndroid: true,
+        managedRouteMode: ManagedRouteMode.bypassMainland,
       ),
       isFalse,
     );

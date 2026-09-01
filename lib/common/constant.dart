@@ -230,16 +230,16 @@ bool effectiveClientIpv6({
   required bool isAndroid,
 }) => configured || privateClientMode;
 
-/// Managed Android keeps the platform IPv6 route inside VpnService so traffic
-/// cannot bypass the tunnel, but the embedded core deliberately rejects IPv6
-/// and AAAA answers. Applications can still send literal IPv6 destinations
-/// learned through HTTPDNS; the Android runtime test covers that data path.
-/// Desktop managed clients retain their existing dual-stack behavior.
 bool effectiveClientCoreIpv6({
   required bool configured,
   required bool privateClientMode,
   required bool isAndroid,
-}) => privateClientMode && isAndroid ? false : configured;
+  required ManagedRouteMode managedRouteMode,
+}) {
+  if (!privateClientMode || !isAndroid) return configured;
+  return managedRouteMode == ManagedRouteMode.bypassMainland ||
+      managedRouteMode == ManagedRouteMode.bypassOverseas;
+}
 
 /// Managed clients use TUN only. Advertising the local mixed port as an
 /// additional platform HTTP proxy creates a second, protocol-limited path and

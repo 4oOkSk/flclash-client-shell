@@ -88,6 +88,9 @@ UpdateParams updateParams(Ref ref) {
   final routeMode = ref.watch(
     networkSettingProvider.select((state) => state.routeMode),
   );
+  final managedRouteMode = ref.watch(
+    networkSettingProvider.select((state) => state.managedRouteMode),
+  );
   return ref.watch(
     patchClashConfigProvider.select(
       (state) => UpdateParams(
@@ -102,6 +105,7 @@ UpdateParams updateParams(Ref ref) {
           configured: state.ipv6,
           privateClientMode: kPrivateClientMode,
           isAndroid: system.isAndroid,
+          managedRouteMode: managedRouteMode,
         ),
         tcpConcurrent: state.tcpConcurrent,
         externalController: kPrivateClientMode

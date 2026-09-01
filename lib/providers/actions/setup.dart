@@ -407,12 +407,14 @@ class SetupAction extends _$SetupAction {
     final testUrl = ref.read(
       appSettingProvider.select((state) => state.testUrl),
     );
+    final managedRouteMode = ref.read(networkSettingProvider).managedRouteMode;
     final managedRouting = PrivateManagedRouting(
-      mode: ref.read(networkSettingProvider).managedRouteMode,
+      mode: managedRouteMode,
       rejectIpv6: !effectiveClientCoreIpv6(
         configured: ref.read(patchClashConfigProvider).ipv6,
         privateClientMode: true,
         isAndroid: system.isAndroid,
+        managedRouteMode: managedRouteMode,
       ),
     );
     var routeOverlay = PrivateRouteOverlay(managedRouting: managedRouting);

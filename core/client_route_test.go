@@ -188,18 +188,16 @@ func TestApplyClientRouteOverlayBuildsManagedRouting(t *testing.T) {
 	if err := commonYaml.Unmarshal([]byte(merged), &view); err != nil {
 		t.Fatalf("merged YAML view error = %v", err)
 	}
-	wantRules := []string{
-		"DOMAIN,local.example,DIRECT",
-		"GEOIP,private,DIRECT,no-resolve",
-		"GEOIP,LAN,DIRECT,no-resolve",
-		"IP-CIDR6,::/0,REJECT,no-resolve",
-		"GEOSITE,google," + clientManagedServerGroup,
-		"GEOSITE,youtube," + clientManagedServerGroup,
-		"GEOSITE,google-play," + clientManagedServerGroup,
-		"GEOSITE,cn,DIRECT",
-		"GEOIP,CN,DIRECT",
-		"MATCH," + clientManagedServerGroup,
-	}
+	wantRules := append(
+		[]string{"DOMAIN,local.example,DIRECT"},
+		buildClientManagedRules(
+			clientManagedServerGroup,
+			&ClientManagedRouting{
+				Mode:       clientManagedRouteBypassMainland,
+				RejectIPv6: true,
+			},
+		)...,
+	)
 	if strings.Join(view.Rules, "\n") != strings.Join(wantRules, "\n") {
 		t.Fatalf("managed rules = %#v", view.Rules)
 	}
@@ -249,6 +247,21 @@ func TestApplyClientRouteOverlayBuildsManagedRouting(t *testing.T) {
 	profile, ok := document["profile"].(map[string]any)
 	if !ok || profile["store-fake-ip"] != false {
 		t.Fatalf("managed profile retained fake IP persistence: %#v", document["profile"])
+	}
+	sniffer, ok := document["sniffer"].(map[string]any)
+	if !ok || sniffer["enable"] != true || sniffer["override-destination"] != true ||
+		sniffer["force-dns-mapping"] != true || sniffer["parse-pure-ip"] != true {
+		t.Fatalf("managed split sniffer = %#v", document["sniffer"])
+	}
+	sniff, ok := sniffer["sniff"].(map[string]any)
+	if !ok {
+		t.Fatalf("managed split protocols = %#v", sniffer["sniff"])
+	}
+	for _, protocol := range []string{"HTTP", "TLS", "QUIC"} {
+		config, ok := sniff[protocol].(map[string]any)
+		if !ok || strings.Join(anyStrings(config["ports"].([]any)), "\x00") != "1-65535" {
+			t.Fatalf("managed split %s sniffer = %#v", protocol, sniff[protocol])
+		}
 	}
 	if !strings.Contains(merged, "192.0.2.10") {
 		t.Fatal("base proxy was lost")
@@ -312,6 +325,78 @@ func TestManagedDNSUsesSplitTCPResolversAndFollowsIPRules(t *testing.T) {
 		}
 		if got := anyStrings(policy[clientMainlandDNSPolicy].([]any)); strings.Join(got, "\x00") != clientMainlandDNS {
 			t.Fatalf("routing %#v: mainland nameserver = %#v", routing, got)
+		}
+	}
+}
+
+func TestManagedGlobalModesPreserveBaseSniffer(t *testing.T) {
+	configYAML := clientRouteTestConfig + `
+sniffer:
+  enable: true
+  sniff:
+    TLS:
+      ports: [8443]
+  skip-domain:
+    - +.push.apple.com
+`
+	for _, mode := range []ClientManagedRouteMode{
+		clientManagedRouteGlobal,
+		clientManagedRouteDirectAllLegacy,
+	} {
+		merged, err := applyClientRouteOverlay(
+			configYAML,
+			&ClientRouteOverlay{Managed: &ClientManagedRouting{Mode: mode}},
+		)
+		if err != nil {
+			t.Fatalf("mode %s: error = %v", mode, err)
+		}
+		var document map[string]any
+		if err := commonYaml.Unmarshal([]byte(merged), &document); err != nil {
+			t.Fatalf("mode %s: merged YAML error = %v", mode, err)
+		}
+		sniffer, _ := document["sniffer"].(map[string]any)
+		sniff, _ := sniffer["sniff"].(map[string]any)
+		if len(sniff) != 1 {
+			t.Fatalf("mode %s changed sniffer protocols: %#v", mode, sniff)
+		}
+		tls, _ := sniff["TLS"].(map[string]any)
+		if strings.Join(anyStrings(tls["ports"].([]any)), "\x00") != "8443" {
+			t.Fatalf("mode %s changed TLS ports: %#v", mode, tls)
+		}
+		if got := anyStrings(sniffer["skip-domain"].([]any)); strings.Join(got, "\x00") != "+.push.apple.com" {
+			t.Fatalf("mode %s changed skip-domain: %#v", mode, got)
+		}
+	}
+}
+
+func TestManagedSplitModesPreserveSnifferExclusions(t *testing.T) {
+	configYAML := clientRouteTestConfig + `
+sniffer:
+  enable: true
+  sniff:
+    TLS:
+      ports: [8443]
+  skip-domain:
+    - +.push.apple.com
+`
+	for _, mode := range []ClientManagedRouteMode{
+		clientManagedRouteBypassMainland,
+		clientManagedRouteBypassOverseas,
+	} {
+		merged, err := applyClientRouteOverlay(
+			configYAML,
+			&ClientRouteOverlay{Managed: &ClientManagedRouting{Mode: mode}},
+		)
+		if err != nil {
+			t.Fatalf("mode %s: error = %v", mode, err)
+		}
+		var document map[string]any
+		if err := commonYaml.Unmarshal([]byte(merged), &document); err != nil {
+			t.Fatalf("mode %s: merged YAML error = %v", mode, err)
+		}
+		sniffer, _ := document["sniffer"].(map[string]any)
+		if got := anyStrings(sniffer["skip-domain"].([]any)); strings.Join(got, "\x00") != "+.push.apple.com" {
+			t.Fatalf("mode %s changed skip-domain: %#v", mode, got)
 		}
 	}
 }
@@ -461,23 +546,19 @@ func TestManagedRoutingKeepsLocalRuleProviderAheadOfIPPolicy(t *testing.T) {
 	if err := commonYaml.Unmarshal([]byte(merged), &view); err != nil {
 		t.Fatalf("merged YAML error = %v", err)
 	}
-	if len(view.Rules) != 9 || !strings.HasPrefix(view.Rules[0], "RULE-SET,__neutralvendor_local_") {
+	if len(view.Rules) < 2 || !strings.HasPrefix(view.Rules[0], "RULE-SET,__neutralvendor_local_") {
 		t.Fatalf("local provider rule is not first: %#v", view.Rules)
 	}
 	if len(view.RuleProviders) != 1 {
 		t.Fatalf("local provider missing: %#v", view.RuleProviders)
 	}
-	wantRules := []string{
-		view.Rules[0],
-		"GEOIP,private,DIRECT,no-resolve",
-		"GEOIP,LAN,DIRECT,no-resolve",
-		"GEOSITE,google," + clientManagedServerGroup,
-		"GEOSITE,youtube," + clientManagedServerGroup,
-		"GEOSITE,google-play," + clientManagedServerGroup,
-		"GEOSITE,cn,DIRECT",
-		"GEOIP,CN,DIRECT",
-		"MATCH," + clientManagedServerGroup,
-	}
+	wantRules := append(
+		[]string{view.Rules[0]},
+		buildClientManagedRules(
+			clientManagedServerGroup,
+			&ClientManagedRouting{Mode: clientManagedRouteBypassMainland},
+		)...,
+	)
 	if strings.Join(view.Rules, "\n") != strings.Join(wantRules, "\n") {
 		t.Fatalf("managed IP policy changed: %#v", view.Rules)
 	}
@@ -491,7 +572,7 @@ func anyStrings(values []any) []string {
 	return result
 }
 
-func TestBuildClientManagedRulesMatchesFourModes(t *testing.T) {
+func TestBuildClientManagedRulesKeepsGlobalModes(t *testing.T) {
 	tests := []struct {
 		name         string
 		mode         ClientManagedRouteMode
@@ -499,8 +580,6 @@ func TestBuildClientManagedRulesMatchesFourModes(t *testing.T) {
 		wantOverseas string
 	}{
 		{"global", clientManagedRouteGlobal, "Proxy", "Proxy"},
-		{"bypass mainland", clientManagedRouteBypassMainland, "DIRECT", "Proxy"},
-		{"bypass overseas", clientManagedRouteBypassOverseas, "Proxy", "DIRECT"},
 		{"legacy direct all", clientManagedRouteDirectAllLegacy, "DIRECT", "DIRECT"},
 	}
 	for _, test := range tests {
@@ -537,13 +616,68 @@ func TestBuildClientManagedRulesMatchesFourModes(t *testing.T) {
 	}
 }
 
-func TestBuildClientManagedRulesRejectsAndroidLiteralIPv6BeforeRouting(t *testing.T) {
-	rules := buildClientManagedRules("Proxy", &ClientManagedRouting{
-		Mode:       clientManagedRouteBypassMainland,
-		RejectIPv6: true,
-	})
-	if len(rules) != 9 || rules[2] != "IP-CIDR6,::/0,REJECT,no-resolve" {
-		t.Fatalf("Android IPv6 reject rule = %#v", rules)
+func TestBuildClientManagedRulesMatchesV2rayNGSplitPolicy(t *testing.T) {
+	dnsAddressRules := []string{
+		"IP-CIDR,223.5.5.5/32", "IP-CIDR,223.6.6.6/32",
+		"IP-CIDR6,2400:3200::1/128", "IP-CIDR6,2400:3200:baba::1/128",
+		"IP-CIDR,119.29.29.29/32", "IP-CIDR,1.12.12.12/32",
+		"IP-CIDR,120.53.53.53/32", "IP-CIDR6,2402:4e00::/128",
+		"IP-CIDR6,2402:4e00:1::/128", "IP-CIDR,180.76.76.76/32",
+		"IP-CIDR6,2400:da00::6666/128", "IP-CIDR,114.114.114.114/32",
+		"IP-CIDR,114.114.115.115/32", "IP-CIDR,114.114.114.119/32",
+		"IP-CIDR,114.114.115.119/32", "IP-CIDR,114.114.114.110/32",
+		"IP-CIDR,114.114.115.110/32", "IP-CIDR,180.184.1.1/32",
+		"IP-CIDR,180.184.2.2/32", "IP-CIDR,101.226.4.6/32",
+		"IP-CIDR,218.30.118.6/32", "IP-CIDR,123.125.81.6/32",
+		"IP-CIDR,140.207.198.6/32", "IP-CIDR,1.2.4.8/32",
+		"IP-CIDR,210.2.4.8/32", "IP-CIDR,52.80.66.66/32",
+		"IP-CIDR,117.50.22.22/32", "IP-CIDR6,2400:7fc0:849e:200::4/128",
+		"IP-CIDR6,2404:c2c0:85d8:901::4/128", "IP-CIDR,117.50.10.10/32",
+		"IP-CIDR,52.80.52.52/32", "IP-CIDR6,2400:7fc0:849e:200::8/128",
+		"IP-CIDR6,2404:c2c0:85d8:901::8/128", "IP-CIDR,117.50.60.30/32",
+		"IP-CIDR,52.80.60.30/32",
+	}
+	tests := []struct {
+		mode           ClientManagedRouteMode
+		mainlandTarget string
+		overseasTarget string
+	}{
+		{clientManagedRouteBypassMainland, "DIRECT", "Proxy"},
+		{clientManagedRouteBypassOverseas, "Proxy", "DIRECT"},
+	}
+	for _, test := range tests {
+		rules := buildClientManagedRules(
+			"Proxy",
+			&ClientManagedRouting{Mode: test.mode},
+		)
+		want := []string{
+			"AND,((NETWORK,UDP),(DST-PORT,443)),REJECT",
+			"GEOSITE,google," + test.overseasTarget,
+			"GEOSITE,youtube," + test.overseasTarget,
+			"GEOSITE,google-play," + test.overseasTarget,
+			"GEOIP,private,DIRECT,no-resolve",
+			"GEOIP,LAN,DIRECT,no-resolve",
+			"GEOSITE,private,DIRECT",
+		}
+		for _, rule := range dnsAddressRules {
+			want = append(want, rule+","+test.mainlandTarget+",no-resolve")
+		}
+		want = append(want,
+			"DOMAIN-SUFFIX,alidns.com,"+test.mainlandTarget,
+			"DOMAIN-SUFFIX,doh.pub,"+test.mainlandTarget,
+			"DOMAIN-SUFFIX,dot.pub,"+test.mainlandTarget,
+			"DOMAIN-SUFFIX,360.cn,"+test.mainlandTarget,
+			"DOMAIN-SUFFIX,onedns.net,"+test.mainlandTarget,
+			"GEOIP,CN,"+test.mainlandTarget+",no-resolve",
+			"GEOSITE,cn,"+test.mainlandTarget,
+			"MATCH,"+test.overseasTarget,
+		)
+		if strings.Join(rules, "\n") != strings.Join(want, "\n") {
+			t.Fatalf("mode %s rules = %#v, want %#v", test.mode, rules, want)
+		}
+		if strings.Contains(strings.Join(rules, "\n"), "IP-CIDR6,::/0,REJECT") {
+			t.Fatalf("mode %s rejected all IPv6: %#v", test.mode, rules)
+		}
 	}
 }
 
