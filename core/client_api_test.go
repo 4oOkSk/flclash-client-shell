@@ -187,8 +187,6 @@ func TestClientAuthenticationStatusClearsStateWithoutJSON(t *testing.T) {
 	}{
 		{name: "unauthorized empty", status: http.StatusUnauthorized},
 		{name: "unauthorized html", status: http.StatusUnauthorized, body: "<html>unauthorized</html>"},
-		{name: "forbidden empty", status: http.StatusForbidden},
-		{name: "forbidden html", status: http.StatusForbidden, body: "<html>forbidden</html>"},
 	}
 
 	for _, test := range tests {
@@ -235,6 +233,73 @@ func TestClientAuthenticationStatusClearsStateWithoutJSON(t *testing.T) {
 			for _, path := range []string{clientSessionPath(), clientConfigPath(), cachePath()} {
 				if _, statErr := os.Stat(path); !errors.Is(statErr, os.ErrNotExist) {
 					t.Fatalf("rejected client state still exists at %s: %v", path, statErr)
+				}
+			}
+		})
+	}
+}
+
+func TestClientConfigForbiddenPreservesStateAndReturnsReason(t *testing.T) {
+	setupEnrollTestSecrets(t)
+	oldHome := constant.Path.HomeDir()
+	t.Cleanup(func() { constant.SetHomeDir(oldHome) })
+
+	tests := []struct {
+		name    string
+		body    string
+		message string
+	}{
+		{name: "json reason", body: `{"ret":0,"msg":"account expired"}`, message: "account expired"},
+		{name: "empty", message: "403 Forbidden"},
+		{name: "html", body: "<html>forbidden</html>", message: "403 Forbidden"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			constant.SetHomeDir(t.TempDir())
+			const session = "restricted-session"
+			const config = "mixed-port: 7890\n"
+			if err := saveEncryptedFile(clientSessionPath(), []byte(session)); err != nil {
+				t.Fatal(err)
+			}
+			envelope, err := json.Marshal(clientConfigCacheEnvelope{
+				SessionID: clientSessionID(session),
+				Etag:      "restricted-etag",
+				Config:    config,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := saveEncryptedFile(clientConfigPath(), envelope); err != nil {
+				t.Fatal(err)
+			}
+			if err := saveConfigCache(config); err != nil {
+				t.Fatal(err)
+			}
+
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusForbidden)
+				_, _ = w.Write([]byte(test.body))
+			}))
+			defer srv.Close()
+
+			got, err := fetchConfigFromClient(srv.URL, 0)
+			if got != "" {
+				t.Fatalf("forbidden config request fell back to cache: %q", got)
+			}
+			var accessError clientConfigAccessError
+			if !errors.As(err, &accessError) {
+				t.Fatalf("expected config access error, got %v", err)
+			}
+			if message := clientSetupErrorMessage(err); message != test.message {
+				t.Fatalf("unexpected setup error message: %q", message)
+			}
+			if !clientHasSession() {
+				t.Fatal("forbidden config request cleared the client session")
+			}
+			for _, path := range []string{clientSessionPath(), clientConfigPath(), cachePath()} {
+				if _, statErr := os.Stat(path); statErr != nil {
+					t.Fatalf("forbidden config request removed %s: %v", path, statErr)
 				}
 			}
 		})

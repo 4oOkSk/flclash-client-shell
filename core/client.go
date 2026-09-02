@@ -26,6 +26,12 @@ type clientHardError struct {
 
 func (e clientHardError) Error() string { return e.message }
 
+type clientConfigAccessError struct {
+	message string
+}
+
+func (e clientConfigAccessError) Error() string { return e.message }
+
 type clientLoginResponseError struct {
 	message string
 }
@@ -312,6 +318,10 @@ func fetchConfigFromClient(endpoint string, refreshInterval time.Duration) (stri
 		}
 		return "", err
 	}
+	if _, ok := err.(clientConfigAccessError); ok {
+		refreshResult = "access-denied"
+		return "", err
+	}
 	if cached, _, cerr := loadClientConfigCache(sessionID); cerr == nil && cached != "" {
 		refreshResult = "offline-cache"
 		return cached, nil
@@ -453,16 +463,6 @@ func fetchClientConfigOnline(endpoint, session, etag string) (string, *clientAcc
 	if resp.StatusCode == http.StatusNotModified {
 		return "", nil, strings.Trim(resp.Header.Get("ETag"), `"`), true, nil
 	}
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		wire, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
-		var authResponse struct {
-			Msg string `json:"msg"`
-		}
-		if json.Unmarshal(wire, &authResponse) == nil && authResponse.Msg != "" {
-			return "", nil, "", false, clientHardError{message: authResponse.Msg}
-		}
-		return "", nil, "", false, clientHardError{message: resp.Status}
-	}
 	wire, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if err != nil {
 		return "", nil, "", false, err
@@ -473,7 +473,21 @@ func fetchClientConfigOnline(endpoint, session, etag string) (string, *clientAcc
 		Etag   string `json:"etag"`
 		Cipher string `json:"cipher"`
 	}
-	if err := json.Unmarshal(wire, &fr); err != nil {
+	decodeErr := json.Unmarshal(wire, &fr)
+	message := strings.TrimSpace(fr.Msg)
+	if resp.StatusCode == http.StatusUnauthorized {
+		if message == "" {
+			message = resp.Status
+		}
+		return "", nil, "", false, clientHardError{message: message}
+	}
+	if resp.StatusCode == http.StatusForbidden {
+		if message == "" {
+			message = resp.Status
+		}
+		return "", nil, "", false, clientConfigAccessError{message: message}
+	}
+	if decodeErr != nil {
 		return "", nil, "", false, errors.New("client config response malformed")
 	}
 	if resp.StatusCode != 200 || fr.Ret != 1 || fr.Cipher == "" {
@@ -541,6 +555,9 @@ func clientSetupErrorMessage(err error) string {
 		// wording may change or be localized; it must not turn transient config
 		// failures into an endless password prompt.
 		return clientLoginRequiredMessage
+	}
+	if accessErr, ok := err.(clientConfigAccessError); ok {
+		return accessErr.message
 	}
 	return "client config update failed"
 }
