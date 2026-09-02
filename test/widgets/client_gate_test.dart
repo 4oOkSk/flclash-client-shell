@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/private_client_config.dart';
 import 'package:fl_clash/common/theme.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/pages/client_gate.dart';
@@ -114,6 +115,36 @@ void main() {
     expect(setupAttempts, 2);
     expect(find.text('home'), findsOneWidget);
     expect(find.byIcon(Icons.error_outline), findsNothing);
+  });
+
+  testWidgets('returns to login when the session is invalidated at runtime', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _TestApp(
+          child: ClientGate(
+            sessionCheck: () async => true,
+            configSetup: () async => '',
+            child: const Text('home'),
+          ),
+        ),
+      ),
+    );
+
+    container.read(initProvider.notifier).value = true;
+    await tester.pumpAndSettle();
+    expect(find.text('home'), findsOneWidget);
+
+    notifyClientAuthenticationRequired();
+    await tester.pump();
+
+    expect(find.text('home'), findsNothing);
+    expect(find.byType(TextField), findsNWidgets(3));
   });
 }
 

@@ -1,5 +1,14 @@
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:flutter/foundation.dart';
+
+const clientLoginRequiredMessage = 'client login required';
+const privateClientSessionRefreshDuration = Duration(minutes: 20);
+final clientAuthenticationRequiredNotifier = ValueNotifier<int>(0);
+
+void notifyClientAuthenticationRequired() {
+  clientAuthenticationRequiredNotifier.value += 1;
+}
 
 const privateClientHiddenDashboardWidgets = <DashboardWidget>{
   DashboardWidget.outboundMode,

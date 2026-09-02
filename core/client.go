@@ -306,7 +306,11 @@ func fetchConfigFromClient(endpoint string, refreshInterval time.Duration) (stri
 		return cfg, nil
 	}
 	if _, ok := err.(clientHardError); ok {
-		refreshResult = "authentication-failed"
+		if clearErr := clearClientAuthenticationState(); clearErr != nil {
+			refreshResult = "authentication-clear-failed"
+		} else {
+			refreshResult = "authentication-failed"
+		}
 		return "", err
 	}
 	if cached, _, cerr := loadClientConfigCache(sessionID); cerr == nil && cached != "" {
@@ -387,6 +391,15 @@ func clientAccountInfoJSON() string {
 func clearClientConfigState() error {
 	pendingClientConfigCache = nil
 	return removeClientFiles(clientConfigPath(), cachePath())
+}
+
+func clearClientAuthenticationState() error {
+	pendingClientConfigCache = nil
+	return removeClientFiles(
+		clientSessionPath(),
+		clientConfigPath(),
+		cachePath(),
+	)
 }
 
 func removeClientFiles(paths ...string) error {

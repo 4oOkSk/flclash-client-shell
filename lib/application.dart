@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/hotkey_manager.dart';
 import 'package:fl_clash/manager/manager.dart';
@@ -93,14 +94,24 @@ class ApplicationState extends ConsumerState<Application> {
 
   void _autoUpdateProfilesTask() {
     _autoUpdateProfilesTaskTimer = Timer(const Duration(minutes: 20), () async {
-      if (kPrivateClientMode) {
-        await ref
-            .read(setupActionProvider.notifier)
-            .applyProfile(silence: true);
-      } else {
-        await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
+      try {
+        if (kPrivateClientMode) {
+          await ref
+              .read(setupActionProvider.notifier)
+              .applyProfile(silence: true);
+        } else {
+          await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
+        }
+      } catch (error) {
+        commonPrint.log(
+          'Automatic profile update failed: ${error.runtimeType}',
+          logLevel: LogLevel.warning,
+        );
+      } finally {
+        if (mounted) {
+          _autoUpdateProfilesTask();
+        }
       }
-      _autoUpdateProfilesTask();
     });
   }
 

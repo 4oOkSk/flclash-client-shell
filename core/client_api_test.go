@@ -132,6 +132,102 @@ func TestClientClearWorksOffline(t *testing.T) {
 	}
 }
 
+func TestClientAuthenticationFailureClearsLocalAuthenticationState(t *testing.T) {
+	setupEnrollTestSecrets(t)
+	oldHome := constant.Path.HomeDir()
+	constant.SetHomeDir(t.TempDir())
+	t.Cleanup(func() { constant.SetHomeDir(oldHome) })
+
+	const session = "revoked-session"
+	const config = "mixed-port: 7890\n"
+	if err := saveEncryptedFile(clientSessionPath(), []byte(session)); err != nil {
+		t.Fatal(err)
+	}
+	envelope, err := json.Marshal(clientConfigCacheEnvelope{
+		SessionID: clientSessionID(session),
+		Etag:      "revoked-etag",
+		Config:    config,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := saveEncryptedFile(clientConfigPath(), envelope); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveConfigCache(config); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ret": 0, "msg": "authentication required"})
+	}))
+	defer srv.Close()
+
+	_, err = fetchConfigFromClient(srv.URL, 0)
+	var hardError clientHardError
+	if !errors.As(err, &hardError) {
+		t.Fatalf("expected authentication error, got %v", err)
+	}
+	if clientHasSession() {
+		t.Fatal("revoked client session still exists")
+	}
+	for _, path := range []string{clientSessionPath(), clientConfigPath(), cachePath()} {
+		if _, statErr := os.Stat(path); !errors.Is(statErr, os.ErrNotExist) {
+			t.Fatalf("revoked client state still exists at %s: %v", path, statErr)
+		}
+	}
+}
+
+func TestClientServiceFailurePreservesLocalAuthenticationState(t *testing.T) {
+	setupEnrollTestSecrets(t)
+	oldHome := constant.Path.HomeDir()
+	constant.SetHomeDir(t.TempDir())
+	t.Cleanup(func() { constant.SetHomeDir(oldHome) })
+
+	const session = "offline-cache-session"
+	const config = "mixed-port: 7890\n"
+	if err := saveEncryptedFile(clientSessionPath(), []byte(session)); err != nil {
+		t.Fatal(err)
+	}
+	envelope, err := json.Marshal(clientConfigCacheEnvelope{
+		SessionID: clientSessionID(session),
+		Etag:      "offline-etag",
+		Config:    config,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := saveEncryptedFile(clientConfigPath(), envelope); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveConfigCache(config); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ret": 0, "msg": "service unavailable"})
+	}))
+	defer srv.Close()
+
+	got, err := fetchConfigFromClient(srv.URL, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != config {
+		t.Fatalf("unexpected offline config: %q", got)
+	}
+	if !clientHasSession() {
+		t.Fatal("transient service failure cleared the client session")
+	}
+	for _, path := range []string{clientSessionPath(), clientConfigPath(), cachePath()} {
+		if _, statErr := os.Stat(path); statErr != nil {
+			t.Fatalf("transient service failure removed %s: %v", path, statErr)
+		}
+	}
+}
+
 func TestClientConfigStoresEncryptedAccountSummary(t *testing.T) {
 	setupEnrollTestSecrets(t)
 	oldHome := constant.Path.HomeDir()

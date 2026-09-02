@@ -24,7 +24,6 @@ class ClientGate extends ConsumerStatefulWidget {
 }
 
 class _ClientGateState extends ConsumerState<ClientGate> {
-  static const _loginRequiredMessage = 'client login required';
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _codeController = TextEditingController();
@@ -36,6 +35,9 @@ class _ClientGateState extends ConsumerState<ClientGate> {
   @override
   void initState() {
     super.initState();
+    clientAuthenticationRequiredNotifier.addListener(
+      _showLoginAfterAuthenticationFailure,
+    );
     ref.listenManual(initProvider, (previous, initialized) {
       if (!initialized || _hasSession != null || _restoring) return;
       _restoring = true;
@@ -45,6 +47,9 @@ class _ClientGateState extends ConsumerState<ClientGate> {
 
   @override
   void dispose() {
+    clientAuthenticationRequiredNotifier.removeListener(
+      _showLoginAfterAuthenticationFailure,
+    );
     _emailController.dispose();
     _passwordController.dispose();
     _codeController.dispose();
@@ -64,13 +69,10 @@ class _ClientGateState extends ConsumerState<ClientGate> {
         });
         return;
       }
-      final message = await _setupClientConfig();
+      final message = await _setupClientConfig(forceRefresh: true);
       if (!mounted) return;
-      final needsLogin = message == _loginRequiredMessage;
+      final needsLogin = message == clientLoginRequiredMessage;
       setState(() {
-        // A network/config refresh failure does not invalidate the encrypted
-        // local session. Enter the app and keep using the last successful cache;
-        // only an explicit authentication failure returns to the login form.
         _hasSession = !needsLogin;
         _restoreFailed = false;
       });
@@ -91,6 +93,15 @@ class _ClientGateState extends ConsumerState<ClientGate> {
     }
   }
 
+  void _showLoginAfterAuthenticationFailure() {
+    if (!mounted) return;
+    setState(() {
+      _hasSession = false;
+      _restoreFailed = false;
+      _submitting = false;
+    });
+  }
+
   void _retryRestore() {
     if (_restoring) return;
     setState(() {
@@ -101,11 +112,17 @@ class _ClientGateState extends ConsumerState<ClientGate> {
     unawaited(_loadState());
   }
 
-  Future<String> _setupClientConfig() async {
+  Future<String> _setupClientConfig({bool forceRefresh = false}) async {
     if (widget.configSetup case final configSetup?) {
       return configSetup();
     }
-    return ref.read(setupActionProvider.notifier).setupPrivateClientProfile();
+    return ref
+        .read(setupActionProvider.notifier)
+        .setupPrivateClientProfile(
+          refreshInterval: forceRefresh
+              ? Duration.zero
+              : privateClientSessionRefreshDuration,
+        );
   }
 
   Future<void> _submit() async {
@@ -138,7 +155,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
       }
       final setupMessage = await _setupClientConfig();
       if (!mounted) return;
-      final needsLogin = setupMessage == _loginRequiredMessage;
+      final needsLogin = setupMessage == clientLoginRequiredMessage;
       setState(() {
         _submitting = false;
         _hasSession = !needsLogin;

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_clash/common/private_client_config.dart';
 import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -617,6 +618,37 @@ void main() {
 
       expect(container.read(autoSetSystemDnsStateProvider).a, isFalse);
     });
+
+    test('stops the core and signals the login gate on rejected auth', () async {
+      late _AuthenticationSetupAction setupAction;
+      final container = ProviderContainer(
+        overrides: [
+          setupActionProvider.overrideWith(() {
+            setupAction = _AuthenticationSetupAction();
+            return setupAction;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(setupActionProvider);
+      var notifications = 0;
+      void listener() {
+        notifications += 1;
+      }
+
+      clientAuthenticationRequiredNotifier.addListener(listener);
+      addTearDown(
+        () => clientAuthenticationRequiredNotifier.removeListener(listener),
+      );
+
+      final message = await setupAction.handlePrivateClientSetupMessage(
+        clientLoginRequiredMessage,
+      );
+
+      expect(message, clientLoginRequiredMessage);
+      expect(setupAction.transitions, [false]);
+      expect(notifications, 1);
+    });
   });
 }
 
@@ -730,6 +762,15 @@ class _AndroidAuthorizationSetupAction extends _AuthorizationSetupAction {
 
   @override
   bool get isAndroidPlatform => true;
+}
+
+class _AuthenticationSetupAction extends SetupAction {
+  final transitions = <bool>[];
+
+  @override
+  Future<void> setRunning(bool running, {bool initialize = false}) async {
+    transitions.add(running);
+  }
 }
 
 class _RaceSetupAction extends SetupAction {

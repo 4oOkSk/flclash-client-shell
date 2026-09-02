@@ -250,8 +250,6 @@ bool effectiveClientVpnSystemProxy({
   required bool isAndroid,
 }) => configured && !privateClientMode;
 
-/// 自有客户端启动/定时 setup 时最多每天回源一次；命中本地加密缓存则不访问 FC。
-/// 如果后续想更省账单，改成 `Duration(days: 7)` 即可切到每周。
 const kEnrollAutoUpdateDuration = defaultUpdateDuration;
 
 final privateClientSelectedMap = <String, String>{};

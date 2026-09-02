@@ -389,15 +389,20 @@ class SetupAction extends _$SetupAction {
 
   Future<String> setupPrivateClientProfile({
     Future<void> Function()? preloadInvoke,
+    Duration refreshInterval = privateClientSessionRefreshDuration,
   }) {
     _enforcePrivateClientSettings();
     return _privateRouteSetupQueue.enqueue(
-      () => _setupPrivateClientProfileImpl(preloadInvoke: preloadInvoke),
+      () => _setupPrivateClientProfileImpl(
+        preloadInvoke: preloadInvoke,
+        refreshInterval: refreshInterval,
+      ),
     );
   }
 
   Future<String> _setupPrivateClientProfileImpl({
     Future<void> Function()? preloadInvoke,
+    required Duration refreshInterval,
   }) async {
     final selectedMap = await preferences.getPrivateClientSelectedMap();
     privateClientSelectedMap
@@ -467,13 +472,15 @@ class SetupAction extends _$SetupAction {
       fallback: routeOverlayFallback,
       apply: (overlay) => coreController.setupFromClient(
         endpoint: kClientApiBase,
-        refreshInterval: kEnrollAutoUpdateDuration,
+        refreshInterval: refreshInterval,
         selectedMap: selectedMap,
         testUrl: testUrl,
         routeOverlay: overlay,
       ),
     );
-    final message = applyResult.message;
+    final message = await handlePrivateClientSetupMessage(
+      applyResult.message,
+    );
     routeOverlayFallback = applyResult.fallback;
     if (message.isNotEmpty && !message.endsWith('is empty')) {
       return message;
@@ -500,6 +507,19 @@ class SetupAction extends _$SetupAction {
       globalState.showNotifier(currentAppLocalizations.privateRouteFallback);
     }
     return '';
+  }
+
+  @visibleForTesting
+  Future<String> handlePrivateClientSetupMessage(String message) async {
+    if (message != clientLoginRequiredMessage) {
+      return message;
+    }
+    try {
+      await setRunning(false);
+    } finally {
+      notifyClientAuthenticationRequired();
+    }
+    return message;
   }
 
   bool _getEffectiveTunEnable(bool enableTun) {
@@ -578,6 +598,9 @@ class SetupAction extends _$SetupAction {
         () async {
           final message = await setupPrivateClientProfile(
             preloadInvoke: preloadInvoke,
+            refreshInterval: force
+                ? Duration.zero
+                : privateClientSessionRefreshDuration,
           );
           if (message.isNotEmpty) throw message;
         },
