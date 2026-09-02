@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 const clientLoginRequiredMessage = 'client login required';
 const privateClientSessionRefreshDuration = Duration(minutes: 20);
+const privateClientResumeValidationInterval = Duration(minutes: 1);
 final clientAuthenticationRequiredNotifier = ValueNotifier<int>(0);
 
 void notifyClientAuthenticationRequired() {

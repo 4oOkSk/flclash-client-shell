@@ -179,6 +179,127 @@ func TestClientAuthenticationFailureClearsLocalAuthenticationState(t *testing.T)
 	}
 }
 
+func TestClientAuthenticationStatusClearsStateWithoutJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{name: "unauthorized empty", status: http.StatusUnauthorized},
+		{name: "unauthorized html", status: http.StatusUnauthorized, body: "<html>unauthorized</html>"},
+		{name: "forbidden empty", status: http.StatusForbidden},
+		{name: "forbidden html", status: http.StatusForbidden, body: "<html>forbidden</html>"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setupEnrollTestSecrets(t)
+			oldHome := constant.Path.HomeDir()
+			constant.SetHomeDir(t.TempDir())
+			t.Cleanup(func() { constant.SetHomeDir(oldHome) })
+
+			const session = "rejected-session"
+			const config = "mixed-port: 7890\n"
+			if err := saveEncryptedFile(clientSessionPath(), []byte(session)); err != nil {
+				t.Fatal(err)
+			}
+			envelope, err := json.Marshal(clientConfigCacheEnvelope{
+				SessionID: clientSessionID(session),
+				Etag:      "rejected-etag",
+				Config:    config,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := saveEncryptedFile(clientConfigPath(), envelope); err != nil {
+				t.Fatal(err)
+			}
+			if err := saveConfigCache(config); err != nil {
+				t.Fatal(err)
+			}
+
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(test.status)
+				_, _ = w.Write([]byte(test.body))
+			}))
+			defer srv.Close()
+
+			_, err = fetchConfigFromClient(srv.URL, 0)
+			var hardError clientHardError
+			if !errors.As(err, &hardError) {
+				t.Fatalf("expected authentication error, got %v", err)
+			}
+			if clientHasSession() {
+				t.Fatal("rejected client session still exists")
+			}
+			for _, path := range []string{clientSessionPath(), clientConfigPath(), cachePath()} {
+				if _, statErr := os.Stat(path); !errors.Is(statErr, os.ErrNotExist) {
+					t.Fatalf("rejected client state still exists at %s: %v", path, statErr)
+				}
+			}
+		})
+	}
+}
+
+func TestClientAuthenticationFailureAfterInvalidNotModifiedCacheClearsState(t *testing.T) {
+	setupEnrollTestSecrets(t)
+	oldHome := constant.Path.HomeDir()
+	constant.SetHomeDir(t.TempDir())
+	t.Cleanup(func() { constant.SetHomeDir(oldHome) })
+
+	const session = "invalid-cache-session"
+	const config = "mixed-port: 7890\n"
+	if err := saveEncryptedFile(clientSessionPath(), []byte(session)); err != nil {
+		t.Fatal(err)
+	}
+	envelope, err := json.Marshal(clientConfigCacheEnvelope{
+		SessionID: clientSessionID(session),
+		Etag:      "invalid-cache-etag",
+		Config:    config,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := saveEncryptedFile(clientConfigPath(), envelope); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveConfigCache(config); err != nil {
+		t.Fatal(err)
+	}
+
+	requests := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		if requests == 1 {
+			if err := os.Remove(clientConfigPath()); err != nil {
+				t.Error(err)
+			}
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("<html>unauthorized</html>"))
+	}))
+	defer srv.Close()
+
+	_, err = fetchConfigFromClient(srv.URL, 0)
+	var hardError clientHardError
+	if !errors.As(err, &hardError) {
+		t.Fatalf("expected authentication error, got %v", err)
+	}
+	if requests != 2 {
+		t.Fatalf("unexpected request count: %d", requests)
+	}
+	if clientHasSession() {
+		t.Fatal("rejected client session still exists")
+	}
+	for _, path := range []string{clientSessionPath(), clientConfigPath(), cachePath()} {
+		if _, statErr := os.Stat(path); !errors.Is(statErr, os.ErrNotExist) {
+			t.Fatalf("rejected client state still exists at %s: %v", path, statErr)
+		}
+	}
+}
+
 func TestClientServiceFailurePreservesLocalAuthenticationState(t *testing.T) {
 	setupEnrollTestSecrets(t)
 	oldHome := constant.Path.HomeDir()

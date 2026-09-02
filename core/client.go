@@ -289,21 +289,20 @@ func fetchConfigFromClient(endpoint string, refreshInterval time.Duration) (stri
 				return envelope.Config, nil
 			}
 			cfg, account, nextEtag, notModified, err = fetchClientConfigOnline(endpoint, session, "")
-			if err != nil {
-				return "", err
-			}
-			if notModified {
-				return "", errors.New("client config cache invalid")
-			}
 		}
-		pendingClientConfigCache = &clientConfigCacheEnvelope{
-			SessionID: sessionID,
-			Etag:      nextEtag,
-			Config:    cfg,
-			Account:   account,
+		if err == nil && notModified {
+			err = errors.New("client config cache invalid")
 		}
-		refreshResult = "online-updated"
-		return cfg, nil
+		if err == nil {
+			pendingClientConfigCache = &clientConfigCacheEnvelope{
+				SessionID: sessionID,
+				Etag:      nextEtag,
+				Config:    cfg,
+				Account:   account,
+			}
+			refreshResult = "online-updated"
+			return cfg, nil
+		}
 	}
 	if _, ok := err.(clientHardError); ok {
 		if clearErr := clearClientAuthenticationState(); clearErr != nil {
@@ -454,6 +453,16 @@ func fetchClientConfigOnline(endpoint, session, etag string) (string, *clientAcc
 	if resp.StatusCode == http.StatusNotModified {
 		return "", nil, strings.Trim(resp.Header.Get("ETag"), `"`), true, nil
 	}
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		wire, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+		var authResponse struct {
+			Msg string `json:"msg"`
+		}
+		if json.Unmarshal(wire, &authResponse) == nil && authResponse.Msg != "" {
+			return "", nil, "", false, clientHardError{message: authResponse.Msg}
+		}
+		return "", nil, "", false, clientHardError{message: resp.Status}
+	}
 	wire, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if err != nil {
 		return "", nil, "", false, err
@@ -466,12 +475,6 @@ func fetchClientConfigOnline(endpoint, session, etag string) (string, *clientAcc
 	}
 	if err := json.Unmarshal(wire, &fr); err != nil {
 		return "", nil, "", false, errors.New("client config response malformed")
-	}
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		if fr.Msg != "" {
-			return "", nil, "", false, clientHardError{message: fr.Msg}
-		}
-		return "", nil, "", false, clientHardError{message: resp.Status}
 	}
 	if resp.StatusCode != 200 || fr.Ret != 1 || fr.Cipher == "" {
 		if fr.Msg != "" {

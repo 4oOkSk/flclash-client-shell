@@ -22,6 +22,19 @@ class AppStateManager extends ConsumerStatefulWidget {
 
 class _AppStateManagerState extends ConsumerState<AppStateManager>
     with WidgetsBindingObserver {
+  Future<void> _validatePrivateClientSession() async {
+    try {
+      await ref
+          .read(setupActionProvider.notifier)
+          .validatePrivateClientSession();
+    } catch (error) {
+      commonPrint.log(
+        'Private client session validation failed: ${error.runtimeType}',
+        logLevel: LogLevel.warning,
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -85,8 +98,13 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       permissions.check();
       render?.resume();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ref = globalState.container;
-        ref.read(setupActionProvider.notifier).tryCheckIp();
+        if (kPrivateClientMode) {
+          unawaited(_validatePrivateClientSession());
+        } else {
+          globalState.container
+              .read(setupActionProvider.notifier)
+              .tryCheckIp();
+        }
       });
     }
   }

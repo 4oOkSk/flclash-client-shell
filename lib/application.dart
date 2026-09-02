@@ -98,7 +98,7 @@ class ApplicationState extends ConsumerState<Application> {
         if (kPrivateClientMode) {
           await ref
               .read(setupActionProvider.notifier)
-              .applyProfile(silence: true);
+              .validatePrivateClientSession();
         } else {
           await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
         }

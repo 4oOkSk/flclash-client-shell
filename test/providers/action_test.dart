@@ -649,6 +649,35 @@ void main() {
       expect(setupAction.transitions, [false]);
       expect(notifications, 1);
     });
+
+    test('forces and throttles private client session validation', () async {
+      late _PrivateClientValidationSetupAction setupAction;
+      final container = ProviderContainer(
+        overrides: [
+          setupActionProvider.overrideWith(() {
+            setupAction = _PrivateClientValidationSetupAction();
+            return setupAction;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(setupActionProvider);
+
+      await setupAction.validatePrivateClientSession();
+      setupAction.validationTime = setupAction.validationTime.add(
+        const Duration(seconds: 59),
+      );
+      await setupAction.validatePrivateClientSession();
+      setupAction.validationTime = setupAction.validationTime.add(
+        const Duration(seconds: 1),
+      );
+      await setupAction.validatePrivateClientSession();
+
+      expect(setupAction.calls, [
+        (silence: true, force: true),
+        (silence: true, force: true),
+      ]);
+    });
   });
 }
 
@@ -770,6 +799,23 @@ class _AuthenticationSetupAction extends SetupAction {
   @override
   Future<void> setRunning(bool running, {bool initialize = false}) async {
     transitions.add(running);
+  }
+}
+
+class _PrivateClientValidationSetupAction extends SetupAction {
+  DateTime validationTime = DateTime(2026, 9, 2);
+  final calls = <({bool silence, bool force})>[];
+
+  @override
+  DateTime get privateClientValidationNow => validationTime;
+
+  @override
+  Future<void> applyProfile({
+    bool silence = false,
+    bool force = false,
+    Future<void> Function()? preloadInvoke,
+  }) async {
+    calls.add((silence: silence, force: force));
   }
 }
 

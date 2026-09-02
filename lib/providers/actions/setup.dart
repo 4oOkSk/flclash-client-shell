@@ -18,6 +18,7 @@ class SetupAction extends _$SetupAction {
   bool _privateRouteFallbackNotified = false;
   _RunRequest? _latestRunRequest;
   DateTime? _startTime;
+  DateTime? _lastPrivateClientValidationAt;
 
   bool get _isRunning => _startTime != null && _startTime!.isBeforeNow;
 
@@ -392,12 +393,32 @@ class SetupAction extends _$SetupAction {
     Duration refreshInterval = privateClientSessionRefreshDuration,
   }) {
     _enforcePrivateClientSettings();
+    if (refreshInterval == Duration.zero) {
+      _lastPrivateClientValidationAt = privateClientValidationNow;
+    }
     return _privateRouteSetupQueue.enqueue(
       () => _setupPrivateClientProfileImpl(
         preloadInvoke: preloadInvoke,
         refreshInterval: refreshInterval,
       ),
     );
+  }
+
+  @protected
+  DateTime get privateClientValidationNow => DateTime.now();
+
+  Future<void> validatePrivateClientSession() {
+    final now = privateClientValidationNow;
+    final lastValidationAt = _lastPrivateClientValidationAt;
+    if (lastValidationAt != null) {
+      final elapsed = now.difference(lastValidationAt);
+      if (!elapsed.isNegative &&
+          elapsed < privateClientResumeValidationInterval) {
+        return Future.value();
+      }
+    }
+    _lastPrivateClientValidationAt = now;
+    return applyProfile(silence: true, force: true);
   }
 
   Future<String> _setupPrivateClientProfileImpl({
