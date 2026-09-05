@@ -449,8 +449,8 @@ jobs:
           New-Item -ItemType Directory -Path $tools | Out-Null
           $extractor = Join-Path $tools 'extractor.exe'
           $license = Join-Path $tools 'license.txt'
-          Invoke-WebRequest -Uri 'https://www.7-zip.org/a/7zr.exe' -OutFile $extractor
-          Invoke-WebRequest -Uri 'https://www.7-zip.org/license.txt' -OutFile $license
+          Invoke-WebRequest -Uri 'https://github.com/ip7z/7zip/releases/download/26.03/7zr.exe' -OutFile $extractor
+          Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ip7z/7zip/0766b733fe3e06dd2a7f9a3cfbf2108ac73abd17/DOC/License.txt' -OutFile $license
           $stage = Join-Path $env:RUNNER_TEMP 'sealed-package-stage'
           if (Test-Path -LiteralPath $stage) { throw 'Package staging path already exists.' }
           New-Item -ItemType Directory -Path $stage | Out-Null
