@@ -28,6 +28,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  GO_VERSION: '1.26.8'
+  GOTOOLCHAIN: local
   FLUTTER_VERSION: '3.44.8'
   PRIVATE_CLIENT_API_BASE: ${{ secrets.RELEASE_API_BASE }}
   PRIVATE_CLIENT_API_USER_AGENT: ${{ secrets.RELEASE_API_USER_AGENT }}
@@ -78,7 +80,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: core/go.mod
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: |
             core/go.sum
             core/Clash.Meta/go.sum
@@ -90,6 +92,7 @@ jobs:
           VERIFY_ANDROID_NDK: ${{ steps.verify_ndk.outputs.ndk-path }}
         run: |
           set -euo pipefail
+          test "$(go env GOVERSION)" = "go$GO_VERSION"
           tidy_diff=$(go mod tidy -diff)
           test -z "$tidy_diff" || {
             printf '%s\n' "$tidy_diff"
@@ -97,6 +100,12 @@ jobs:
           }
           CGO_ENABLED=0 go list -deps -tags=with_gvisor ./... >/dev/null
           CGO_ENABLED=0 go test -tags=with_gvisor ./...
+          CGO_ENABLED=0 go test -tags=with_gvisor \
+            github.com/metacubex/mihomo/component/updater \
+            github.com/metacubex/mihomo/tunnel/statistic \
+            github.com/metacubex/mihomo/adapter/outbound \
+            github.com/metacubex/mihomo/transport/hysteria/core \
+            github.com/metacubex/sing-quic/hysteria2
 
           build_desktop_core() {
             local goos=$1
@@ -207,7 +216,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: core/go.mod
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: |
             core/go.sum
             core/Clash.Meta/go.sum
@@ -352,7 +361,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
-          go-version-file: core/go.mod
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: |
             core/go.sum
             core/Clash.Meta/go.sum

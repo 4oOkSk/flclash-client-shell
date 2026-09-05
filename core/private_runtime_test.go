@@ -6,10 +6,46 @@ import (
 
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
+	"github.com/metacubex/mihomo/component/updater"
 	"github.com/metacubex/mihomo/config"
 	M "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/tunnel"
 )
+
+func TestGeoUpdatePolicyRespectsConfigOwnership(test *testing.T) {
+	oldConfig, oldPrivate := currentConfig, privateConfig
+	oldAutoUpdate, oldInterval := updater.GeoAutoUpdate(), updater.GeoUpdateInterval()
+	test.Cleanup(func() {
+		currentConfig, privateConfig = oldConfig, oldPrivate
+		updater.SetGeoAutoUpdate(oldAutoUpdate)
+		updater.SetGeoUpdateInterval(oldInterval)
+	})
+	for _, managed := range []bool{true, false} {
+		parsed, err := config.ParseRawConfig(config.DefaultRawConfig())
+		if err != nil {
+			test.Fatal(err)
+		}
+		currentConfig, privateConfig = parsed, managed
+		currentConfig.General.GeoAutoUpdate = true
+		currentConfig.General.GeoUpdateInterval = 168
+		requestedAutoUpdate, requestedInterval := false, 24
+		updateGeoUpdatePolicy(&UpdateParams{
+			GeoAutoUpdate:     &requestedAutoUpdate,
+			GeoUpdateInterval: &requestedInterval,
+		})
+		wantAutoUpdate, wantInterval := false, 24
+		if managed {
+			wantAutoUpdate, wantInterval = true, 168
+		}
+		if updater.GeoAutoUpdate() != wantAutoUpdate || updater.GeoUpdateInterval() != wantInterval {
+			test.Fatalf("managed=%v updater=%v/%d want=%v/%d", managed,
+				updater.GeoAutoUpdate(), updater.GeoUpdateInterval(), wantAutoUpdate, wantInterval)
+		}
+		if currentConfig.General.GeoAutoUpdate != wantAutoUpdate || currentConfig.General.GeoUpdateInterval != wantInterval {
+			test.Fatal("runtime policy and stored configuration diverged")
+		}
+	}
+}
 
 func TestPrivateConfigAcceptsLocalRuntimePatch(t *testing.T) {
 	oldConfig := currentConfig

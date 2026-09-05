@@ -326,12 +326,7 @@ func updateConfig(params *UpdateParams) {
 		}
 	}
 
-	if params.GeoAutoUpdate != nil {
-		updater.SetGeoAutoUpdate(*params.GeoAutoUpdate)
-	}
-	if params.GeoUpdateInterval != nil {
-		updater.SetGeoUpdateInterval(*params.GeoUpdateInterval)
-	}
+	updateGeoUpdatePolicy(params)
 
 	if reloadRuntimeConfig {
 		// DNS resolvers and fake-IP mappers capture the IPv6 setting when the
@@ -342,9 +337,21 @@ func updateConfig(params *UpdateParams) {
 		patchSelectGroup(selectedMap)
 	}
 	updateListeners()
-	if updater.GeoAutoUpdate() {
-		updater.RegisterGeoUpdaterWithCancel()
+	updater.RegisterGeoUpdaterWithCancel()
+}
+
+func updateGeoUpdatePolicy(params *UpdateParams) {
+	general := currentConfig.General
+	if !privateConfig {
+		if params.GeoAutoUpdate != nil {
+			general.GeoAutoUpdate = *params.GeoAutoUpdate
+		}
+		if params.GeoUpdateInterval != nil {
+			general.GeoUpdateInterval = *params.GeoUpdateInterval
+		}
 	}
+	updater.SetGeoAutoUpdate(general.GeoAutoUpdate)
+	updater.SetGeoUpdateInterval(general.GeoUpdateInterval)
 }
 
 func applyConfig(params *SetupParams) error {
@@ -375,9 +382,7 @@ func applyConfig(params *SetupParams) error {
 		patchPrivateGlobalDefault(params.SelectedMap)
 	}
 	updateListeners()
-	if updater.GeoAutoUpdate() {
-		updater.RegisterGeoUpdaterWithCancel()
-	}
+	updater.RegisterGeoUpdaterWithCancel()
 	return err
 }
 

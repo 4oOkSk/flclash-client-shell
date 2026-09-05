@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/metacubex/mihomo/log"
@@ -17,51 +18,82 @@ func sendGeoUpdateStatus(geoType string, updating bool, skipped bool, updateErr 
 	}
 }
 
-var geoUpdateCancel context.CancelFunc
+type geoUpdaterTask struct {
+	interval time.Duration
+	cancel   context.CancelFunc
+	done     chan struct{}
+}
+
+var geoUpdateMu sync.Mutex
+var geoUpdateTask *geoUpdaterTask
 
 func RegisterGeoUpdaterWithCancel() {
-	if geoUpdateCancel != nil {
-		geoUpdateCancel()
-	}
+	geoUpdateMu.Lock()
+	defer geoUpdateMu.Unlock()
 
-	if updateInterval <= 0 {
-		log.Errorln("[GEO] Invalid update interval: %d", updateInterval)
+	interval := time.Duration(updateInterval) * time.Hour
+	if autoUpdate && interval > 0 && geoUpdateTask != nil && geoUpdateTask.interval == interval {
+		select {
+		case <-geoUpdateTask.done:
+		default:
+			return
+		}
+	}
+	if geoUpdateTask != nil {
+		geoUpdateTask.cancel()
+		geoUpdateTask = nil
+	}
+	if !autoUpdate || interval <= 0 {
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	geoUpdateCancel = cancel
-
+	task := &geoUpdaterTask{interval: interval, cancel: cancel, done: make(chan struct{})}
+	geoUpdateTask = task
 	go func() {
-		ticker := time.NewTicker(time.Duration(updateInterval) * time.Hour)
-		defer ticker.Stop()
+		defer close(task.done)
+		runGeoUpdater(ctx, interval, 5*time.Minute, getUpdateTime, UpdateGeoDatabases)
+	}()
+}
 
-		lastUpdate, err := getUpdateTime()
-		if err != nil {
-			log.Errorln("[GEO] Get GEO database update time error: %s", err.Error())
-			return
+func runGeoUpdater(
+	ctx context.Context,
+	interval time.Duration,
+	retryInterval time.Duration,
+	lastUpdate func() (time.Time, error),
+	update func() error,
+) {
+	if ctx.Err() != nil {
+		return
+	}
+	delay := time.Duration(0)
+	if updatedAt, err := lastUpdate(); err == nil {
+		delay = time.Until(updatedAt.Add(interval))
+		if delay < 0 {
+			delay = 0
+		} else if delay > interval {
+			delay = interval
 		}
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
 
-		log.Infoln("[GEO] last update time %s", lastUpdate)
-		if lastUpdate.Add(time.Duration(updateInterval) * time.Hour).Before(time.Now()) {
-			log.Infoln("[GEO] Database has not been updated for %v, update now", time.Duration(updateInterval)*time.Hour)
-			if err := UpdateGeoDatabases(); err != nil {
-				log.Errorln("[GEO] Failed to update GEO database: %s", err.Error())
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			if ctx.Err() != nil {
 				return
 			}
-		}
-
-		for {
-			select {
-			case <-ctx.Done():
-				log.Infoln("[GEO] Geo updater stopped")
-				return
-			case <-ticker.C:
-				log.Infoln("[GEO] updating database every %d hours", updateInterval)
-				if err := UpdateGeoDatabases(); err != nil {
-					log.Errorln("[GEO] Failed to update GEO database: %s", err.Error())
+			delay = interval
+			if err := update(); err != nil {
+				log.Errorln("[GEO] Failed to update GEO database: %s", err.Error())
+				if retryInterval > 0 && retryInterval < interval {
+					delay = retryInterval
 				}
 			}
+			timer.Reset(delay)
 		}
-	}()
+	}
 }

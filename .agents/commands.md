@@ -116,13 +116,18 @@ What those suites own:
 
 ## Native Component Verification
 
-The CI Go-wrapper checks can be reproduced without CGO:
+The public release workflow's no-CGO Go checks can be reproduced with:
 
 ```bash
 cd core
-CGO_ENABLED=0 go test .
-CGO_ENABLED=0 go vet .
+tidy_diff=$(go mod tidy -diff)
+test -z "$tidy_diff"
+CGO_ENABLED=0 go list -deps -tags=with_gvisor ./... >/dev/null
+CGO_ENABLED=0 go test -tags=with_gvisor ./...
+CGO_ENABLED=0 go test -tags=with_gvisor github.com/metacubex/mihomo/component/updater github.com/metacubex/mihomo/tunnel/statistic github.com/metacubex/mihomo/adapter/outbound github.com/metacubex/mihomo/transport/hysteria/core github.com/metacubex/sing-quic/hysteria2
 ```
+
+The workflow then compiles the Core for the supported desktop and Android targets. It does not currently run `go vet`.
 
 Windows direct-Core launcher and hash checks are covered by `test/core/desktop/launcher_test.dart`; elevation, named-pipe
 peer identity, and Job Object behavior still require a real Windows package smoke test. Native Android lifecycle edits
@@ -139,17 +144,16 @@ emulator validation; Kotlin compilation cannot prove those system callbacks.
 
 ## Verify
 
-The tag-triggered release workflow runs these root-package checks in order:
+The public release workflow is started manually through `workflow_dispatch` and runs these root-package checks in order:
 
 ```bash
 flutter pub get
-flutter analyze --no-fatal-infos
+flutter analyze --no-fatal-warnings --no-fatal-infos
 flutter test --reporter expanded
 ```
 
 Run `flutter analyze` locally before committing when practical.
 
-The workflow runs only for `v*` tag pushes; pull requests do not trigger it.
-Root analysis excludes `plugins/**`, and root tests do not discover nested
-plugin packages, so CI also validates local Flutter packages, the setup build
-tool, the Go wrapper, and native components from their own package directories.
+The workflow has no tag-push or pull-request trigger. Root analysis excludes `plugins/**`, and root tests do not discover
+nested plugin packages. Release verification separately checks the setup build tool and Go Core; other nested plugin
+tests and device-level behavior require their focused checks.

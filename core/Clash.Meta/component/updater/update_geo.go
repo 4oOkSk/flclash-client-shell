@@ -29,18 +29,26 @@ var (
 )
 
 func GeoAutoUpdate() bool {
+	geoUpdateMu.Lock()
+	defer geoUpdateMu.Unlock()
 	return autoUpdate
 }
 
 func GeoUpdateInterval() int {
+	geoUpdateMu.Lock()
+	defer geoUpdateMu.Unlock()
 	return updateInterval
 }
 
 func SetGeoAutoUpdate(newAutoUpdate bool) {
+	geoUpdateMu.Lock()
+	defer geoUpdateMu.Unlock()
 	autoUpdate = newAutoUpdate
 }
 
 func SetGeoUpdateInterval(newGeoUpdateInterval int) {
+	geoUpdateMu.Lock()
+	defer geoUpdateMu.Unlock()
 	updateInterval = newGeoUpdateInterval
 }
 
@@ -221,18 +229,21 @@ func updateGeoDatabases() error {
 var ErrGetDatabaseUpdateSkip = errors.New("GEO database is updating, skip")
 
 func UpdateGeoDatabases() error {
+	return runGeoDatabaseUpdate(updateGeoDatabases)
+}
+
+func runGeoDatabaseUpdate(update func() error) error {
 	log.Infoln("[GEO] Start updating GEO database")
 
-	if updatingGeo.Load() {
+	if !updatingGeo.CompareAndSwap(false, true) {
 		return ErrGetDatabaseUpdateSkip
 	}
 
-	updatingGeo.Store(true)
 	defer updatingGeo.Store(false)
 
 	log.Infoln("[GEO] Updating GEO database")
 
-	if err := updateGeoDatabases(); err != nil {
+	if err := update(); err != nil {
 		log.Errorln("[GEO] update GEO database error: %s", err.Error())
 		return err
 	}
@@ -260,35 +271,5 @@ func getUpdateTime() (time time.Time, err error) {
 }
 
 func RegisterGeoUpdater() {
-	if updateInterval <= 0 {
-		log.Errorln("[GEO] Invalid update interval: %d", updateInterval)
-		return
-	}
-
-	go func() {
-		ticker := time.NewTicker(time.Duration(updateInterval) * time.Hour)
-		defer ticker.Stop()
-
-		lastUpdate, err := getUpdateTime()
-		if err != nil {
-			log.Errorln("[GEO] Get GEO database update time error: %s", err.Error())
-			return
-		}
-
-		log.Infoln("[GEO] last update time %s", lastUpdate)
-		if lastUpdate.Add(time.Duration(updateInterval) * time.Hour).Before(time.Now()) {
-			log.Infoln("[GEO] Database has not been updated for %v, update now", time.Duration(updateInterval)*time.Hour)
-			if err := UpdateGeoDatabases(); err != nil {
-				log.Errorln("[GEO] Failed to update GEO database: %s", err.Error())
-				return
-			}
-		}
-
-		for range ticker.C {
-			log.Infoln("[GEO] updating database every %d hours", updateInterval)
-			if err := UpdateGeoDatabases(); err != nil {
-				log.Errorln("[GEO] Failed to update GEO database: %s", err.Error())
-			}
-		}
-	}()
+	RegisterGeoUpdaterWithCancel()
 }
