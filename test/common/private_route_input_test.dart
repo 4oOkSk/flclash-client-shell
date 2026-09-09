@@ -21,6 +21,9 @@ void main() {
         'DOMAIN,example.com,DIRECT',
         'file:///tmp/file',
         '999.999.1.1',
+        'https://999.999.1.1',
+        '192.0.2.0/24',
+        '2001:db8::/32',
         'com',
         '*.example.com',
       ]) {

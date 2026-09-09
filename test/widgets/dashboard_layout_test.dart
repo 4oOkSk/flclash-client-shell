@@ -5,6 +5,7 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/dashboard/dashboard.dart';
+import 'package:fl_clash/views/dashboard/widgets/private_client_account.dart';
 import 'package:fl_clash/widgets/grid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,6 +13,50 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets(
+    'standalone account summary grows for tall text instead of clipping',
+    (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          privateClientAccountInfoProvider.overrideWith((_) async => null),
+        ],
+      );
+      addTearDown(container.dispose);
+      globalState.container = container;
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _TestApp(
+            child: Builder(
+              builder: (context) => Theme(
+                data: Theme.of(context).copyWith(
+                  textTheme: Theme.of(context).textTheme.copyWith(
+                    bodySmall: const TextStyle(fontSize: 18, height: 2.5),
+                  ),
+                ),
+                child: const Scaffold(
+                  body: SingleChildScrollView(
+                    child: SizedBox(
+                      width: 390,
+                      child: PrivateClientAccountCard(adaptive: true),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('剩余流量'), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(PrivateClientAccountCard)).height,
+        greaterThan(100),
+      );
+    },
+  );
+
   testWidgets('dashboard limits a wide grid to 16 centered columns', (
     tester,
   ) async {

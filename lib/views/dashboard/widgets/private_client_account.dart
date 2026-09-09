@@ -9,7 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PrivateClientAccountCard extends ConsumerWidget {
-  const PrivateClientAccountCard({super.key});
+  final bool adaptive;
+
+  const PrivateClientAccountCard({super.key, this.adaptive = false});
 
   String _remaining(int bytes) => bytes.traffic.show;
 
@@ -24,7 +26,7 @@ class PrivateClientAccountCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final account = ref.watch(privateClientAccountInfoProvider);
     return SizedBox(
-      height: getWidgetHeight(1),
+      height: adaptive ? null : getWidgetHeight(1),
       child: CommonCard(
         info: const Info(
           label: '账户状态',

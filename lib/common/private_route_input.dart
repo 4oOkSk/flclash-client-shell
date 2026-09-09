@@ -14,6 +14,12 @@ String normalizePrivateRouteDestination(String input) {
   }
   final address = InternetAddress.tryParse(value);
   if (address != null) return address.address;
+  final prefixParts = value.split('/');
+  if (prefixParts.length == 2 &&
+      InternetAddress.tryParse(prefixParts.first) != null &&
+      RegExp(r'^\d+$').hasMatch(prefixParts.last)) {
+    throw const FormatException('network requires advanced editor');
+  }
   if (RegExp(r'^[0-9.]+$').hasMatch(value)) {
     throw const FormatException('invalid address');
   }
@@ -26,6 +32,9 @@ String normalizePrivateRouteDestination(String input) {
   }
   final host = uri.host.toLowerCase().replaceFirst(RegExp(r'\.$'), '');
   if (InternetAddress.tryParse(host) != null) return host;
+  if (RegExp(r'^[0-9.]+$').hasMatch(host)) {
+    throw const FormatException('invalid address');
+  }
   if (host.length > 253 ||
       !host.contains('.') ||
       host

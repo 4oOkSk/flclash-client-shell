@@ -141,7 +141,7 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
                 ),
               ),
               const SizedBox(height: 20),
-              const PrivateClientAccountCard(),
+              const PrivateClientAccountCard(adaptive: true),
             ],
           ),
         ),

@@ -113,7 +113,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       if (kPrivateClientMode) ...[
         const Padding(
           padding: EdgeInsets.all(16),
-          child: PrivateClientAccountCard(),
+          child: PrivateClientAccountCard(adaptive: true),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
