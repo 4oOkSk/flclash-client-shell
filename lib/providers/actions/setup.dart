@@ -526,7 +526,7 @@ class SetupAction extends _$SetupAction {
     );
     final message = await handlePrivateClientSetupMessage(applyResult.message);
     routeOverlayFallback = applyResult.fallback;
-    if (message.isNotEmpty && !message.endsWith('is empty')) {
+    if (message.isNotEmpty) {
       return message;
     }
     ref.invalidate(privateClientAccountInfoProvider);

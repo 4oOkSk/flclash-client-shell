@@ -206,12 +206,16 @@ class Preferences {
   }
 
   Future<bool> saveAppliedPrivateRoute(PrivateRouteOverlay overlay) async {
-    final preferences = await sharedPreferencesCompleter.future;
-    return preferences?.setString(
-          'private_client_applied_route',
-          jsonEncode(overlay.toJson()),
-        ) ??
-        false;
+    try {
+      final preferences = await sharedPreferencesCompleter.future;
+      return await preferences?.setString(
+            'private_client_applied_route',
+            jsonEncode(overlay.toJson()),
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> clearPreferences() async {
