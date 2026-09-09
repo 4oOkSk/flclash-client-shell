@@ -34,6 +34,7 @@ type EnrollParams struct {
 	SelectedMap            map[string]string   `json:"selected-map"`
 	TestURL                string              `json:"test-url"`
 	RouteOverlay           *ClientRouteOverlay `json:"route-overlay"`
+	RouteDestination       string              `json:"route-destination"`
 	RefreshIntervalSeconds int64               `json:"refresh-interval-seconds"`
 	SecureCacheKey         string              `json:"secure-cache-key"`
 	SecureCacheKeySource   string              `json:"secure-cache-key-source"`

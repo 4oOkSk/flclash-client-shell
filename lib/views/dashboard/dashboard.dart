@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 
 import 'widgets/core_status_button.dart';
 import 'widgets/start_button.dart';
+import 'private_home.dart';
 
 typedef _IsEditWidgetBuilder = Widget Function(bool isEdit);
 
@@ -341,6 +342,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    if (kPrivateClientMode) return const PrivateHomeView();
     final dashboardState = ref.watch(dashboardStateProvider);
     final spacing = 14.mAp;
     final children = [

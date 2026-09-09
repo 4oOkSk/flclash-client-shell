@@ -14,6 +14,13 @@ import 'package:wifi_ssid/wifi_ssid.dart';
 part 'generated/app.g.dart';
 
 @Riverpod(keepAlive: true)
+class PrivateRouteStatus extends _$PrivateRouteStatus
+    with AutoDisposeNotifierMixin {
+  @override
+  PrivateRouteApplyState build() => const PrivateRouteApplyState();
+}
+
+@Riverpod(keepAlive: true)
 class AuthorizedTunEnable extends _$AuthorizedTunEnable
     with AutoDisposeNotifierMixin {
   @override

@@ -9,6 +9,60 @@ part of '../app.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(PrivateRouteStatus)
+final privateRouteStatusProvider = PrivateRouteStatusProvider._();
+
+final class PrivateRouteStatusProvider
+    extends $NotifierProvider<PrivateRouteStatus, PrivateRouteApplyState> {
+  PrivateRouteStatusProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'privateRouteStatusProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$privateRouteStatusHash();
+
+  @$internal
+  @override
+  PrivateRouteStatus create() => PrivateRouteStatus();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PrivateRouteApplyState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PrivateRouteApplyState>(value),
+    );
+  }
+}
+
+String _$privateRouteStatusHash() =>
+    r'405b38659840a512953178b4c546df9c3866b0e9';
+
+abstract class _$PrivateRouteStatus extends $Notifier<PrivateRouteApplyState> {
+  PrivateRouteApplyState build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref as $Ref<PrivateRouteApplyState, PrivateRouteApplyState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<PrivateRouteApplyState, PrivateRouteApplyState>,
+              PrivateRouteApplyState,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(AuthorizedTunEnable)
 final authorizedTunEnableProvider = AuthorizedTunEnableProvider._();
 

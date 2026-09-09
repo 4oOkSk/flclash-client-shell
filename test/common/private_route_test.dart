@@ -193,123 +193,90 @@ void main() {
     });
   });
 
-  group('applyPrivateRouteOverlayFallbacks', () {
-    test('retries base after full overlay is rejected', () async {
-      final applied = <PrivateRouteOverlay>[];
-      final result = await applyPrivateRouteOverlayFallbacks(
+  group('applyPrivateRouteOverlaySafely', () {
+    test(
+      'restores the previous complete policy, never an empty default',
+      () async {
+        final applied = <PrivateRouteOverlay>[];
+        final result = await applyPrivateRouteOverlaySafely(
+          overlay: fullOverlay,
+          previous: baseOverlay,
+          apply: (overlay) async {
+            applied.add(overlay);
+            return overlay == fullOverlay
+                ? 'client route overlay invalid: rules'
+                : '';
+          },
+        );
+        expect(applied, [fullOverlay, baseOverlay]);
+        expect(result.applied, same(baseOverlay));
+        expect(result.fallback, isTrue);
+      },
+    );
+
+    test(
+      'first invalid policy fails closed without stripping blocking rules',
+      () async {
+        final applied = <PrivateRouteOverlay>[];
+        final result = await applyPrivateRouteOverlaySafely(
+          overlay: fullOverlay,
+          previous: null,
+          apply: (overlay) async {
+            applied.add(overlay);
+            return 'client route overlay invalid: rules';
+          },
+        );
+        expect(applied, [fullOverlay]);
+        expect(result.message, isNotEmpty);
+        expect(result.applied, isNull);
+      },
+    );
+
+    test(
+      'script failures restore the previous policy without applying partial rules',
+      () async {
+        final applied = <PrivateRouteOverlay>[];
+        final result = await applyPrivateRouteOverlaySafely(
+          overlay: baseOverlay,
+          previous: fullOverlay,
+          buildFailed: true,
+          apply: (overlay) async {
+            applied.add(overlay);
+            return '';
+          },
+        );
+        expect(applied, [fullOverlay]);
+        expect(result.applied, same(fullOverlay));
+        expect(result.fallback, isTrue);
+      },
+    );
+
+    test(
+      'authentication and transport errors are not hidden by a retry',
+      () async {
+        var calls = 0;
+        final result = await applyPrivateRouteOverlaySafely(
+          overlay: fullOverlay,
+          previous: baseOverlay,
+          apply: (_) async {
+            calls++;
+            return 'client login required';
+          },
+        );
+        expect(calls, 1);
+        expect(result.message, 'client login required');
+        expect(result.applied, isNull);
+      },
+    );
+
+    test('failed restoration is not reported as success', () async {
+      final result = await applyPrivateRouteOverlaySafely(
         overlay: fullOverlay,
-        baseOverlay: baseOverlay,
-        managedRouting: managedRouting,
-        apply: (overlay) async {
-          applied.add(overlay);
-          return overlay == fullOverlay
-              ? 'client route overlay invalid: full'
-              : '';
-        },
+        previous: baseOverlay,
+        apply: (_) async => 'client route overlay invalid: target',
       );
-
-      expect(applied, [fullOverlay, baseOverlay]);
-      expect(result.message, isEmpty);
-      expect(result.fallback, isTrue);
+      expect(result.message, isNotEmpty);
+      expect(result.applied, isNull);
     });
-
-    test('retries managed-only after base overlay is rejected', () async {
-      final applied = <PrivateRouteOverlay>[];
-      final result = await applyPrivateRouteOverlayFallbacks(
-        overlay: baseOverlay,
-        baseOverlay: baseOverlay,
-        managedRouting: managedRouting,
-        apply: (overlay) async {
-          applied.add(overlay);
-          return overlay == baseOverlay
-              ? 'client route overlay invalid: base'
-              : '';
-        },
-      );
-
-      expect(applied, hasLength(2));
-      expect(applied.first, same(baseOverlay));
-      expect(applied.last.rules, isEmpty);
-      expect(applied.last.ruleProviders, isEmpty);
-      expect(applied.last.managedRouting, same(managedRouting));
-      expect(result.message, isEmpty);
-      expect(result.fallback, isTrue);
-    });
-
-    test('retries managed-only after full and base are rejected', () async {
-      final applied = <PrivateRouteOverlay>[];
-      final result = await applyPrivateRouteOverlayFallbacks(
-        overlay: fullOverlay,
-        baseOverlay: baseOverlay,
-        managedRouting: managedRouting,
-        apply: (overlay) async {
-          applied.add(overlay);
-          return overlay.rules.isNotEmpty
-              ? 'client route overlay invalid: rules'
-              : '';
-        },
-      );
-
-      expect(applied, hasLength(3));
-      expect(applied[0], same(fullOverlay));
-      expect(applied[1], same(baseOverlay));
-      expect(applied[2].rules, isEmpty);
-      expect(applied[2].ruleProviders, isEmpty);
-      expect(applied[2].managedRouting, same(managedRouting));
-      expect(result.message, isEmpty);
-      expect(result.fallback, isTrue);
-    });
-
-    test('does not duplicate an already managed-only request', () async {
-      const managedOverlay = PrivateRouteOverlay(
-        managedRouting: managedRouting,
-      );
-      final applied = <PrivateRouteOverlay>[];
-      final result = await applyPrivateRouteOverlayFallbacks(
-        overlay: managedOverlay,
-        baseOverlay: managedOverlay,
-        managedRouting: managedRouting,
-        apply: (overlay) async {
-          applied.add(overlay);
-          return 'client route overlay invalid: managed';
-        },
-      );
-
-      expect(applied, [managedOverlay]);
-      expect(result.message, 'client route overlay invalid: managed');
-      expect(result.fallback, isTrue);
-    });
-  });
-
-  test('fallback notification is emitted once and resets after recovery', () {
-    var state = resolvePrivateRouteFallbackNotification(
-      fallback: false,
-      wasNotified: false,
-    );
-    expect(state, (notify: false, nextNotified: false));
-
-    state = resolvePrivateRouteFallbackNotification(
-      fallback: true,
-      wasNotified: state.nextNotified,
-    );
-    expect(state, (notify: true, nextNotified: true));
-
-    state = resolvePrivateRouteFallbackNotification(
-      fallback: true,
-      wasNotified: state.nextNotified,
-    );
-    expect(state, (notify: false, nextNotified: true));
-
-    state = resolvePrivateRouteFallbackNotification(
-      fallback: false,
-      wasNotified: state.nextNotified,
-    );
-    expect(state, (notify: false, nextNotified: false));
-
-    state = resolvePrivateRouteFallbackNotification(
-      fallback: true,
-      wasNotified: state.nextNotified,
-    );
-    expect(state, (notify: true, nextNotified: true));
   });
 }

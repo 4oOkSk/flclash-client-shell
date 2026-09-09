@@ -72,13 +72,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m21(label) => "${label} must be between 1024 and 49151";
 
-  static String m22(count) => "${count} seconds";
+  static String m22(action, index) =>
+      "Expected action: ${action} · matched rule ${index}";
 
-  static String m23(count) => "${count} items have been selected";
+  static String m23(count) => "${count} seconds";
 
-  static String m24(label) => "${label} must be a url";
+  static String m24(count) => "${count} items have been selected";
 
-  static String m25(count) =>
+  static String m25(label) => "${label} must be a url";
+
+  static String m26(count) =>
       "${Intl.plural(count, one: '1 year ago', other: '${count} years ago')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -226,6 +229,28 @@ class MessageLookup extends MessageLookupByLibrary {
       "The current application is already the latest version",
     ),
     "clearData": MessageLookupByLibrary.simpleMessage("Clear Data"),
+    "clientAllProxy": MessageLookupByLibrary.simpleMessage("Proxy all"),
+    "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
+      "Use your selected route, with necessary system exceptions.",
+    ),
+    "clientChangeLine": MessageLookupByLibrary.simpleMessage("Change route"),
+    "clientConnect": MessageLookupByLibrary.simpleMessage("Connect"),
+    "clientCurrentLine": MessageLookupByLibrary.simpleMessage("Current route"),
+    "clientDiagnostics": MessageLookupByLibrary.simpleMessage("Diagnostics"),
+    "clientDisconnect": MessageLookupByLibrary.simpleMessage("Disconnect"),
+    "clientHome": MessageLookupByLibrary.simpleMessage("Home"),
+    "clientLines": MessageLookupByLibrary.simpleMessage("Routes"),
+    "clientMe": MessageLookupByLibrary.simpleMessage("Account"),
+    "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
+      "Mainland sites connect directly; other sites use your selected route.",
+    ),
+    "clientReturnHint": MessageLookupByLibrary.simpleMessage(
+      "Mainland sites use your return route; other sites connect directly.",
+    ),
+    "clientSmartOutbound": MessageLookupByLibrary.simpleMessage(
+      "Smart outbound",
+    ),
+    "clientSmartReturn": MessageLookupByLibrary.simpleMessage("Smart return"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage("Export clipboard"),
     "clipboardImport": MessageLookupByLibrary.simpleMessage("Clipboard import"),
     "color": MessageLookupByLibrary.simpleMessage("Color"),
@@ -839,19 +864,91 @@ class MessageLookup extends MessageLookupByLibrary {
       "Override",
     ),
     "restoreSuccess": MessageLookupByLibrary.simpleMessage("Restore success"),
+    "routeAddException": MessageLookupByLibrary.simpleMessage("Add exception"),
     "routeAddress": MessageLookupByLibrary.simpleMessage("Route address"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage(
       "Config listen route address",
+    ),
+    "routeAdvanced": MessageLookupByLibrary.simpleMessage("Advanced routing"),
+    "routeAdvancedHint": MessageLookupByLibrary.simpleMessage(
+      "Rule order, rule sets and scripts. Existing advanced rules remain unchanged.",
+    ),
+    "routeAdvancedOpen": MessageLookupByLibrary.simpleMessage(
+      "Edit in advanced rules",
+    ),
+    "routeAdvancedRule": MessageLookupByLibrary.simpleMessage("Advanced rule"),
+    "routeApplied": MessageLookupByLibrary.simpleMessage("Rules applied"),
+    "routeApplyFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not apply these changes. Check your rules; no default-rule fallback was performed.",
+    ),
+    "routeApplying": MessageLookupByLibrary.simpleMessage("Applying rules…"),
+    "routeCheck": MessageLookupByLibrary.simpleMessage("Check routing"),
+    "routeCheckHint": MessageLookupByLibrary.simpleMessage(
+      "Predicts the currently applied HTTPS/TCP rules without sending traffic. This is not a connectivity test.",
+    ),
+    "routeCheckResult": m22,
+    "routeDeleteException": MessageLookupByLibrary.simpleMessage(
+      "Delete this exception?",
+    ),
+    "routeDestination": MessageLookupByLibrary.simpleMessage(
+      "Website or IP address",
+    ),
+    "routeDirect": MessageLookupByLibrary.simpleMessage("Connect directly"),
+    "routeDomainHint": MessageLookupByLibrary.simpleMessage(
+      "A pasted URL is matched by hostname, not by page path. Use advanced rules for networks.",
+    ),
+    "routeEditException": MessageLookupByLibrary.simpleMessage(
+      "Edit exception",
+    ),
+    "routeExceptions": MessageLookupByLibrary.simpleMessage("Exceptions"),
+    "routeExceptionsHint": MessageLookupByLibrary.simpleMessage(
+      "The first matching exception takes priority over the default mode.",
+    ),
+    "routeIncludeSubdomains": MessageLookupByLibrary.simpleMessage(
+      "Include subdomains",
+    ),
+    "routeInvalidDestination": MessageLookupByLibrary.simpleMessage(
+      "Enter a valid domain, HTTP(S) URL or IP address without credentials.",
     ),
     "routeMode": MessageLookupByLibrary.simpleMessage("Route mode"),
     "routeMode_bypassPrivate": MessageLookupByLibrary.simpleMessage(
       "Bypass private route address",
     ),
     "routeMode_config": MessageLookupByLibrary.simpleMessage("Use config"),
+    "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
+      "An earlier rule needs a resolved IP or application context. No routing conclusion can be made from this input alone.",
+    ),
+    "routeNewConnections": MessageLookupByLibrary.simpleMessage(
+      "Changes affect new connections. Existing connections are not interrupted.",
+    ),
+    "routeNoExceptions": MessageLookupByLibrary.simpleMessage(
+      "No exceptions. The selected mode handles your traffic.",
+    ),
+    "routeNotApplied": MessageLookupByLibrary.simpleMessage(
+      "Changes not applied",
+    ),
+    "routeReconnect": MessageLookupByLibrary.simpleMessage(
+      "Reconnect existing traffic",
+    ),
+    "routeReconnectConfirm": MessageLookupByLibrary.simpleMessage(
+      "Close current proxy connections so applications reconnect using the new rules? Downloads and calls may be interrupted.",
+    ),
+    "routeRecoveryNotSaved": MessageLookupByLibrary.simpleMessage(
+      "Rules are active, but the recovery copy could not be saved.",
+    ),
+    "routeReject": MessageLookupByLibrary.simpleMessage("Block access"),
+    "routeRestored": MessageLookupByLibrary.simpleMessage(
+      "Changes rejected; previous valid rules restored",
+    ),
+    "routeSaveApply": MessageLookupByLibrary.simpleMessage("Save and apply"),
     "routeScript": MessageLookupByLibrary.simpleMessage("Routing script"),
     "routeScriptDesc": MessageLookupByLibrary.simpleMessage(
       "Use JavaScript for advanced local routing logic.",
     ),
+    "routeUnavailable": MessageLookupByLibrary.simpleMessage(
+      "No applied routing is available. Connect or apply your rules first.",
+    ),
+    "routeViaLine": MessageLookupByLibrary.simpleMessage("Use selected route"),
     "routing": MessageLookupByLibrary.simpleMessage("Routing"),
     "routingPrivacyDesc": MessageLookupByLibrary.simpleMessage(
       "These settings only control where traffic goes. They do not display or modify server configuration.",
@@ -970,7 +1067,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "search": MessageLookupByLibrary.simpleMessage("Search"),
     "seconds": MessageLookupByLibrary.simpleMessage("Seconds"),
-    "secondsCount": m22,
+    "secondsCount": m23,
     "selectAll": MessageLookupByLibrary.simpleMessage("Select all"),
     "selectProxies": MessageLookupByLibrary.simpleMessage("Select proxies"),
     "selectProxyProviders": MessageLookupByLibrary.simpleMessage(
@@ -986,7 +1083,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Please select sub rule",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m23,
+    "selectedCountTitle": m24,
     "serverSelection": MessageLookupByLibrary.simpleMessage("Server selection"),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
@@ -1087,7 +1184,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "Obtain profile through URL",
     ),
-    "urlTip": m24,
+    "urlTip": m25,
     "useHosts": MessageLookupByLibrary.simpleMessage("Use hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("Use system hosts"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
@@ -1107,7 +1204,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "WebDAV configuration",
     ),
     "whitelistMode": MessageLookupByLibrary.simpleMessage("Whitelist mode"),
-    "yearsAgo": m25,
+    "yearsAgo": m26,
     "zh_CN": MessageLookupByLibrary.simpleMessage("Simplified Chinese"),
   };
 }

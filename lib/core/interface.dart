@@ -62,6 +62,8 @@ mixin CoreInterface {
 
   Future<String> clientDiagnostics();
 
+  Future<String> clientRoutePreview(String destination);
+
   Future<String> configureClientSecureStorage({
     required String key,
     required String source,
@@ -282,42 +284,39 @@ abstract class CoreHandlerInterface with CoreInterface {
   });
 
   @override
-  Future<bool> clientHasSession() async =>
-      (await _invokeEnroll(
-        {'mode': 'client-state'},
-        timeout: _clientLocalMethodTimeout,
-      )).isEmpty;
+  Future<bool> clientHasSession() async => (await _invokeEnroll({
+    'mode': 'client-state',
+  }, timeout: _clientLocalMethodTimeout)).isEmpty;
 
   @override
-  Future<String> clientAccountInfo() => _invokeEnroll(
-    {'mode': 'client-info'},
-    timeout: _clientLocalMethodTimeout,
-  );
+  Future<String> clientAccountInfo() => _invokeEnroll({
+    'mode': 'client-info',
+  }, timeout: _clientLocalMethodTimeout);
 
   @override
-  Future<String> clientDiagnostics() => _invokeEnroll(
-    {'mode': 'client-diagnostics'},
-    timeout: _clientLocalMethodTimeout,
-  );
+  Future<String> clientDiagnostics() => _invokeEnroll({
+    'mode': 'client-diagnostics',
+  }, timeout: _clientLocalMethodTimeout);
+
+  @override
+  Future<String> clientRoutePreview(String destination) => _invokeEnroll({
+    'mode': 'client-route-preview',
+    'route-destination': destination,
+  }, timeout: _clientLocalMethodTimeout);
 
   @override
   Future<String> configureClientSecureStorage({
     required String key,
     required String source,
-  }) => _invokeEnroll(
-    {
-      'mode': 'client-secure-storage',
-      'secure-cache-key': key,
-      'secure-cache-key-source': source,
-    },
-    timeout: _clientLocalMethodTimeout,
-  );
+  }) => _invokeEnroll({
+    'mode': 'client-secure-storage',
+    'secure-cache-key': key,
+    'secure-cache-key-source': source,
+  }, timeout: _clientLocalMethodTimeout);
 
   @override
-  Future<String> clientClear({required String endpoint}) => _invokeEnroll({
-    'mode': 'client-clear',
-    'endpoint': endpoint,
-  });
+  Future<String> clientClear({required String endpoint}) =>
+      _invokeEnroll({'mode': 'client-clear', 'endpoint': endpoint});
 
   @override
   Future<bool> crash() async {

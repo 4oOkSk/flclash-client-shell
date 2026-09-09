@@ -21,6 +21,7 @@ import 'package:path/path.dart' show dirname, join;
 import 'config/advanced.dart';
 import 'developer.dart';
 import 'theme.dart';
+import 'dashboard/widgets/private_client_account.dart';
 
 class ToolsView extends ConsumerStatefulWidget {
   const ToolsView({super.key});
@@ -74,13 +75,29 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       items: [
         const _LocaleItem(),
         const _ThemeItem(),
-        const _BackupItem(),
-        if (system.isDesktop) const _HotkeyItem(),
-        if (system.isWindows) const _LoopbackItem(),
-        if (system.isAndroid) const _AccessItem(),
-        const _ConfigItem(),
-        const _AdvancedConfigItem(),
-        const _SettingItem(),
+        if (kPrivateClientMode) ...[
+          const _SettingItem(),
+          ExpansionTile(
+            title: Text(context.appLocalizations.advancedConfig),
+            children: [
+              const _BackupItem(),
+              if (system.isDesktop) const _HotkeyItem(),
+              if (system.isWindows) const _LoopbackItem(),
+              if (system.isAndroid) const _AccessItem(),
+              const _ConfigItem(),
+              const _AdvancedConfigItem(),
+            ],
+          ),
+        ],
+        if (!kPrivateClientMode) ...[
+          const _BackupItem(),
+          if (system.isDesktop) const _HotkeyItem(),
+          if (system.isWindows) const _LoopbackItem(),
+          if (system.isAndroid) const _AccessItem(),
+          const _ConfigItem(),
+          const _AdvancedConfigItem(),
+          const _SettingItem(),
+        ],
       ],
     );
   }
@@ -93,6 +110,16 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ),
     );
     final items = [
+      if (kPrivateClientMode) ...[
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: PrivateClientAccountCard(),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: PrivateClientWebsiteCard(),
+        ),
+      ],
       Consumer(
         builder: (_, ref, _) {
           final state = ref.watch(moreToolsSelectorStateProvider);
@@ -101,8 +128,15 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           }
           return Column(
             children: [
-              ListHeader(title: context.appLocalizations.more),
-              _buildNavigationMenu(state.navigationItems),
+              if (kPrivateClientMode)
+                ExpansionTile(
+                  title: Text(context.appLocalizations.clientDiagnostics),
+                  children: [_buildNavigationMenu(state.navigationItems)],
+                )
+              else ...[
+                ListHeader(title: context.appLocalizations.more),
+                _buildNavigationMenu(state.navigationItems),
+              ],
             ],
           );
         },
@@ -111,7 +145,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ..._getOtherList(vm2.b),
     ];
     return CommonScaffold(
-      title: context.appLocalizations.tools,
+      title: kPrivateClientMode
+          ? context.appLocalizations.clientMe
+          : context.appLocalizations.tools,
       body: ListView.builder(
         key: toolsStoreKey,
         itemCount: items.length,

@@ -19,11 +19,10 @@ typedef PrivateRouteOverlayBuildResult = ({
   bool fallback,
 });
 
-typedef PrivateRouteOverlayApplyResult = ({String message, bool fallback});
-
-typedef PrivateRouteFallbackNotificationResult = ({
-  bool notify,
-  bool nextNotified,
+typedef PrivateRouteOverlayApplyResult = ({
+  String message,
+  bool fallback,
+  PrivateRouteOverlay? applied,
 });
 
 Future<T> selectPrivateRouteSnapshot<T>({
@@ -138,32 +137,25 @@ Future<PrivateRouteOverlayBuildResult> buildPrivateRouteOverlayPreservingBase({
   }
 }
 
-Future<PrivateRouteOverlayApplyResult> applyPrivateRouteOverlayFallbacks({
+Future<PrivateRouteOverlayApplyResult> applyPrivateRouteOverlaySafely({
   required PrivateRouteOverlay overlay,
-  required PrivateRouteOverlay baseOverlay,
-  required PrivateManagedRouting managedRouting,
+  required PrivateRouteOverlay? previous,
   required Future<String> Function(PrivateRouteOverlay overlay) apply,
-  bool fallback = false,
+  bool buildFailed = false,
 }) async {
-  final managedOverlay = PrivateRouteOverlay(managedRouting: managedRouting);
-  var message = await apply(overlay);
-  if (!message.startsWith('client route overlay invalid')) {
-    return (message: message, fallback: fallback);
+  final message = buildFailed
+      ? 'client route overlay invalid: script'
+      : await apply(overlay);
+  if (message.isEmpty) {
+    return (message: '', fallback: false, applied: overlay);
   }
-  fallback = true;
-  if (!identical(overlay, baseOverlay)) {
-    message = await apply(baseOverlay);
+  if (!message.startsWith('client route overlay invalid') || previous == null) {
+    return (message: message, fallback: false, applied: null);
   }
-  if (message.startsWith('client route overlay invalid') &&
-      (baseOverlay.rules.isNotEmpty || baseOverlay.ruleProviders.isNotEmpty)) {
-    message = await apply(managedOverlay);
-  }
-  return (message: message, fallback: fallback);
-}
-
-PrivateRouteFallbackNotificationResult resolvePrivateRouteFallbackNotification({
-  required bool fallback,
-  required bool wasNotified,
-}) {
-  return (notify: fallback && !wasNotified, nextNotified: fallback);
+  final restored = await apply(previous);
+  return (
+    message: restored,
+    fallback: true,
+    applied: restored.isEmpty ? previous : null,
+  );
 }

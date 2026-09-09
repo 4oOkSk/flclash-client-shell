@@ -12,7 +12,7 @@ Use this for user-facing Flutter UI changes in `lib/`, including widgets, screen
 ## Workflow
 
 1. Locate existing nearby widgets and reuse their patterns before adding new abstractions.
-2. Follow current Material You and Surfboard-like visual conventions.
+2. Managed HarborProxy UI follows the website's classic Material language: blue app bars, white surfaces, small corners and clear lists. Generic builds keep upstream Material You conventions. See `docs/client-routing.md` for the managed interaction contract.
 3. Use existing providers, notifiers, and helpers where possible.
 4. Keep `child:` last in widget constructors.
 5. Prefer `const` constructors and final locals.

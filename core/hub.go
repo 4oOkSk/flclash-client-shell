@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	"github.com/metacubex/mihomo/common/observable"
@@ -490,7 +491,7 @@ func handleSetupFromEnroll(data []byte) string {
 	}
 	refreshInterval := time.Duration(params.RefreshIntervalSeconds) * time.Second
 	switch params.Mode {
-	case enrollModeClientLogin, enrollModeClientSetup, enrollModeClientState, enrollModeClientInfo, enrollModeClientDiagnostics, enrollModeClientSecureStore, enrollModeClientClear:
+	case enrollModeClientLogin, enrollModeClientSetup, enrollModeClientState, enrollModeClientInfo, enrollModeClientDiagnostics, enrollModeClientSecureStore, enrollModeClientClear, "client-route-preview":
 		clientConfigMu.Lock()
 		defer clientConfigMu.Unlock()
 	}
@@ -509,6 +510,8 @@ func handleSetupFromEnroll(data []byte) string {
 		return clientAccountInfoJSON()
 	case enrollModeClientDiagnostics:
 		return clientRuntimeDiagnosticsJSON()
+	case "client-route-preview":
+		return clientRoutePreviewJSON(params.RouteDestination)
 	case enrollModeClientSecureStore:
 		configureRuntimeCacheKey(params.SecureCacheKey, params.SecureCacheKeySource)
 		return ""
@@ -548,6 +551,9 @@ func handleSetupFromEnroll(data []byte) string {
 	if err := applyConfig(sp); err != nil {
 		if params.Mode == enrollModeClientSetup {
 			clientRecordApply("core-apply-failed")
+			if !params.RouteOverlay.empty() {
+				return clientRouteOverlayError(errors.New("validation failed"))
+			}
 		}
 		return clientSetupErrorMessage(err)
 	}

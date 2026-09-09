@@ -212,6 +212,7 @@ func applyClientRouteOverlay(configYAML string, overlay *ClientRouteOverlay) (st
 			return "", err
 		}
 		baseRules = buildClientManagedRules(primaryGroup, overlay.Managed)
+		allowedTargets[primaryGroup] = struct{}{}
 		applyClientManagedDocument(document, overlay.Managed)
 	}
 	fallbackTarget := findBaseMatchTarget(baseRules)

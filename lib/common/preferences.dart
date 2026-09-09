@@ -189,6 +189,29 @@ class Preferences {
     final preferences = await sharedPreferencesCompleter.future;
     await preferences?.remove('private_client_rule_providers');
     await preferences?.remove('private_client_route_script_id');
+    await preferences?.remove('private_client_applied_route');
+  }
+
+  Future<PrivateRouteOverlay?> getAppliedPrivateRoute() async {
+    final preferences = await sharedPreferencesCompleter.future;
+    final value = preferences?.getString('private_client_applied_route');
+    if (value == null) return null;
+    try {
+      return PrivateRouteOverlay.fromJson(
+        Map<String, dynamic>.from(jsonDecode(value) as Map),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> saveAppliedPrivateRoute(PrivateRouteOverlay overlay) async {
+    final preferences = await sharedPreferencesCompleter.future;
+    return preferences?.setString(
+          'private_client_applied_route',
+          jsonEncode(overlay.toJson()),
+        ) ??
+        false;
   }
 
   Future<void> clearPreferences() async {

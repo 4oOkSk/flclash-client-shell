@@ -65,13 +65,15 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m21(label) => "${label} は 1024 から 49151 の間でなければなりません";
 
-  static String m22(count) => "${count} 秒";
+  static String m22(action, index) => "予測される動作：${action} · ルール ${index} に一致";
 
-  static String m23(count) => "${count} 項目が選択されています";
+  static String m23(count) => "${count} 秒";
 
-  static String m24(label) => "${label}はURLである必要があります";
+  static String m24(count) => "${count} 項目が選択されています";
 
-  static String m25(count) => "${count}年前";
+  static String m25(label) => "${label}はURLである必要があります";
+
+  static String m26(count) => "${count}年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -170,6 +172,26 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdate": MessageLookupByLibrary.simpleMessage("更新を確認"),
     "checkUpdateError": MessageLookupByLibrary.simpleMessage("アプリは最新版です"),
     "clearData": MessageLookupByLibrary.simpleMessage("データを消去"),
+    "clientAllProxy": MessageLookupByLibrary.simpleMessage("すべてプロキシ"),
+    "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
+      "必要なシステム例外を除き、選択した接続先を使用します。",
+    ),
+    "clientChangeLine": MessageLookupByLibrary.simpleMessage("接続先を変更"),
+    "clientConnect": MessageLookupByLibrary.simpleMessage("接続"),
+    "clientCurrentLine": MessageLookupByLibrary.simpleMessage("現在の接続先"),
+    "clientDiagnostics": MessageLookupByLibrary.simpleMessage("診断"),
+    "clientDisconnect": MessageLookupByLibrary.simpleMessage("切断"),
+    "clientHome": MessageLookupByLibrary.simpleMessage("ホーム"),
+    "clientLines": MessageLookupByLibrary.simpleMessage("接続先"),
+    "clientMe": MessageLookupByLibrary.simpleMessage("アカウント"),
+    "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
+      "中国本土のサイトは直接、その他は選択した接続先を使用します。",
+    ),
+    "clientReturnHint": MessageLookupByLibrary.simpleMessage(
+      "中国本土のサイトは帰国用接続先、その他は直接接続します。",
+    ),
+    "clientSmartOutbound": MessageLookupByLibrary.simpleMessage("海外向け自動振り分け"),
+    "clientSmartReturn": MessageLookupByLibrary.simpleMessage("中国向け自動振り分け"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage("クリップボードにエクスポート"),
     "clipboardImport": MessageLookupByLibrary.simpleMessage("クリップボードからインポート"),
     "color": MessageLookupByLibrary.simpleMessage("カラー"),
@@ -671,17 +693,79 @@ class MessageLookup extends MessageLookupByLibrary {
     "restoreStrategy_compatible": MessageLookupByLibrary.simpleMessage("互換"),
     "restoreStrategy_override": MessageLookupByLibrary.simpleMessage("上書き"),
     "restoreSuccess": MessageLookupByLibrary.simpleMessage("復元に成功しました"),
+    "routeAddException": MessageLookupByLibrary.simpleMessage("例外を追加"),
     "routeAddress": MessageLookupByLibrary.simpleMessage("ルートアドレス"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage("ルートアドレスを設定"),
+    "routeAdvanced": MessageLookupByLibrary.simpleMessage("高度な振り分け"),
+    "routeAdvancedHint": MessageLookupByLibrary.simpleMessage(
+      "順序、ルールセット、スクリプト。既存の高度なルールは保持されます。",
+    ),
+    "routeAdvancedOpen": MessageLookupByLibrary.simpleMessage("高度なルールで編集"),
+    "routeAdvancedRule": MessageLookupByLibrary.simpleMessage("高度なルール"),
+    "routeApplied": MessageLookupByLibrary.simpleMessage("ルール適用済み"),
+    "routeApplyFailed": MessageLookupByLibrary.simpleMessage(
+      "変更を適用できません。ルールを確認してください。既定ルールへの自動切替は行っていません。",
+    ),
+    "routeApplying": MessageLookupByLibrary.simpleMessage("ルールを適用中…"),
+    "routeCheck": MessageLookupByLibrary.simpleMessage("振り分けを確認"),
+    "routeCheckHint": MessageLookupByLibrary.simpleMessage(
+      "適用済みの HTTPS/TCP ルールを通信せずに確認します。疎通テストではありません。",
+    ),
+    "routeCheckResult": m22,
+    "routeDeleteException": MessageLookupByLibrary.simpleMessage(
+      "この例外を削除しますか？",
+    ),
+    "routeDestination": MessageLookupByLibrary.simpleMessage("サイトまたは IP アドレス"),
+    "routeDirect": MessageLookupByLibrary.simpleMessage("直接接続"),
+    "routeDomainHint": MessageLookupByLibrary.simpleMessage(
+      "URL はホスト名で照合され、ページのパスは対象外です。ネットワーク指定は高度なルールを使用してください。",
+    ),
+    "routeEditException": MessageLookupByLibrary.simpleMessage("例外を編集"),
+    "routeExceptions": MessageLookupByLibrary.simpleMessage("例外ルール"),
+    "routeExceptionsHint": MessageLookupByLibrary.simpleMessage(
+      "上から最初に一致した例外が、既定のモードより優先されます。",
+    ),
+    "routeIncludeSubdomains": MessageLookupByLibrary.simpleMessage(
+      "サブドメインを含める",
+    ),
+    "routeInvalidDestination": MessageLookupByLibrary.simpleMessage(
+      "認証情報を含まない有効なドメイン、HTTP(S) URL、IP アドレスを入力してください。",
+    ),
     "routeMode": MessageLookupByLibrary.simpleMessage("ルートモード"),
     "routeMode_bypassPrivate": MessageLookupByLibrary.simpleMessage(
       "プライベートルートをバイパス",
     ),
     "routeMode_config": MessageLookupByLibrary.simpleMessage("設定を使用"),
+    "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
+      "先行ルールに解決済み IP またはアプリ情報が必要です。この入力だけでは判定できません。",
+    ),
+    "routeNewConnections": MessageLookupByLibrary.simpleMessage(
+      "変更は新規接続に適用されます。既存の接続は切断されません。",
+    ),
+    "routeNoExceptions": MessageLookupByLibrary.simpleMessage(
+      "例外はありません。選択したモードで接続します。",
+    ),
+    "routeNotApplied": MessageLookupByLibrary.simpleMessage("変更は未適用です"),
+    "routeReconnect": MessageLookupByLibrary.simpleMessage("既存の接続を再接続"),
+    "routeReconnectConfirm": MessageLookupByLibrary.simpleMessage(
+      "現在のプロキシ接続を閉じ、新しいルールで再接続しますか？ダウンロードや通話が中断される場合があります。",
+    ),
+    "routeRecoveryNotSaved": MessageLookupByLibrary.simpleMessage(
+      "ルールは有効ですが、復元用コピーを保存できませんでした。",
+    ),
+    "routeReject": MessageLookupByLibrary.simpleMessage("アクセスを拒否"),
+    "routeRestored": MessageLookupByLibrary.simpleMessage(
+      "変更を適用できず、前の有効なルールに復元しました",
+    ),
+    "routeSaveApply": MessageLookupByLibrary.simpleMessage("保存して適用"),
     "routeScript": MessageLookupByLibrary.simpleMessage("ルーティングスクリプト"),
     "routeScriptDesc": MessageLookupByLibrary.simpleMessage(
       "JavaScript で高度なローカルルーティングロジックを処理します。",
     ),
+    "routeUnavailable": MessageLookupByLibrary.simpleMessage(
+      "確認できる適用済みルールがありません。先に接続または適用してください。",
+    ),
+    "routeViaLine": MessageLookupByLibrary.simpleMessage("選択した接続先"),
     "routing": MessageLookupByLibrary.simpleMessage("ルーティング"),
     "routingPrivacyDesc": MessageLookupByLibrary.simpleMessage(
       "これらの設定は通信経路だけに影響し、サーバー設定の表示や変更は行いません。",
@@ -792,7 +876,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "search": MessageLookupByLibrary.simpleMessage("検索"),
     "seconds": MessageLookupByLibrary.simpleMessage("秒"),
-    "secondsCount": m22,
+    "secondsCount": m23,
     "selectAll": MessageLookupByLibrary.simpleMessage("すべて選択"),
     "selectProxies": MessageLookupByLibrary.simpleMessage("プロキシを選択"),
     "selectProxyProviders": MessageLookupByLibrary.simpleMessage(
@@ -804,7 +888,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "selectSubRule": MessageLookupByLibrary.simpleMessage("サブルールを選択してください"),
     "selected": MessageLookupByLibrary.simpleMessage("選択済み"),
-    "selectedCountTitle": m23,
+    "selectedCountTitle": m24,
     "serverSelection": MessageLookupByLibrary.simpleMessage("サーバー選択"),
     "settings": MessageLookupByLibrary.simpleMessage("設定"),
     "show": MessageLookupByLibrary.simpleMessage("表示"),
@@ -887,7 +971,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("アップロード"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL経由でプロファイルを取得"),
-    "urlTip": m24,
+    "urlTip": m25,
     "useHosts": MessageLookupByLibrary.simpleMessage("ホストを使用"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("システムホストを使用"),
     "userAgent": MessageLookupByLibrary.simpleMessage("ユーザーエージェント"),
@@ -903,7 +987,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "vpnTip": MessageLookupByLibrary.simpleMessage("変更はVPN再起動後に有効"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV設定"),
     "whitelistMode": MessageLookupByLibrary.simpleMessage("ホワイトリストモード"),
-    "yearsAgo": m25,
+    "yearsAgo": m26,
     "zh_CN": MessageLookupByLibrary.simpleMessage("簡体字中国語"),
   };
 }

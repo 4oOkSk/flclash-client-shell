@@ -7,6 +7,26 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('managed navigation has four primary destinations on both layouts', () {
+    final items = navigation.getItems(managedClientMode: true);
+    for (final mode in [
+      NavigationItemMode.mobile,
+      NavigationItemMode.desktop,
+    ]) {
+      expect(
+        items
+            .where((item) => item.modes.contains(mode))
+            .map((item) => item.label),
+        [
+          PageLabel.dashboard,
+          PageLabel.proxies,
+          PageLabel.profiles,
+          PageLabel.tools,
+        ],
+      );
+    }
+  });
+
   testWidgets('managed client replaces the profiles slot with routing', (
     tester,
   ) async {

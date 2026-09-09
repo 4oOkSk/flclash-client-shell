@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/private_client_theme.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/hotkey_manager.dart';
@@ -43,6 +44,9 @@ class ApplicationState extends ConsumerState<Application> {
   }) {
     return ref.read(genColorSchemeProvider(brightness));
   }
+
+  ThemeData _clientTheme(ThemeData theme) =>
+      kPrivateClientMode ? classicClientTheme(theme) : theme;
 
   @override
   void initState() {
@@ -188,21 +192,25 @@ class ApplicationState extends ConsumerState<Application> {
           locale: utils.getLocaleForString(locale),
           supportedLocales: AppLocalizations.delegate.supportedLocales,
           themeMode: themeProps.themeMode,
-          theme: ThemeData(
-            useMaterial3: true,
-            pageTransitionsTheme: _pageTransitionsTheme,
-            colorScheme: _getAppColorScheme(
-              brightness: Brightness.light,
-              primaryColor: themeProps.primaryColor,
+          theme: _clientTheme(
+            ThemeData(
+              useMaterial3: true,
+              pageTransitionsTheme: _pageTransitionsTheme,
+              colorScheme: _getAppColorScheme(
+                brightness: Brightness.light,
+                primaryColor: themeProps.primaryColor,
+              ),
             ),
           ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            pageTransitionsTheme: _pageTransitionsTheme,
-            colorScheme: _getAppColorScheme(
-              brightness: Brightness.dark,
-              primaryColor: themeProps.primaryColor,
-            ).toPureBlack(themeProps.pureBlack),
+          darkTheme: _clientTheme(
+            ThemeData(
+              useMaterial3: true,
+              pageTransitionsTheme: _pageTransitionsTheme,
+              colorScheme: _getAppColorScheme(
+                brightness: Brightness.dark,
+                primaryColor: themeProps.primaryColor,
+              ).toPureBlack(themeProps.pureBlack),
+            ),
           ),
           home: child!,
         );

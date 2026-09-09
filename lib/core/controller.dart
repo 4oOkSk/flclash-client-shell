@@ -176,6 +176,9 @@ class CoreController {
 
   Future<String> clientDiagnostics() => _interface.clientDiagnostics();
 
+  Future<String> clientRoutePreview(String destination) =>
+      _interface.clientRoutePreview(destination);
+
   Future<String> clientClear({required String endpoint}) =>
       _interface.clientClear(endpoint: endpoint);
 

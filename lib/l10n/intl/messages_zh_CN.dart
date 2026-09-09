@@ -65,13 +65,15 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m21(label) => "${label} 必须在 1024 到 49151 之间";
 
-  static String m22(count) => "${count} 秒";
+  static String m22(action, index) => "预计方式：${action} · 命中第 ${index} 条规则";
 
-  static String m23(count) => "已选择 ${count} 项";
+  static String m23(count) => "${count} 秒";
 
-  static String m24(label) => "${label}必须为URL";
+  static String m24(count) => "已选择 ${count} 项";
 
-  static String m25(count) => "${count} 年前";
+  static String m25(label) => "${label}必须为URL";
+
+  static String m26(count) => "${count} 年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -160,6 +162,26 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdate": MessageLookupByLibrary.simpleMessage("检查更新"),
     "checkUpdateError": MessageLookupByLibrary.simpleMessage("当前应用已经是最新版了"),
     "clearData": MessageLookupByLibrary.simpleMessage("清除数据"),
+    "clientAllProxy": MessageLookupByLibrary.simpleMessage("全部代理"),
+    "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
+      "通过所选线路访问，保留必要的系统例外。",
+    ),
+    "clientChangeLine": MessageLookupByLibrary.simpleMessage("更换线路"),
+    "clientConnect": MessageLookupByLibrary.simpleMessage("连接"),
+    "clientCurrentLine": MessageLookupByLibrary.simpleMessage("当前线路"),
+    "clientDiagnostics": MessageLookupByLibrary.simpleMessage("诊断"),
+    "clientDisconnect": MessageLookupByLibrary.simpleMessage("断开连接"),
+    "clientHome": MessageLookupByLibrary.simpleMessage("首页"),
+    "clientLines": MessageLookupByLibrary.simpleMessage("线路"),
+    "clientMe": MessageLookupByLibrary.simpleMessage("我的"),
+    "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
+      "国内网站直连，其他网站走所选线路。",
+    ),
+    "clientReturnHint": MessageLookupByLibrary.simpleMessage(
+      "国内网站走回国线路，其他网站直连。",
+    ),
+    "clientSmartOutbound": MessageLookupByLibrary.simpleMessage("智能出国"),
+    "clientSmartReturn": MessageLookupByLibrary.simpleMessage("智能回国"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage("导出剪贴板"),
     "clipboardImport": MessageLookupByLibrary.simpleMessage("剪贴板导入"),
     "color": MessageLookupByLibrary.simpleMessage("颜色"),
@@ -585,15 +607,71 @@ class MessageLookup extends MessageLookupByLibrary {
     "restoreStrategy_compatible": MessageLookupByLibrary.simpleMessage("兼容"),
     "restoreStrategy_override": MessageLookupByLibrary.simpleMessage("覆盖"),
     "restoreSuccess": MessageLookupByLibrary.simpleMessage("恢复成功"),
+    "routeAddException": MessageLookupByLibrary.simpleMessage("添加规则"),
     "routeAddress": MessageLookupByLibrary.simpleMessage("路由地址"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage("配置监听路由地址"),
+    "routeAdvanced": MessageLookupByLibrary.simpleMessage("高级分流"),
+    "routeAdvancedHint": MessageLookupByLibrary.simpleMessage(
+      "规则排序、规则集与脚本。已有高级规则会保留，不会被简单编辑覆盖。",
+    ),
+    "routeAdvancedOpen": MessageLookupByLibrary.simpleMessage("在高级规则中编辑"),
+    "routeAdvancedRule": MessageLookupByLibrary.simpleMessage("高级规则"),
+    "routeApplied": MessageLookupByLibrary.simpleMessage("规则已生效"),
+    "routeApplyFailed": MessageLookupByLibrary.simpleMessage(
+      "无法应用本次修改，请检查规则；没有自动丢弃规则切回默认配置。",
+    ),
+    "routeApplying": MessageLookupByLibrary.simpleMessage("正在应用规则…"),
+    "routeCheck": MessageLookupByLibrary.simpleMessage("检查走向"),
+    "routeCheckHint": MessageLookupByLibrary.simpleMessage(
+      "只预判当前已生效的 HTTPS/TCP 规则，不发送网络请求，不代表实际连通。",
+    ),
+    "routeCheckResult": m22,
+    "routeDeleteException": MessageLookupByLibrary.simpleMessage("删除这条例外规则？"),
+    "routeDestination": MessageLookupByLibrary.simpleMessage("网站或 IP 地址"),
+    "routeDirect": MessageLookupByLibrary.simpleMessage("本地直连"),
+    "routeDomainHint": MessageLookupByLibrary.simpleMessage(
+      "粘贴网址时只匹配域名，不匹配网页路径；网段请使用高级规则。",
+    ),
+    "routeEditException": MessageLookupByLibrary.simpleMessage("编辑规则"),
+    "routeExceptions": MessageLookupByLibrary.simpleMessage("例外规则"),
+    "routeExceptionsHint": MessageLookupByLibrary.simpleMessage(
+      "按列表顺序优先匹配，例外规则优先于默认分流模式。",
+    ),
+    "routeIncludeSubdomains": MessageLookupByLibrary.simpleMessage("包含子域名"),
+    "routeInvalidDestination": MessageLookupByLibrary.simpleMessage(
+      "请输入有效域名、HTTP(S) 网址或 IP 地址，不要包含账号密码。",
+    ),
     "routeMode": MessageLookupByLibrary.simpleMessage("路由模式"),
     "routeMode_bypassPrivate": MessageLookupByLibrary.simpleMessage("绕过私有路由地址"),
     "routeMode_config": MessageLookupByLibrary.simpleMessage("使用配置"),
+    "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
+      "前面的规则需要解析后的 IP 或应用信息，仅凭此输入无法确定走向。",
+    ),
+    "routeNewConnections": MessageLookupByLibrary.simpleMessage(
+      "修改作用于新建连接，不会自动中断现有连接。",
+    ),
+    "routeNoExceptions": MessageLookupByLibrary.simpleMessage(
+      "暂无例外规则，当前按所选分流模式访问。",
+    ),
+    "routeNotApplied": MessageLookupByLibrary.simpleMessage("修改尚未生效"),
+    "routeReconnect": MessageLookupByLibrary.simpleMessage("重新建立现有连接"),
+    "routeReconnectConfirm": MessageLookupByLibrary.simpleMessage(
+      "关闭当前代理连接，让应用按新规则重连？下载和通话可能短暂中断。",
+    ),
+    "routeRecoveryNotSaved": MessageLookupByLibrary.simpleMessage(
+      "规则已生效，但恢复点保存失败。",
+    ),
+    "routeReject": MessageLookupByLibrary.simpleMessage("阻止访问"),
+    "routeRestored": MessageLookupByLibrary.simpleMessage("本次修改未生效，已恢复上一份有效规则"),
+    "routeSaveApply": MessageLookupByLibrary.simpleMessage("保存并应用"),
     "routeScript": MessageLookupByLibrary.simpleMessage("路由脚本"),
     "routeScriptDesc": MessageLookupByLibrary.simpleMessage(
       "使用 JavaScript 处理高级本地分流逻辑。",
     ),
+    "routeUnavailable": MessageLookupByLibrary.simpleMessage(
+      "尚无可检查的生效规则，请先连接或应用规则。",
+    ),
+    "routeViaLine": MessageLookupByLibrary.simpleMessage("走当前线路"),
     "routing": MessageLookupByLibrary.simpleMessage("分流"),
     "routingPrivacyDesc": MessageLookupByLibrary.simpleMessage(
       "这些设置只影响流量走向，不会显示或修改服务器配置。",
@@ -684,7 +762,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "search": MessageLookupByLibrary.simpleMessage("搜索"),
     "seconds": MessageLookupByLibrary.simpleMessage("秒"),
-    "secondsCount": m22,
+    "secondsCount": m23,
     "selectAll": MessageLookupByLibrary.simpleMessage("全选"),
     "selectProxies": MessageLookupByLibrary.simpleMessage("选择代理"),
     "selectProxyProviders": MessageLookupByLibrary.simpleMessage("选择代理集"),
@@ -692,7 +770,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectSplitStrategy": MessageLookupByLibrary.simpleMessage("请选择分流策略"),
     "selectSubRule": MessageLookupByLibrary.simpleMessage("请选择子规则"),
     "selected": MessageLookupByLibrary.simpleMessage("已选择"),
-    "selectedCountTitle": m23,
+    "selectedCountTitle": m24,
     "serverSelection": MessageLookupByLibrary.simpleMessage("服务器选择"),
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
     "show": MessageLookupByLibrary.simpleMessage("显示"),
@@ -769,7 +847,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上传"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("通过URL获取配置文件"),
-    "urlTip": m24,
+    "urlTip": m25,
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统Hosts"),
     "userAgent": MessageLookupByLibrary.simpleMessage("用户代理"),
@@ -785,7 +863,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "vpnTip": MessageLookupByLibrary.simpleMessage("重启VPN后改变生效"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV配置"),
     "whitelistMode": MessageLookupByLibrary.simpleMessage("白名单模式"),
-    "yearsAgo": m25,
+    "yearsAgo": m26,
     "zh_CN": MessageLookupByLibrary.simpleMessage("中文简体"),
   };
 }

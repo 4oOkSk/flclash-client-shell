@@ -4713,6 +4713,446 @@ class AppLocalizations {
       args: [count],
     );
   }
+
+  /// `Home`
+  String get clientHome {
+    return Intl.message('Home', name: 'clientHome', desc: '', args: []);
+  }
+
+  /// `Routes`
+  String get clientLines {
+    return Intl.message('Routes', name: 'clientLines', desc: '', args: []);
+  }
+
+  /// `Account`
+  String get clientMe {
+    return Intl.message('Account', name: 'clientMe', desc: '', args: []);
+  }
+
+  /// `Smart outbound`
+  String get clientSmartOutbound {
+    return Intl.message(
+      'Smart outbound',
+      name: 'clientSmartOutbound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smart return`
+  String get clientSmartReturn {
+    return Intl.message(
+      'Smart return',
+      name: 'clientSmartReturn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Proxy all`
+  String get clientAllProxy {
+    return Intl.message(
+      'Proxy all',
+      name: 'clientAllProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Mainland sites connect directly; other sites use your selected route.`
+  String get clientOutboundHint {
+    return Intl.message(
+      'Mainland sites connect directly; other sites use your selected route.',
+      name: 'clientOutboundHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Mainland sites use your return route; other sites connect directly.`
+  String get clientReturnHint {
+    return Intl.message(
+      'Mainland sites use your return route; other sites connect directly.',
+      name: 'clientReturnHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use your selected route, with necessary system exceptions.`
+  String get clientAllProxyHint {
+    return Intl.message(
+      'Use your selected route, with necessary system exceptions.',
+      name: 'clientAllProxyHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exceptions`
+  String get routeExceptions {
+    return Intl.message(
+      'Exceptions',
+      name: 'routeExceptions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The first matching exception takes priority over the default mode.`
+  String get routeExceptionsHint {
+    return Intl.message(
+      'The first matching exception takes priority over the default mode.',
+      name: 'routeExceptionsHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Advanced routing`
+  String get routeAdvanced {
+    return Intl.message(
+      'Advanced routing',
+      name: 'routeAdvanced',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rule order, rule sets and scripts. Existing advanced rules remain unchanged.`
+  String get routeAdvancedHint {
+    return Intl.message(
+      'Rule order, rule sets and scripts. Existing advanced rules remain unchanged.',
+      name: 'routeAdvancedHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add exception`
+  String get routeAddException {
+    return Intl.message(
+      'Add exception',
+      name: 'routeAddException',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Website or IP address`
+  String get routeDestination {
+    return Intl.message(
+      'Website or IP address',
+      name: 'routeDestination',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Include subdomains`
+  String get routeIncludeSubdomains {
+    return Intl.message(
+      'Include subdomains',
+      name: 'routeIncludeSubdomains',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A pasted URL is matched by hostname, not by page path. Use advanced rules for networks.`
+  String get routeDomainHint {
+    return Intl.message(
+      'A pasted URL is matched by hostname, not by page path. Use advanced rules for networks.',
+      name: 'routeDomainHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use selected route`
+  String get routeViaLine {
+    return Intl.message(
+      'Use selected route',
+      name: 'routeViaLine',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect directly`
+  String get routeDirect {
+    return Intl.message(
+      'Connect directly',
+      name: 'routeDirect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Block access`
+  String get routeReject {
+    return Intl.message(
+      'Block access',
+      name: 'routeReject',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter a valid domain, HTTP(S) URL or IP address without credentials.`
+  String get routeInvalidDestination {
+    return Intl.message(
+      'Enter a valid domain, HTTP(S) URL or IP address without credentials.',
+      name: 'routeInvalidDestination',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save and apply`
+  String get routeSaveApply {
+    return Intl.message(
+      'Save and apply',
+      name: 'routeSaveApply',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check routing`
+  String get routeCheck {
+    return Intl.message(
+      'Check routing',
+      name: 'routeCheck',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Predicts the currently applied HTTPS/TCP rules without sending traffic. This is not a connectivity test.`
+  String get routeCheckHint {
+    return Intl.message(
+      'Predicts the currently applied HTTPS/TCP rules without sending traffic. This is not a connectivity test.',
+      name: 'routeCheckHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `An earlier rule needs a resolved IP or application context. No routing conclusion can be made from this input alone.`
+  String get routeNeedsContext {
+    return Intl.message(
+      'An earlier rule needs a resolved IP or application context. No routing conclusion can be made from this input alone.',
+      name: 'routeNeedsContext',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No applied routing is available. Connect or apply your rules first.`
+  String get routeUnavailable {
+    return Intl.message(
+      'No applied routing is available. Connect or apply your rules first.',
+      name: 'routeUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rules applied`
+  String get routeApplied {
+    return Intl.message(
+      'Rules applied',
+      name: 'routeApplied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Applying rules…`
+  String get routeApplying {
+    return Intl.message(
+      'Applying rules…',
+      name: 'routeApplying',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Changes not applied`
+  String get routeNotApplied {
+    return Intl.message(
+      'Changes not applied',
+      name: 'routeNotApplied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Changes rejected; previous valid rules restored`
+  String get routeRestored {
+    return Intl.message(
+      'Changes rejected; previous valid rules restored',
+      name: 'routeRestored',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not apply these changes. Check your rules; no default-rule fallback was performed.`
+  String get routeApplyFailed {
+    return Intl.message(
+      'Could not apply these changes. Check your rules; no default-rule fallback was performed.',
+      name: 'routeApplyFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rules are active, but the recovery copy could not be saved.`
+  String get routeRecoveryNotSaved {
+    return Intl.message(
+      'Rules are active, but the recovery copy could not be saved.',
+      name: 'routeRecoveryNotSaved',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Changes affect new connections. Existing connections are not interrupted.`
+  String get routeNewConnections {
+    return Intl.message(
+      'Changes affect new connections. Existing connections are not interrupted.',
+      name: 'routeNewConnections',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reconnect existing traffic`
+  String get routeReconnect {
+    return Intl.message(
+      'Reconnect existing traffic',
+      name: 'routeReconnect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Close current proxy connections so applications reconnect using the new rules? Downloads and calls may be interrupted.`
+  String get routeReconnectConfirm {
+    return Intl.message(
+      'Close current proxy connections so applications reconnect using the new rules? Downloads and calls may be interrupted.',
+      name: 'routeReconnectConfirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Advanced rule`
+  String get routeAdvancedRule {
+    return Intl.message(
+      'Advanced rule',
+      name: 'routeAdvancedRule',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No exceptions. The selected mode handles your traffic.`
+  String get routeNoExceptions {
+    return Intl.message(
+      'No exceptions. The selected mode handles your traffic.',
+      name: 'routeNoExceptions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Expected action: {action} · matched rule {index}`
+  String routeCheckResult(String action, int index) {
+    return Intl.message(
+      'Expected action: $action · matched rule $index',
+      name: 'routeCheckResult',
+      desc: '',
+      args: [action, index],
+    );
+  }
+
+  /// `Current route`
+  String get clientCurrentLine {
+    return Intl.message(
+      'Current route',
+      name: 'clientCurrentLine',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change route`
+  String get clientChangeLine {
+    return Intl.message(
+      'Change route',
+      name: 'clientChangeLine',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect`
+  String get clientConnect {
+    return Intl.message('Connect', name: 'clientConnect', desc: '', args: []);
+  }
+
+  /// `Disconnect`
+  String get clientDisconnect {
+    return Intl.message(
+      'Disconnect',
+      name: 'clientDisconnect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Diagnostics`
+  String get clientDiagnostics {
+    return Intl.message(
+      'Diagnostics',
+      name: 'clientDiagnostics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit exception`
+  String get routeEditException {
+    return Intl.message(
+      'Edit exception',
+      name: 'routeEditException',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete this exception?`
+  String get routeDeleteException {
+    return Intl.message(
+      'Delete this exception?',
+      name: 'routeDeleteException',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit in advanced rules`
+  String get routeAdvancedOpen {
+    return Intl.message(
+      'Edit in advanced rules',
+      name: 'routeAdvancedOpen',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

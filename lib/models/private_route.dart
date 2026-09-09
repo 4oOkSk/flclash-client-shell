@@ -6,6 +6,20 @@ const privateRuleProviderBehaviors = <String>['domain', 'ipcidr', 'classical'];
 
 const privateRuleProviderFormats = <String>['yaml', 'text', 'mrs'];
 
+enum PrivateRouteApplyPhase { idle, applying, applied, restored, failed }
+
+class PrivateRouteApplyState {
+  final PrivateRouteApplyPhase phase;
+  final PrivateRouteOverlay? applied;
+  final bool recoverySaved;
+
+  const PrivateRouteApplyState({
+    this.phase = PrivateRouteApplyPhase.idle,
+    this.applied,
+    this.recoverySaved = true,
+  });
+}
+
 class PrivateRuleProviderConfig {
   final String name;
   final String url;
@@ -133,6 +147,21 @@ class PrivateRouteOverlay {
     this.ruleProviders = const [],
     this.managedRouting,
   });
+
+  factory PrivateRouteOverlay.fromJson(Map<String, dynamic> value) {
+    final routing = value['managed-routing'];
+    return PrivateRouteOverlay.fromScriptResult(
+      value,
+      managedRouting: routing is Map
+          ? PrivateManagedRouting(
+              mode:
+                  ManagedRouteMode.tryParse(routing['mode']) ??
+                  (throw const FormatException('invalid routing mode')),
+              rejectIpv6: routing['reject-ipv6'] == true,
+            )
+          : null,
+    );
+  }
 
   factory PrivateRouteOverlay.fromScriptResult(
     Map<String, dynamic> value, {

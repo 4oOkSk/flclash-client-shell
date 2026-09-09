@@ -279,7 +279,11 @@ class _NavigationBarDefaultsM3 extends NavigationBarThemeData {
   Color? get indicatorColor => _colors.secondaryContainer;
 
   @override
-  ShapeBorder? get indicatorShape => const StadiumBorder();
+  ShapeBorder? get indicatorShape => kPrivateClientMode
+      ? const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(3)),
+        )
+      : const StadiumBorder();
 
   @override
   WidgetStateProperty<TextStyle?>? get labelTextStyle {

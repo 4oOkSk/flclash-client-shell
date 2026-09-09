@@ -225,7 +225,9 @@ class CommonCard extends StatelessWidget {
               shape:
                   shape ??
                   RoundedSuperellipseBorder(
-                    borderRadius: BorderRadius.circular(radius ?? 14),
+                    borderRadius: BorderRadius.circular(
+                      radius ?? (kPrivateClientMode ? 3 : 14),
+                    ),
                   ),
               iconSize: 20,
               iconColor: _buildIconColor(context),
@@ -252,7 +254,9 @@ class CommonCard extends StatelessWidget {
               shape:
                   shape ??
                   RoundedSuperellipseBorder(
-                    borderRadius: BorderRadius.circular(radius ?? 14),
+                    borderRadius: BorderRadius.circular(
+                      radius ?? (kPrivateClientMode ? 3 : 14),
+                    ),
                   ),
               iconSize: 20,
               iconColor: _buildIconColor(context),

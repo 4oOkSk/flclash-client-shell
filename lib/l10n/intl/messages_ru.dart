@@ -71,13 +71,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m21(label) => "${label} должен быть числом от 1024 до 49151";
 
-  static String m22(count) => "${count} секунд";
+  static String m22(action, index) =>
+      "Ожидаемое действие: ${action} · правило ${index}";
 
-  static String m23(count) => "Выбрано ${count} элементов";
+  static String m23(count) => "${count} секунд";
 
-  static String m24(label) => "${label} должен быть URL";
+  static String m24(count) => "Выбрано ${count} элементов";
 
-  static String m25(count) =>
+  static String m25(label) => "${label} должен быть URL";
+
+  static String m26(count) =>
       "${Intl.plural(count, one: '${count} год назад', few: '${count} года назад', many: '${count} лет назад', other: '${count} года назад')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -231,6 +234,30 @@ class MessageLookup extends MessageLookupByLibrary {
       "Текущее приложение уже является последней версией",
     ),
     "clearData": MessageLookupByLibrary.simpleMessage("Очистить данные"),
+    "clientAllProxy": MessageLookupByLibrary.simpleMessage("Всё через прокси"),
+    "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
+      "Через выбранный сервер, кроме необходимых системных исключений.",
+    ),
+    "clientChangeLine": MessageLookupByLibrary.simpleMessage("Сменить сервер"),
+    "clientConnect": MessageLookupByLibrary.simpleMessage("Подключиться"),
+    "clientCurrentLine": MessageLookupByLibrary.simpleMessage("Текущий сервер"),
+    "clientDiagnostics": MessageLookupByLibrary.simpleMessage("Диагностика"),
+    "clientDisconnect": MessageLookupByLibrary.simpleMessage("Отключиться"),
+    "clientHome": MessageLookupByLibrary.simpleMessage("Главная"),
+    "clientLines": MessageLookupByLibrary.simpleMessage("Серверы"),
+    "clientMe": MessageLookupByLibrary.simpleMessage("Аккаунт"),
+    "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
+      "Сайты материкового Китая — напрямую, остальные — через выбранный сервер.",
+    ),
+    "clientReturnHint": MessageLookupByLibrary.simpleMessage(
+      "Сайты материкового Китая — через сервер возврата, остальные — напрямую.",
+    ),
+    "clientSmartOutbound": MessageLookupByLibrary.simpleMessage(
+      "Умный зарубежный",
+    ),
+    "clientSmartReturn": MessageLookupByLibrary.simpleMessage(
+      "Умный доступ в Китай",
+    ),
     "clipboardExport": MessageLookupByLibrary.simpleMessage(
       "Экспорт в буфер обмена",
     ),
@@ -886,9 +913,57 @@ class MessageLookup extends MessageLookupByLibrary {
     "restoreSuccess": MessageLookupByLibrary.simpleMessage(
       "Восстановление успешно",
     ),
+    "routeAddException": MessageLookupByLibrary.simpleMessage(
+      "Добавить исключение",
+    ),
     "routeAddress": MessageLookupByLibrary.simpleMessage("Адрес маршрутизации"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage(
       "Настройка адреса прослушивания маршрутизации",
+    ),
+    "routeAdvanced": MessageLookupByLibrary.simpleMessage(
+      "Расширенные правила",
+    ),
+    "routeAdvancedHint": MessageLookupByLibrary.simpleMessage(
+      "Порядок, наборы правил и скрипты. Существующие сложные правила сохраняются.",
+    ),
+    "routeAdvancedOpen": MessageLookupByLibrary.simpleMessage(
+      "Открыть расширенный редактор",
+    ),
+    "routeAdvancedRule": MessageLookupByLibrary.simpleMessage(
+      "Сложное правило",
+    ),
+    "routeApplied": MessageLookupByLibrary.simpleMessage("Правила применены"),
+    "routeApplyFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось применить изменения. Проверьте правила; автоматического сброса к стандартным не было.",
+    ),
+    "routeApplying": MessageLookupByLibrary.simpleMessage("Применение правил…"),
+    "routeCheck": MessageLookupByLibrary.simpleMessage("Проверить маршрут"),
+    "routeCheckHint": MessageLookupByLibrary.simpleMessage(
+      "Проверка действующих правил HTTPS/TCP без сетевых запросов. Это не проверка доступности.",
+    ),
+    "routeCheckResult": m22,
+    "routeDeleteException": MessageLookupByLibrary.simpleMessage(
+      "Удалить это исключение?",
+    ),
+    "routeDestination": MessageLookupByLibrary.simpleMessage(
+      "Сайт или IP-адрес",
+    ),
+    "routeDirect": MessageLookupByLibrary.simpleMessage("Напрямую"),
+    "routeDomainHint": MessageLookupByLibrary.simpleMessage(
+      "Из URL используется только имя хоста, не путь страницы. Для подсетей используйте расширенные правила.",
+    ),
+    "routeEditException": MessageLookupByLibrary.simpleMessage(
+      "Изменить исключение",
+    ),
+    "routeExceptions": MessageLookupByLibrary.simpleMessage("Исключения"),
+    "routeExceptionsHint": MessageLookupByLibrary.simpleMessage(
+      "Первое совпавшее исключение имеет приоритет над основным режимом.",
+    ),
+    "routeIncludeSubdomains": MessageLookupByLibrary.simpleMessage(
+      "Включая поддомены",
+    ),
+    "routeInvalidDestination": MessageLookupByLibrary.simpleMessage(
+      "Введите домен, HTTP(S) URL или IP-адрес без учётных данных.",
     ),
     "routeMode": MessageLookupByLibrary.simpleMessage("Режим маршрутизации"),
     "routeMode_bypassPrivate": MessageLookupByLibrary.simpleMessage(
@@ -897,9 +972,43 @@ class MessageLookup extends MessageLookupByLibrary {
     "routeMode_config": MessageLookupByLibrary.simpleMessage(
       "Использовать конфигурацию",
     ),
+    "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
+      "Предыдущему правилу нужен IP или контекст приложения. Этих данных недостаточно для вывода.",
+    ),
+    "routeNewConnections": MessageLookupByLibrary.simpleMessage(
+      "Изменения действуют для новых соединений. Текущие не прерываются.",
+    ),
+    "routeNoExceptions": MessageLookupByLibrary.simpleMessage(
+      "Исключений нет. Используется выбранный режим.",
+    ),
+    "routeNotApplied": MessageLookupByLibrary.simpleMessage(
+      "Изменения не применены",
+    ),
+    "routeReconnect": MessageLookupByLibrary.simpleMessage(
+      "Переподключить текущие соединения",
+    ),
+    "routeReconnectConfirm": MessageLookupByLibrary.simpleMessage(
+      "Закрыть текущие прокси-соединения для применения новых правил? Загрузки и звонки могут прерваться.",
+    ),
+    "routeRecoveryNotSaved": MessageLookupByLibrary.simpleMessage(
+      "Правила действуют, но резервную копию сохранить не удалось.",
+    ),
+    "routeReject": MessageLookupByLibrary.simpleMessage("Блокировать"),
+    "routeRestored": MessageLookupByLibrary.simpleMessage(
+      "Изменения отклонены; восстановлены предыдущие действующие правила",
+    ),
+    "routeSaveApply": MessageLookupByLibrary.simpleMessage(
+      "Сохранить и применить",
+    ),
     "routeScript": MessageLookupByLibrary.simpleMessage("Скрипт маршрутизации"),
     "routeScriptDesc": MessageLookupByLibrary.simpleMessage(
       "Используйте JavaScript для расширенной локальной маршрутизации.",
+    ),
+    "routeUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Нет действующих правил. Сначала подключитесь или примените правила.",
+    ),
+    "routeViaLine": MessageLookupByLibrary.simpleMessage(
+      "Через выбранный сервер",
     ),
     "routing": MessageLookupByLibrary.simpleMessage("Маршрутизация"),
     "routingPrivacyDesc": MessageLookupByLibrary.simpleMessage(
@@ -1019,7 +1128,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "search": MessageLookupByLibrary.simpleMessage("Поиск"),
     "seconds": MessageLookupByLibrary.simpleMessage("Секунд"),
-    "secondsCount": m22,
+    "secondsCount": m23,
     "selectAll": MessageLookupByLibrary.simpleMessage("Выбрать все"),
     "selectProxies": MessageLookupByLibrary.simpleMessage("Выбрать прокси"),
     "selectProxyProviders": MessageLookupByLibrary.simpleMessage(
@@ -1035,7 +1144,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Пожалуйста, выберите подправило",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Выбрано"),
-    "selectedCountTitle": m23,
+    "selectedCountTitle": m24,
     "serverSelection": MessageLookupByLibrary.simpleMessage("Выбор сервера"),
     "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
     "show": MessageLookupByLibrary.simpleMessage("Показать"),
@@ -1150,7 +1259,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "Получить профиль через URL",
     ),
-    "urlTip": m24,
+    "urlTip": m25,
     "useHosts": MessageLookupByLibrary.simpleMessage("Использовать hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "Использовать системные hosts",
@@ -1174,7 +1283,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage(
       "Режим белого списка",
     ),
-    "yearsAgo": m25,
+    "yearsAgo": m26,
     "zh_CN": MessageLookupByLibrary.simpleMessage("Упрощенный китайский"),
   };
 }

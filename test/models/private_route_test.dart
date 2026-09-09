@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/private_route.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,6 +46,29 @@ void main() {
   });
 
   group('PrivateRouteOverlay', () {
+    test(
+      'recovery serialization preserves blocking rules, providers and exact mode',
+      () {
+        const overlay = PrivateRouteOverlay(
+          rules: ['DOMAIN,example.com,REJECT'],
+          ruleProviders: [
+            PrivateRuleProviderConfig(
+              name: 'local',
+              url: 'https://example.com/rules.yaml',
+            ),
+          ],
+          managedRouting: PrivateManagedRouting(
+            mode: ManagedRouteMode.bypassOverseas,
+            rejectIpv6: true,
+          ),
+        );
+        final restored = PrivateRouteOverlay.fromJson(
+          jsonDecode(jsonEncode(overlay.toJson())) as Map<String, dynamic>,
+        );
+        expect(restored.toJson(), overlay.toJson());
+        expect(restored.rules.single, endsWith(',REJECT'));
+      },
+    );
     test('extracts only rules and typed rule providers from script result', () {
       final overlay = PrivateRouteOverlay.fromScriptResult({
         'rules': ['DOMAIN,example.com,DIRECT'],

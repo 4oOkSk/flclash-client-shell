@@ -29,7 +29,7 @@ class Navigation {
         label: PageLabel.proxies,
         builder: (_) =>
             const ProxiesView(key: GlobalObjectKey(PageLabel.proxies)),
-        modes: hasProxies
+        modes: hasProxies || isManagedClientMode
             ? [NavigationItemMode.mobile, NavigationItemMode.desktop]
             : [],
       ),
@@ -46,7 +46,9 @@ class Navigation {
         builder: (_) =>
             const RequestsView(key: GlobalObjectKey(PageLabel.requests)),
         description: 'requestsDesc',
-        modes: [NavigationItemMode.desktop, NavigationItemMode.more],
+        modes: isManagedClientMode
+            ? [NavigationItemMode.more]
+            : [NavigationItemMode.desktop, NavigationItemMode.more],
       ),
       NavigationItem(
         icon: const Icon(Icons.ballot),
@@ -54,7 +56,9 @@ class Navigation {
         builder: (_) =>
             const ConnectionsView(key: GlobalObjectKey(PageLabel.connections)),
         description: 'connectionsDesc',
-        modes: [NavigationItemMode.desktop, NavigationItemMode.more],
+        modes: isManagedClientMode
+            ? [NavigationItemMode.more]
+            : [NavigationItemMode.desktop, NavigationItemMode.more],
       ),
       NavigationItem(
         icon: const Icon(Icons.storage),
@@ -100,8 +104,15 @@ String navigationItemLabel(
   bool? managedClientMode,
 }) {
   final isManagedClientMode = managedClientMode ?? kClientApiBase.isNotEmpty;
-  if (isManagedClientMode && navigationItem.label == PageLabel.profiles) {
-    return AppLocalizations.of(context).routing;
+  if (isManagedClientMode) {
+    final localizations = AppLocalizations.of(context);
+    return switch (navigationItem.label) {
+      PageLabel.dashboard => localizations.clientHome,
+      PageLabel.proxies => localizations.clientLines,
+      PageLabel.profiles => localizations.routing,
+      PageLabel.tools => localizations.clientMe,
+      _ => Intl.message(navigationItem.label.name),
+    };
   }
   return Intl.message(navigationItem.label.name);
 }

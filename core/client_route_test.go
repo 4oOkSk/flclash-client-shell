@@ -53,6 +53,23 @@ rules:
   - MATCH,Proxy
 `
 
+func TestManagedLocalRuleCanFollowCurrentLine(test *testing.T) {
+	merged, err := applyClientRouteOverlay(clientRouteTestConfig, &ClientRouteOverlay{
+		Rules:   []string{"DOMAIN,example.org," + clientManagedServerGroup},
+		Managed: &ClientManagedRouting{Mode: clientManagedRouteGlobal},
+	})
+	if err != nil {
+		test.Fatal(err)
+	}
+	var view clientRouteConfigView
+	if err := commonYaml.Unmarshal([]byte(merged), &view); err != nil {
+		test.Fatal(err)
+	}
+	if view.Rules[0] != "DOMAIN,example.org,"+clientManagedServerGroup {
+		test.Fatal("current-line rule was not retained before the default policy")
+	}
+}
+
 func TestApplyClientRouteOverlay(t *testing.T) {
 	overlay := &ClientRouteOverlay{
 		Rules: []string{

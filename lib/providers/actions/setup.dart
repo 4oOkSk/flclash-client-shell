@@ -15,7 +15,6 @@ class SetupAction extends _$SetupAction {
   final _setupScheduler = SerialTaskScheduler();
   final _listenerScheduler = SerialTaskScheduler();
   final _privateRouteSetupQueue = PrivateRouteSetupQueue();
-  bool _privateRouteFallbackNotified = false;
   _RunRequest? _latestRunRequest;
   DateTime? _startTime;
   DateTime? _lastPrivateClientValidationAt;
@@ -362,29 +361,28 @@ class SetupAction extends _$SetupAction {
 
   void _enforcePrivateClientSettings() {
     if (!kPrivateClientMode) return;
-    ref.read(networkSettingProvider.notifier).update(
-      (state) => state.systemProxy
-          ? state.copyWith(systemProxy: false)
-          : state,
-    );
-    ref.read(patchClashConfigProvider.notifier).update(
-      (state) {
-        if (state.mode == Mode.rule &&
-            !state.allowLan &&
-            state.tun.enable) {
-          return state;
-        }
-        return state.copyWith(
-          mode: Mode.rule,
-          allowLan: false,
-          tun: state.tun.copyWith(enable: true),
+    ref
+        .read(networkSettingProvider.notifier)
+        .update(
+          (state) =>
+              state.systemProxy ? state.copyWith(systemProxy: false) : state,
         );
-      },
-    );
-    if (system.isAndroid) {
-      ref.read(vpnSettingProvider.notifier).update(
-        (state) => state.enable ? state : state.copyWith(enable: true),
+    ref.read(patchClashConfigProvider.notifier).update((state) {
+      if (state.mode == Mode.rule && !state.allowLan && state.tun.enable) {
+        return state;
+      }
+      return state.copyWith(
+        mode: Mode.rule,
+        allowLan: false,
+        tun: state.tun.copyWith(enable: true),
       );
+    });
+    if (system.isAndroid) {
+      ref
+          .read(vpnSettingProvider.notifier)
+          .update(
+            (state) => state.enable ? state : state.copyWith(enable: true),
+          );
     }
   }
 
@@ -396,12 +394,41 @@ class SetupAction extends _$SetupAction {
     if (refreshInterval == Duration.zero) {
       _lastPrivateClientValidationAt = privateClientValidationNow;
     }
-    return _privateRouteSetupQueue.enqueue(
-      () => _setupPrivateClientProfileImpl(
-        preloadInvoke: preloadInvoke,
-        refreshInterval: refreshInterval,
-      ),
-    );
+    return _privateRouteSetupQueue.enqueue(() async {
+      final previous =
+          ref.read(privateRouteStatusProvider).applied ??
+          await preferences.getAppliedPrivateRoute();
+      ref
+          .read(privateRouteStatusProvider.notifier)
+          .value = PrivateRouteApplyState(
+        phase: PrivateRouteApplyPhase.applying,
+        applied: previous,
+      );
+      try {
+        final message = await _setupPrivateClientProfileImpl(
+          preloadInvoke: preloadInvoke,
+          refreshInterval: refreshInterval,
+          previousRoute: previous,
+        );
+        if (message.isNotEmpty) {
+          ref
+              .read(privateRouteStatusProvider.notifier)
+              .value = PrivateRouteApplyState(
+            phase: PrivateRouteApplyPhase.failed,
+            applied: ref.read(privateRouteStatusProvider).applied,
+          );
+        }
+        return message;
+      } catch (_) {
+        ref
+            .read(privateRouteStatusProvider.notifier)
+            .value = PrivateRouteApplyState(
+          phase: PrivateRouteApplyPhase.failed,
+          applied: ref.read(privateRouteStatusProvider).applied,
+        );
+        rethrow;
+      }
+    });
   }
 
   @protected
@@ -424,6 +451,7 @@ class SetupAction extends _$SetupAction {
   Future<String> _setupPrivateClientProfileImpl({
     Future<void> Function()? preloadInvoke,
     required Duration refreshInterval,
+    required PrivateRouteOverlay? previousRoute,
   }) async {
     final selectedMap = await preferences.getPrivateClientSelectedMap();
     privateClientSelectedMap
@@ -444,7 +472,6 @@ class SetupAction extends _$SetupAction {
       ),
     );
     var routeOverlay = PrivateRouteOverlay(managedRouting: managedRouting);
-    var baseRouteOverlay = routeOverlay;
     var routeOverlayFallback = false;
     try {
       final rulesState = ref.read(globalRulesProvider);
@@ -481,16 +508,14 @@ class SetupAction extends _$SetupAction {
         script: script,
       );
       routeOverlay = result.overlay;
-      baseRouteOverlay = result.baseOverlay;
       routeOverlayFallback = result.fallback;
     } catch (_) {
       routeOverlayFallback = true;
     }
-    final applyResult = await applyPrivateRouteOverlayFallbacks(
+    final applyResult = await applyPrivateRouteOverlaySafely(
       overlay: routeOverlay,
-      baseOverlay: baseRouteOverlay,
-      managedRouting: managedRouting,
-      fallback: routeOverlayFallback,
+      previous: previousRoute,
+      buildFailed: routeOverlayFallback,
       apply: (overlay) => coreController.setupFromClient(
         endpoint: kClientApiBase,
         refreshInterval: refreshInterval,
@@ -499,34 +524,39 @@ class SetupAction extends _$SetupAction {
         routeOverlay: overlay,
       ),
     );
-    final message = await handlePrivateClientSetupMessage(
-      applyResult.message,
-    );
+    final message = await handlePrivateClientSetupMessage(applyResult.message);
     routeOverlayFallback = applyResult.fallback;
     if (message.isNotEmpty && !message.endsWith('is empty')) {
       return message;
     }
     ref.invalidate(privateClientAccountInfoProvider);
     final updateMessage = await coreController.updateConfig(
-      ref.read(updateParamsProvider).copyWith.tun(
-        enable: _getEffectiveTunEnable(
-          ref.read(patchClashConfigProvider).tun.enable,
-        ),
-      ),
+      ref
+          .read(updateParamsProvider)
+          .copyWith
+          .tun(
+            enable: _getEffectiveTunEnable(
+              ref.read(patchClashConfigProvider).tun.enable,
+            ),
+          ),
     );
     if (updateMessage.isNotEmpty) return updateMessage;
     await preloadInvoke?.call();
     ref.read(checkIpNumProvider.notifier).add();
     await ref.read(proxiesActionProvider.notifier).updateGroups();
     await ref.read(providersProvider.notifier).syncProviders();
-    final notification = resolvePrivateRouteFallbackNotification(
-      fallback: routeOverlayFallback,
-      wasNotified: _privateRouteFallbackNotified,
+    final applied = applyResult.applied;
+    final recoverySaved =
+        applied != null && await preferences.saveAppliedPrivateRoute(applied);
+    ref
+        .read(privateRouteStatusProvider.notifier)
+        .value = PrivateRouteApplyState(
+      phase: routeOverlayFallback
+          ? PrivateRouteApplyPhase.restored
+          : PrivateRouteApplyPhase.applied,
+      applied: applied,
+      recoverySaved: recoverySaved,
     );
-    _privateRouteFallbackNotified = notification.nextNotified;
-    if (notification.notify) {
-      globalState.showNotifier(currentAppLocalizations.privateRouteFallback);
-    }
     return '';
   }
 
@@ -595,9 +625,7 @@ class SetupAction extends _$SetupAction {
       case AuthorizeCode.error:
       case AuthorizeCode.coreHashMismatch:
         if (kPrivateClientMode) {
-          throw StateError(
-            'TUN authorization failed (${code.diagnosticCode})',
-          );
+          throw StateError('TUN authorization failed (${code.diagnosticCode})');
         }
         return true;
     }
@@ -623,6 +651,7 @@ class SetupAction extends _$SetupAction {
                 ? Duration.zero
                 : privateClientSessionRefreshDuration,
           );
+          if (message == clientLoginRequiredMessage) return;
           if (message.isNotEmpty) throw message;
         },
         silence: true,
