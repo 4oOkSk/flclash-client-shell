@@ -19,13 +19,15 @@ class Navigation {
     return [
       NavigationItem(
         keep: false,
-        icon: const Icon(Icons.space_dashboard),
+        icon: Icon(
+          isManagedClientMode ? Icons.home_outlined : Icons.space_dashboard,
+        ),
         label: PageLabel.dashboard,
         builder: (_) =>
             const DashboardView(key: GlobalObjectKey(PageLabel.dashboard)),
       ),
       NavigationItem(
-        icon: const Icon(Icons.article),
+        icon: Icon(isManagedClientMode ? Icons.alt_route : Icons.article),
         label: PageLabel.proxies,
         builder: (_) =>
             const ProxiesView(key: GlobalObjectKey(PageLabel.proxies)),
@@ -80,7 +82,9 @@ class Navigation {
             : [],
       ),
       NavigationItem(
-        icon: const Icon(Icons.construction),
+        icon: Icon(
+          isManagedClientMode ? Icons.person_outline : Icons.construction,
+        ),
         label: PageLabel.tools,
         builder: (_) => const ToolsView(key: GlobalObjectKey(PageLabel.tools)),
         modes: [NavigationItemMode.desktop, NavigationItemMode.mobile],

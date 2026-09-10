@@ -27,6 +27,7 @@ class CommonScaffold extends StatefulWidget {
   final AppBarSearchState? searchState;
   final OnKeywordsUpdateCallback? onKeywordsUpdate;
   final bool? resizeToAvoidBottomInset;
+  final bool managedRoot;
 
   const CommonScaffold({
     super.key,
@@ -43,6 +44,7 @@ class CommonScaffold extends StatefulWidget {
     this.isTV,
     this.onKeywordsUpdate,
     this.resizeToAvoidBottomInset,
+    this.managedRoot = false,
   });
 
   @override
@@ -359,7 +361,10 @@ class CommonScaffoldState extends State<CommonScaffold> {
         ],
       ),
     );
-    return Scaffold(
+    final inlineTitle =
+        widget.managedRoot &&
+        ClientWindowChromeScope.inlinePageTitlesOf(context);
+    final scaffold = Scaffold(
       appBar: _buildAppBar(backActionProvider?.backAction),
       body: NotificationListener<UserScrollNotification>(
         child: body,
@@ -386,6 +391,29 @@ class CommonScaffoldState extends State<CommonScaffold> {
               child: widget.floatingActionButton,
             )
           : null,
+    );
+    if (!inlineTitle) return scaffold;
+    final theme = Theme.of(context);
+    return ColoredBox(
+      color: widget.backgroundColor ?? theme.scaffoldBackgroundColor,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1040),
+          child: Theme(
+            data: theme.copyWith(
+              appBarTheme: theme.appBarTheme.copyWith(
+                backgroundColor: theme.scaffoldBackgroundColor,
+                foregroundColor: theme.colorScheme.onSurface,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                titleTextStyle: theme.textTheme.titleLarge,
+              ),
+            ),
+            child: scaffold,
+          ),
+        ),
+      ),
     );
   }
 }

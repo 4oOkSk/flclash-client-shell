@@ -145,6 +145,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ..._getOtherList(vm2.b),
     ];
     return CommonScaffold(
+      managedRoot: kPrivateClientMode,
       title: kPrivateClientMode
           ? context.appLocalizations.clientMe
           : context.appLocalizations.tools,

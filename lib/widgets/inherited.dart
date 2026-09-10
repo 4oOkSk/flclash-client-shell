@@ -2,6 +2,26 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/widgets/sheet.dart';
 import 'package:flutter/material.dart';
 
+class ClientWindowChromeScope extends InheritedWidget {
+  final bool inlinePageTitles;
+
+  const ClientWindowChromeScope({
+    super.key,
+    required this.inlinePageTitles,
+    required super.child,
+  });
+
+  static bool inlinePageTitlesOf(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<ClientWindowChromeScope>()
+          ?.inlinePageTitles ??
+      false;
+
+  @override
+  bool updateShouldNotify(ClientWindowChromeScope oldWidget) =>
+      inlinePageTitles != oldWidget.inlinePageTitles;
+}
+
 class PageActivityScope extends InheritedWidget {
   final bool isActive;
 

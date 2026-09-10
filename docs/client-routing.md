@@ -6,6 +6,26 @@ settings and routing editors remain available; generic builds retain the upstrea
 The classic Material theme follows the website's blue app bars, white surfaces, grey background
 and small corners, with a corresponding dark palette. Native lifecycle ownership is unchanged.
 
+## Shared application layout
+
+The managed Windows and Linux window controls share one full-width branded app bar. Primary
+page headings sit on the content surface rather than forming a second colored bar. All four
+primary pages share the same content width and alignment. Secondary routes retain their own
+title and back navigation; native macOS title-bar behavior is unchanged.
+
+Wide windows use an expanded navigation rail with visible text. Medium windows keep labels
+below the icons, and compact layouts use labeled bottom navigation. The managed layout does
+not hide destination names through the generic client's label preference. Primary buttons,
+navigation selection and window chrome use one blue palette and consistent corner treatment.
+
+The design follows Material's [large-screen layout and navigation](https://m2.material.io/components/navigation-drawer)
+and [navigation rail guidance](https://m2.material.io/components/navigation-rail), preserving
+the website's classic Material styling rather than combining unrelated window and page themes.
+
+Visual acceptance includes the entire window, not isolated content widgets: all four primary
+pages, wide and medium desktop layouts, compact/mobile navigation, and dark mode. Component
+screenshots with demonstration data are not substitutes for native package acceptance.
+
 ## Exceptions
 
 The simple editor accepts a domain, HTTP(S) URL or literal IP address. A URL is normalized to its

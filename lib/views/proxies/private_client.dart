@@ -57,6 +57,7 @@ class PrivateClientProxiesView extends ConsumerWidget {
     final group = findPrivateClientPrimaryGroup(ref.watch(groupsProvider));
     final style = ref.watch(proxiesStyleSettingProvider);
     return CommonScaffold(
+      managedRoot: true,
       title: context.appLocalizations.clientLines,
       body: group == null
           ? Center(child: Text(context.appLocalizations.routeUnavailable))

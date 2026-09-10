@@ -281,7 +281,7 @@ class _NavigationBarDefaultsM3 extends NavigationBarThemeData {
   @override
   ShapeBorder? get indicatorShape => kPrivateClientMode
       ? const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(3)),
+          borderRadius: BorderRadius.all(Radius.circular(4)),
         )
       : const StadiumBorder();
 

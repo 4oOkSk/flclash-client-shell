@@ -72,7 +72,7 @@ class ThemeManager extends ConsumerWidget {
               .copyWith(
                 shape: RoundedSuperellipseBorder(
                   borderRadius: BorderRadius.all(
-                    Radius.circular(kPrivateClientMode ? 3 : 16),
+                    Radius.circular(kPrivateClientMode ? 4 : 16),
                   ),
                 ),
               ),

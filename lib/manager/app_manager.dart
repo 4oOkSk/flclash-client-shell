@@ -101,9 +101,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         if (kPrivateClientMode) {
           unawaited(_validatePrivateClientSession());
         } else {
-          globalState.container
-              .read(setupActionProvider.notifier)
-              .tryCheckIp();
+          globalState.container.read(setupActionProvider.notifier).tryCheckIp();
         }
       });
     }
@@ -197,6 +195,9 @@ class AppSidebarContainer extends ConsumerWidget {
     final isMobileView = navigationState.viewMode == ViewMode.mobile;
     final currentIndex = navigationState.currentIndex;
     final showLabel = ref.watch(appSettingProvider).showLabel;
+    final managedExpanded =
+        kPrivateClientMode &&
+        ref.watch(viewSizeProvider.select((size) => size.width)) >= 1000;
     return Container(
       color: context.colorScheme.surfaceContainer,
       child: Row(
@@ -211,7 +212,7 @@ class AppSidebarContainer extends ConsumerWidget {
                   children: [
                     if (system.isMacOS) const SizedBox(height: 22),
                     const SizedBox(height: 10),
-                    if (!system.isMacOS) ...[
+                    if (!system.isMacOS && !kPrivateClientMode) ...[
                       const ClipRect(child: AppIcon()),
                       const SizedBox(height: 12),
                     ],
@@ -224,19 +225,28 @@ class AppSidebarContainer extends ConsumerWidget {
                             Expanded(
                               child: NavigationRail(
                                 scrollable: true,
-                                minExtendedWidth: 200,
+                                minExtendedWidth: kPrivateClientMode
+                                    ? 208
+                                    : 200,
                                 backgroundColor: Colors.transparent,
                                 selectedLabelTextStyle: context
                                     .textTheme
                                     .labelLarge!
                                     .copyWith(
-                                      color: context.colorScheme.onSurface,
+                                      color: kPrivateClientMode
+                                          ? context.colorScheme.primary
+                                          : context.colorScheme.onSurface,
+                                      fontWeight: kPrivateClientMode
+                                          ? FontWeight.w600
+                                          : null,
                                     ),
                                 unselectedLabelTextStyle: context
                                     .textTheme
                                     .labelLarge!
                                     .copyWith(
-                                      color: context.colorScheme.onSurface,
+                                      color: kPrivateClientMode
+                                          ? context.colorScheme.onSurfaceVariant
+                                          : context.colorScheme.onSurface,
                                     ),
                                 destinations: navigationItems
                                     .map(
@@ -251,9 +261,11 @@ class AppSidebarContainer extends ConsumerWidget {
                                 onDestinationSelected: (index) {
                                   _handleToPage(navigationItems[index].label);
                                 },
-                                extended: false,
+                                extended: managedExpanded,
                                 selectedIndex: currentIndex,
-                                labelType: showLabel
+                                labelType: managedExpanded
+                                    ? NavigationRailLabelType.none
+                                    : showLabel || kPrivateClientMode
                                     ? NavigationRailLabelType.all
                                     : NavigationRailLabelType.none,
                               ),
@@ -263,20 +275,21 @@ class AppSidebarContainer extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    IconButton(
-                      onPressed: () {
-                        ref
-                            .read(appSettingProvider.notifier)
-                            .update(
-                              (state) =>
-                                  state.copyWith(showLabel: !state.showLabel),
-                            );
-                      },
-                      icon: Icon(
-                        Icons.menu,
-                        color: context.colorScheme.onSurfaceVariant,
+                    if (!kPrivateClientMode)
+                      IconButton(
+                        onPressed: () {
+                          ref
+                              .read(appSettingProvider.notifier)
+                              .update(
+                                (state) =>
+                                    state.copyWith(showLabel: !state.showLabel),
+                              );
+                        },
+                        icon: Icon(
+                          Icons.menu,
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 16),
                   ],
                 ),

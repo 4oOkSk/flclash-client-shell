@@ -4,6 +4,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/widgets/inherited.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_ext/window_ext.dart';
@@ -119,6 +120,17 @@ class WindowHeaderContainer extends StatelessWidget {
         if ((version <= 10 || !isMobileView) && system.isMacOS) {
           return child!;
         }
+        if (kPrivateClientMode && !system.isMacOS) {
+          return ClientWindowChromeScope(
+            inlinePageTitles: !isMobileView,
+            child: Column(
+              children: [
+                const WindowHeader(managed: true),
+                Expanded(child: child!),
+              ],
+            ),
+          );
+        }
         return Stack(
           children: [
             Column(
@@ -137,7 +149,9 @@ class WindowHeaderContainer extends StatelessWidget {
 }
 
 class WindowHeader extends StatefulWidget {
-  const WindowHeader({super.key});
+  final bool managed;
+
+  const WindowHeader({super.key, this.managed = false});
 
   @override
   State<WindowHeader> createState() => _WindowHeaderState();
@@ -192,6 +206,7 @@ class _WindowHeaderState extends State<WindowHeader> {
 
   Widget _buildActions() {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           onPressed: () async {
@@ -239,6 +254,64 @@ class _WindowHeaderState extends State<WindowHeader> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.managed) {
+      final theme = Theme.of(context);
+      final foreground = theme.appBarTheme.foregroundColor!;
+      return Material(
+        color: theme.appBarTheme.backgroundColor,
+        elevation: 2,
+        child: IconButtonTheme(
+          data: IconButtonThemeData(
+            style: IconButton.styleFrom(
+              foregroundColor: foreground,
+              shape: const RoundedRectangleBorder(),
+              minimumSize: const Size(40, 48),
+              iconSize: 20,
+            ),
+          ),
+          child: SizedBox(
+            height: kToolbarHeight,
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (_) => windowManager.startDragging(),
+                    onDoubleTap: _updateMaximized,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/icon.png',
+                            width: 28,
+                            height: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              appName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: foreground,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                _buildActions(),
+                const SizedBox(width: 4),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Material(
       child: Stack(
         alignment: AlignmentDirectional.center,

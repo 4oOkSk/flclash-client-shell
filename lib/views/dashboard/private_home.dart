@@ -52,13 +52,14 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
         ? routeState.applied?.managedRouting?.mode ?? desiredMode
         : desiredMode;
     return CommonScaffold(
+      managedRoot: true,
       title: text.clientHome,
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
+          constraints: const BoxConstraints(maxWidth: 1040),
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             children: [
               Card(
                 margin: EdgeInsets.zero,

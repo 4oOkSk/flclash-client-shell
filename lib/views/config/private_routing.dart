@@ -187,11 +187,12 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
         status.phase == PrivateRouteApplyPhase.failed ||
         status.phase == PrivateRouteApplyPhase.restored;
     return CommonScaffold(
+      managedRoot: true,
       title: text.routing,
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
+          constraints: const BoxConstraints(maxWidth: 1040),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
