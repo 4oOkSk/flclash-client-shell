@@ -4,7 +4,6 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
-import 'package:fl_clash/widgets/inherited.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_ext/window_ext.dart';
@@ -121,14 +120,11 @@ class WindowHeaderContainer extends StatelessWidget {
           return child!;
         }
         if (kPrivateClientMode && !system.isMacOS) {
-          return ClientWindowChromeScope(
-            inlinePageTitles: !isMobileView,
-            child: Column(
-              children: [
-                const WindowHeader(managed: true),
-                Expanded(child: child!),
-              ],
-            ),
+          return Column(
+            children: [
+              const WindowHeader(managed: true),
+              Expanded(child: child!),
+            ],
           );
         }
         return Stack(
@@ -259,7 +255,7 @@ class _WindowHeaderState extends State<WindowHeader> {
       final foreground = theme.appBarTheme.foregroundColor!;
       return Material(
         color: theme.appBarTheme.backgroundColor,
-        elevation: 2,
+        shape: Border(bottom: BorderSide(color: theme.dividerColor)),
         child: IconButtonTheme(
           data: IconButtonThemeData(
             style: IconButton.styleFrom(
@@ -270,7 +266,7 @@ class _WindowHeaderState extends State<WindowHeader> {
             ),
           ),
           child: SizedBox(
-            height: kToolbarHeight,
+            height: 48,
             child: Row(
               children: [
                 Expanded(
@@ -279,21 +275,21 @@ class _WindowHeaderState extends State<WindowHeader> {
                     onPanStart: (_) => windowManager.startDragging(),
                     onDoubleTap: _updateMaximized,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
                         children: [
                           Image.asset(
                             'assets/images/icon.png',
-                            width: 28,
-                            height: 28,
+                            width: 24,
+                            height: 24,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               appName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.labelLarge?.copyWith(
                                 color: foreground,
                                 fontWeight: FontWeight.w600,
                               ),

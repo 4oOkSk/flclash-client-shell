@@ -159,7 +159,17 @@ class AppSidebarContainer extends ConsumerWidget {
     required BuildContext context,
     required Widget child,
   }) {
-    return Material(color: context.colorScheme.surfaceContainer, child: child);
+    return Material(
+      color: kPrivateClientMode
+          ? Theme.of(context).scaffoldBackgroundColor
+          : context.colorScheme.surfaceContainer,
+      shape: kPrivateClientMode
+          ? BorderDirectional(
+              end: BorderSide(color: Theme.of(context).dividerColor),
+            )
+          : null,
+      child: child,
+    );
   }
 
   void _updateSideBarWidth(WidgetRef ref, double contentWidth) {
@@ -199,7 +209,9 @@ class AppSidebarContainer extends ConsumerWidget {
         kPrivateClientMode &&
         ref.watch(viewSizeProvider.select((size) => size.width)) >= 1000;
     return Container(
-      color: context.colorScheme.surfaceContainer,
+      color: kPrivateClientMode
+          ? Theme.of(context).scaffoldBackgroundColor
+          : context.colorScheme.surfaceContainer,
       child: Row(
         children: [
           AnimatedVisibility.sidebar(

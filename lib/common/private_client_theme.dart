@@ -4,7 +4,7 @@ ThemeData classicClientTheme(ThemeData base) {
   final dark = base.brightness == Brightness.dark;
   final primary = dark ? const Color(0xff90caf9) : const Color(0xff1976d2);
   final surface = dark ? const Color(0xff22272c) : Colors.white;
-  final background = dark ? const Color(0xff171b1f) : const Color(0xfff5f5f5);
+  final background = dark ? const Color(0xff171b1f) : const Color(0xfff5f6f8);
   final selection = dark ? const Color(0xff203c52) : const Color(0xffe3f2fd);
   const shape = RoundedRectangleBorder(
     borderRadius: BorderRadius.all(Radius.circular(4)),
@@ -47,14 +47,14 @@ ThemeData classicClientTheme(ThemeData base) {
     dividerColor: scheme.outlineVariant,
     splashFactory: InkRipple.splashFactory,
     appBarTheme: AppBarThemeData(
-      backgroundColor: dark ? const Color(0xff173c5b) : primary,
-      foregroundColor: Colors.white,
+      backgroundColor: background,
+      foregroundColor: scheme.onSurface,
       surfaceTintColor: Colors.transparent,
-      elevation: 2,
-      scrolledUnderElevation: 2,
+      elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
       titleTextStyle: base.textTheme.titleLarge?.copyWith(
-        color: Colors.white,
+        color: scheme.onSurface,
         fontSize: 20,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
@@ -91,12 +91,13 @@ ThemeData classicClientTheme(ThemeData base) {
       filled: false,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: surface,
+      backgroundColor: background,
+      elevation: 0,
       surfaceTintColor: Colors.transparent,
       indicatorShape: shape,
     ),
     navigationRailTheme: NavigationRailThemeData(
-      backgroundColor: surface,
+      backgroundColor: background,
       indicatorColor: selection,
       indicatorShape: shape,
       selectedIconTheme: IconThemeData(color: primary, size: 24),

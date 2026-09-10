@@ -361,11 +361,18 @@ class CommonScaffoldState extends State<CommonScaffold> {
         ],
       ),
     );
-    final inlineTitle =
+    final hideRootTitle =
         widget.managedRoot &&
-        ClientWindowChromeScope.inlinePageTitlesOf(context);
+        widget.appBar == null &&
+        (widget.actions?.isEmpty ?? true) &&
+        widget.editState == null &&
+        widget.searchState == null &&
+        !widget.isLoading &&
+        backActionProvider?.backAction == null;
     final scaffold = Scaffold(
-      appBar: _buildAppBar(backActionProvider?.backAction),
+      appBar: hideRootTitle
+          ? null
+          : _buildAppBar(backActionProvider?.backAction),
       body: NotificationListener<UserScrollNotification>(
         child: body,
         onNotification: (notification) {
@@ -392,7 +399,7 @@ class CommonScaffoldState extends State<CommonScaffold> {
             )
           : null,
     );
-    if (!inlineTitle) return scaffold;
+    if (!widget.managedRoot) return scaffold;
     final theme = Theme.of(context);
     return ColoredBox(
       color: widget.backgroundColor ?? theme.scaffoldBackgroundColor,
@@ -400,16 +407,9 @@ class CommonScaffoldState extends State<CommonScaffold> {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1040),
-          child: Theme(
-            data: theme.copyWith(
-              appBarTheme: theme.appBarTheme.copyWith(
-                backgroundColor: theme.scaffoldBackgroundColor,
-                foregroundColor: theme.colorScheme.onSurface,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                titleTextStyle: theme.textTheme.titleLarge,
-              ),
-            ),
+          child: Semantics(
+            namesRoute: hideRootTitle,
+            label: hideRootTitle ? widget.title : null,
             child: scaffold,
           ),
         ),

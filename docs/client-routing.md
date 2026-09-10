@@ -3,20 +3,24 @@
 The managed client uses Home, Routes, Routing and Account as its four primary destinations.
 Requests, connections and resources remain available under Account → Diagnostics. Advanced
 settings and routing editors remain available; generic builds retain the upstream dashboard.
-The classic Material theme follows the website's blue app bars, white surfaces, grey background
-and small corners, with a corresponding dark palette. Native lifecycle ownership is unchanged.
+The classic Material theme uses neutral window chrome and navigation, white cards, a light grey
+background and small corners. Blue highlights selection and actions, with a corresponding dark
+palette. Native lifecycle ownership is unchanged.
 
 ## Shared application layout
 
-The managed Windows and Linux window controls share one full-width branded app bar. Primary
-page headings sit on the content surface rather than forming a second colored bar. All four
-primary pages share the same content width and alignment. Secondary routes retain their own
-title and back navigation; native macOS title-bar behavior is unchanged.
+The managed Windows and Linux window controls share one quiet, full-width 48-pixel title bar.
+The four primary destinations omit duplicate page headings and their empty toolbar rows on
+desktop and mobile; navigation identifies the current page. Their content shares a maximum
+width of 1040 logical pixels and a consistent alignment. Secondary routes retain their own title
+and back navigation, and action/search toolbars are not hidden. Native macOS title-bar behavior
+is unchanged. Mobile content retains system safe-area padding.
 
 Wide windows use an expanded navigation rail with visible text. Medium windows keep labels
 below the icons, and compact layouts use labeled bottom navigation. The managed layout does
-not hide destination names through the generic client's label preference. Primary buttons,
-navigation selection and window chrome use one blue palette and consistent corner treatment.
+not hide destination names through the generic client's label preference. The title bar, rail,
+bottom navigation and page canvas share a neutral background. Primary buttons and navigation
+selection use one blue palette and consistent corner treatment.
 
 The design follows Material's [large-screen layout and navigation](https://m2.material.io/components/navigation-drawer)
 and [navigation rail guidance](https://m2.material.io/components/navigation-rail), preserving

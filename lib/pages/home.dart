@@ -30,7 +30,9 @@ class HomePage extends ConsumerWidget {
     return HomeBackScopeContainer(
       child: AppSidebarContainer(
         child: Material(
-          color: context.colorScheme.surface,
+          color: kPrivateClientMode
+              ? Theme.of(context).scaffoldBackgroundColor
+              : context.colorScheme.surface,
           child: Consumer(
             builder: (context, ref, child) {
               final state = ref.watch(navigationStateProvider);
@@ -244,7 +246,7 @@ class _NavigationBarDefaultsM3 extends NavigationBarThemeData {
   _NavigationBarDefaultsM3(this.context)
     : super(
         height: 80.0,
-        elevation: 3.0,
+        elevation: kPrivateClientMode ? 0 : 3,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       );
 
@@ -253,7 +255,9 @@ class _NavigationBarDefaultsM3 extends NavigationBarThemeData {
   late final TextTheme _textTheme = Theme.of(context).textTheme;
 
   @override
-  Color? get backgroundColor => _colors.surfaceContainer;
+  Color? get backgroundColor => kPrivateClientMode
+      ? Theme.of(context).scaffoldBackgroundColor
+      : _colors.surfaceContainer;
 
   @override
   Color? get shadowColor => Colors.transparent;
@@ -294,7 +298,9 @@ class _NavigationBarDefaultsM3 extends NavigationBarThemeData {
         color: states.contains(WidgetState.disabled)
             ? _colors.onSurfaceVariant.opacity38
             : states.contains(WidgetState.selected)
-            ? _colors.onSurface
+            ? kPrivateClientMode
+                  ? _colors.primary
+                  : _colors.onSurface
             : _colors.onSurfaceVariant,
       );
     });

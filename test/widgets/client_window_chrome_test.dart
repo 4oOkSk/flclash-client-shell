@@ -36,10 +36,10 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
-      const _ChromeTestApp(
-        child: MediaQuery(
-          data: MediaQueryData(textScaler: TextScaler.linear(1.5)),
-          child: Column(
+        const _ChromeTestApp(
+          child: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(1.5)),
+            child: Column(
               children: [
                 WindowHeader(managed: true),
                 Expanded(child: SizedBox()),
@@ -50,7 +50,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text(appName), findsOneWidget);
-      expect(tester.getSize(find.byType(WindowHeader)).height, kToolbarHeight);
+      expect(tester.getSize(find.byType(WindowHeader)).height, 48);
       await tester.tap(find.byIcon(Icons.remove));
       await tester.pump();
       expect(methods, contains('minimize'));
@@ -58,57 +58,121 @@ void main() {
     },
   );
 
-  testWidgets('inline root heading preserves a nested page title and back', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _ChromeTestApp(
-        child: ClientWindowChromeScope(
-          inlinePageTitles: true,
-          child: Navigator(
-            onGenerateRoute: (_) => MaterialPageRoute<void>(
-              builder: (context) => CommonScaffold(
-                title: 'Routing',
-                managedRoot: true,
-                body: Center(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const CommonScaffold(
-                          title: 'Advanced routing',
-                          body: SizedBox(),
+  for (final size in [const Size(390, 844), const Size(1440, 900)]) {
+    testWidgets(
+      'root omits title space and retains nested navigation at $size',
+      (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          _ChromeTestApp(
+            child: MediaQuery(
+              data: MediaQueryData(
+                size: size,
+                padding: const EdgeInsets.only(top: 24),
+              ),
+              child: Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
+                  builder: (context) => CommonScaffold(
+                    title: 'Routing',
+                    managedRoot: true,
+                    body: Align(
+                      key: const ValueKey('root-body'),
+                      alignment: Alignment.topLeft,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const CommonScaffold(
+                              title: 'Advanced routing',
+                              body: SizedBox(),
+                            ),
+                          ),
                         ),
+                        child: const Text('Advanced'),
                       ),
                     ),
-                    child: const Text('Advanced'),
                   ),
                 ),
               ),
             ),
           ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Routing'), findsNothing);
+        expect(find.byType(AppBar), findsNothing);
+        expect(
+          tester.getTopLeft(find.byKey(const ValueKey('root-body'))).dy,
+          24,
+        );
+        expect(
+          tester.getSize(find.byKey(const ValueKey('root-body'))).width,
+          lessThanOrEqualTo(1040),
+        );
+        await tester.tap(find.text('Advanced'));
+        await tester.pumpAndSettle();
+        expect(find.text('Advanced routing'), findsOneWidget);
+        expect(find.byType(BackButton), findsOneWidget);
+        final detailTheme = Theme.of(tester.element(find.byType(AppBar).last));
+        expect(
+          detailTheme.appBarTheme.backgroundColor,
+          detailTheme.scaffoldBackgroundColor,
+        );
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+        expect(find.text('Routing'), findsNothing);
+        expect(find.byType(AppBar), findsNothing);
+        expect(find.text('Advanced'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('managed root preserves an action-bearing toolbar', (
+    tester,
+  ) async {
+    var invoked = false;
+    await tester.pumpWidget(
+      _ChromeTestApp(
+        child: CommonScaffold(
+          title: 'Routing',
+          managedRoot: true,
+          actions: [
+            IconButton(
+              onPressed: () => invoked = true,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+          body: const SizedBox(),
         ),
       ),
     );
-    await tester.pumpAndSettle();
-    final rootTheme = Theme.of(tester.element(find.byType(AppBar)));
-    expect(
-      rootTheme.appBarTheme.backgroundColor,
-      rootTheme.scaffoldBackgroundColor,
-    );
-    await tester.tap(find.text('Advanced'));
-    await tester.pumpAndSettle();
-    expect(find.text('Advanced routing'), findsOneWidget);
-    expect(find.byType(BackButton), findsOneWidget);
-    final detailTheme = Theme.of(tester.element(find.byType(AppBar).last));
-    expect(
-      detailTheme.appBarTheme.backgroundColor,
-      detailTheme.colorScheme.primary,
-    );
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.refresh));
+    expect(invoked, isTrue);
     expect(find.text('Routing'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  for (final brightness in Brightness.values) {
+    test('managed chrome shares a neutral canvas in $brightness', () {
+      final theme = classicClientTheme(ThemeData(brightness: brightness));
+      expect(theme.appBarTheme.backgroundColor, theme.scaffoldBackgroundColor);
+      expect(
+        theme.navigationRailTheme.backgroundColor,
+        theme.scaffoldBackgroundColor,
+      );
+      expect(
+        theme.navigationBarTheme.backgroundColor,
+        theme.scaffoldBackgroundColor,
+      );
+      expect(theme.appBarTheme.foregroundColor, theme.colorScheme.onSurface);
+      expect(
+        theme.appBarTheme.backgroundColor,
+        isNot(theme.colorScheme.primary),
+      );
+    });
+  }
 }
 
 class _ChromeTestApp extends StatelessWidget {
