@@ -292,7 +292,7 @@ void main() {
       );
       await tester.pump();
 
-      final applicationItem = find.text('Application');
+      final applicationItem = find.text(AppLocalizations.current.application);
       await tester.scrollUntilVisible(
         applicationItem,
         500,
@@ -302,7 +302,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ApplicationSettingView), findsOneWidget);
 
-      final logItem = find.text('Logcat');
+      final logItem = find.text(AppLocalizations.current.logcat);
       await tester.scrollUntilVisible(
         logItem,
         500,

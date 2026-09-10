@@ -92,9 +92,9 @@ void main() {
   final toolDestinations = <String, Type>{
     'Theme': ThemeView,
     'Backup and Restore': BackupAndRestore,
-    'Basic configuration': ConfigView,
-    'Advanced configuration': AdvancedConfigView,
-    'Application': ApplicationSettingView,
+    'Connection settings': ConfigView,
+    'Advanced settings': AdvancedConfigView,
+    'App settings': ApplicationSettingView,
   };
 
   for (final entry in toolDestinations.entries) {
