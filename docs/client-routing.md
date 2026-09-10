@@ -7,6 +7,18 @@ The classic Material theme uses neutral window chrome and navigation, white card
 background and small corners. Blue highlights selection and actions, with a corresponding dark
 palette. Native lifecycle ownership is unchanged.
 
+Managed cards share one surface, four-pixel corners, a neutral outline and no drop shadow.
+Information-only cards are not buttons and do not acquire a selection border on hover.
+Blue card outlines identify an actual selected option, not a passive account summary.
+Settings, diagnostics and advanced options use the same inset card groups and row typography;
+dividers stay inside their groups rather than spanning the page canvas.
+
+Account → Diagnostics always includes **Copy diagnostic report**, including when no other
+diagnostic destinations are available. It uses the existing redacted report and clipboard path,
+blocks duplicate requests while collecting, and reports copy success or failure. Navigating away
+during collection must not update disposed widget state. The managed Home has no diagnostic
+export toolbar; generic dashboard behavior is unchanged.
+
 ## Shared application layout
 
 The managed Windows and Linux window controls share one quiet, full-width 48-pixel title bar.

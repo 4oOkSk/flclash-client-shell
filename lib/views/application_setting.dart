@@ -245,16 +245,18 @@ class ApplicationSettingView extends StatelessWidget {
     ];
     return BaseScaffold(
       title: context.appLocalizations.application,
-      body: ListView.separated(
-        itemBuilder: (_, index) {
-          final item = items[index];
-          return item;
-        },
-        separatorBuilder: (_, _) {
-          return const Divider(height: 0);
-        },
-        itemCount: items.length,
-      ),
+      body: kPrivateClientMode
+          ? generateListView(generateSection(items: items))
+          : ListView.separated(
+              itemBuilder: (_, index) {
+                final item = items[index];
+                return item;
+              },
+              separatorBuilder: (_, _) {
+                return const Divider(height: 0);
+              },
+              itemCount: items.length,
+            ),
     );
   }
 }

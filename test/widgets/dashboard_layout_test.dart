@@ -108,6 +108,17 @@ void main() {
       ]) {
         expect(find.text(label), findsOneWidget);
       }
+      expect(
+        find.descendant(
+          of: find.byType(PrivateClientAccountCard),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is InkWell && widget.onTap != null ||
+                widget is ButtonStyleButton && widget.onPressed != null,
+          ),
+        ),
+        findsNothing,
+      );
       if (locale.languageCode == 'en') {
         expect(find.textContaining(RegExp(r'[\u4e00-\u9fff]')), findsNothing);
       }

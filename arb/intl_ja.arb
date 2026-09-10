@@ -1,4 +1,7 @@
 {
+  "clientCopyDiagnostics": "診断レポートをコピー",
+  "clientCopyDiagnosticsHint": "機密情報を除いた診断レポートをクリップボードにコピーします。",
+  "clientCopyDiagnosticsFailed": "診断レポートをコピーできませんでした。もう一度お試しください。",
   "clientAccountOverview": "アカウント情報",
   "clientDataRemaining": "残りのデータ容量",
   "clientExpiresOn": "有効期限",

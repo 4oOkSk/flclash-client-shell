@@ -46,6 +46,7 @@ class InfoHeader extends StatelessWidget {
                 if (info.iconData != null) ...[
                   Icon(
                     info.iconData,
+                    size: kPrivateClientMode ? 20 : null,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
@@ -57,9 +58,13 @@ class InfoHeader extends StatelessWidget {
                       info.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: context.colorScheme.onSurfaceVariant,
-                      ),
+                      style: kPrivateClientMode
+                          ? context.textTheme.titleMedium?.copyWith(
+                              color: context.colorScheme.onSurface,
+                            )
+                          : context.textTheme.titleSmall?.copyWith(
+                              color: context.colorScheme.onSurfaceVariant,
+                            ),
                     ),
                   ),
                 ),
@@ -191,6 +196,40 @@ class CommonCard extends StatelessWidget {
     return colorScheme.primary;
   }
 
+  Widget _buildManagedCard(BuildContext context, Widget content) {
+    final scheme = context.colorScheme;
+    final baseShape =
+        shape ??
+        (Theme.of(context).cardTheme.shape as OutlinedBorder?) ??
+        const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(4)),
+        );
+    final cardShape = radius == null
+        ? baseShape
+        : RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius!),
+            side: baseShape.side,
+          );
+    final body = Padding(padding: padding ?? EdgeInsets.zero, child: content);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: isSelected ? scheme.secondaryContainer : scheme.surface,
+      shape: isError || isSelected
+          ? cardShape.copyWith(
+              side: BorderSide(color: isError ? scheme.error : scheme.primary),
+            )
+          : cardShape,
+      child: onPressed == null && onLongPress == null
+          ? body
+          : InkWell(
+              onTap: onPressed,
+              onLongPress: onLongPress,
+              customBorder: cardShape,
+              child: body,
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var childWidget = child;
@@ -215,63 +254,65 @@ class CommonCard extends StatelessWidget {
       childWidget = Stack(children: children);
     }
 
-    final button = switch (type == CommonCardType.filled) {
-      true => FilledButton(
-        onLongPress: onLongPress,
-        clipBehavior: Clip.antiAlias,
-        style:
-            FilledButton.styleFrom(
-              padding: padding ?? EdgeInsets.zero,
-              shape:
-                  shape ??
-                  RoundedSuperellipseBorder(
-                    borderRadius: BorderRadius.circular(
-                      radius ?? (kPrivateClientMode ? 4 : 14),
+    final button = kPrivateClientMode
+        ? _buildManagedCard(context, childWidget)
+        : switch (type == CommonCardType.filled) {
+            true => FilledButton(
+              onLongPress: onLongPress,
+              clipBehavior: Clip.antiAlias,
+              style:
+                  FilledButton.styleFrom(
+                    padding: padding ?? EdgeInsets.zero,
+                    shape:
+                        shape ??
+                        RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(
+                            radius ?? (kPrivateClientMode ? 4 : 14),
+                          ),
+                        ),
+                    iconSize: 20,
+                    iconColor: _buildIconColor(context),
+                    foregroundColor: _buildForegroundColor(context),
+                    side: BorderSide.none,
+                    elevation: 0,
+                  ).copyWith(
+                    backgroundColor: WidgetStatePropertyAll(
+                      _buildBackgroundColor(context),
+                    ),
+                    side: WidgetStateProperty.resolveWith(
+                      (states) => _buildBorderSide(context, states),
                     ),
                   ),
-              iconSize: 20,
-              iconColor: _buildIconColor(context),
-              foregroundColor: _buildForegroundColor(context),
-              side: BorderSide.none,
-              elevation: 0,
-            ).copyWith(
-              backgroundColor: WidgetStatePropertyAll(
-                _buildBackgroundColor(context),
-              ),
-              side: WidgetStateProperty.resolveWith(
-                (states) => _buildBorderSide(context, states),
-              ),
+              onPressed: onPressed,
+              child: childWidget,
             ),
-        onPressed: onPressed,
-        child: childWidget,
-      ),
-      false => OutlinedButton(
-        onLongPress: onLongPress,
-        clipBehavior: Clip.antiAlias,
-        style:
-            OutlinedButton.styleFrom(
-              padding: padding ?? EdgeInsets.zero,
-              shape:
-                  shape ??
-                  RoundedSuperellipseBorder(
-                    borderRadius: BorderRadius.circular(
-                      radius ?? (kPrivateClientMode ? 4 : 14),
+            false => OutlinedButton(
+              onLongPress: onLongPress,
+              clipBehavior: Clip.antiAlias,
+              style:
+                  OutlinedButton.styleFrom(
+                    padding: padding ?? EdgeInsets.zero,
+                    shape:
+                        shape ??
+                        RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(
+                            radius ?? (kPrivateClientMode ? 4 : 14),
+                          ),
+                        ),
+                    iconSize: 20,
+                    iconColor: _buildIconColor(context),
+                    backgroundColor: _buildBackgroundColor(context),
+                    foregroundColor: _buildForegroundColor(context),
+                    elevation: 0,
+                  ).copyWith(
+                    side: WidgetStateProperty.resolveWith(
+                      (states) => _buildBorderSide(context, states),
                     ),
                   ),
-              iconSize: 20,
-              iconColor: _buildIconColor(context),
-              backgroundColor: _buildBackgroundColor(context),
-              foregroundColor: _buildForegroundColor(context),
-              elevation: 0,
-            ).copyWith(
-              side: WidgetStateProperty.resolveWith(
-                (states) => _buildBorderSide(context, states),
-              ),
+              onPressed: onPressed,
+              child: childWidget,
             ),
-        onPressed: onPressed,
-        child: childWidget,
-      ),
-    };
+          };
     final card = !enterActionsOnRight
         ? button
         : Focus(

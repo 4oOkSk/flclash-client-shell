@@ -1,17 +1,13 @@
-import 'dart:io';
 import 'dart:math';
 
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/enum/enum.dart';
-import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
-import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 
 import 'widgets/core_status_button.dart';
 import 'widgets/start_button.dart';
@@ -65,159 +61,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
-  Future<void> _copyDiagnosticLogs() async {
-    final patchConfig = ref.read(patchClashConfigProvider);
-    final network = ref.read(networkSettingProvider);
-    final vpn = ref.read(vpnSettingProvider);
-    final platformVersion = Platform.operatingSystemVersion;
-    List<String> platformLogs;
-    try {
-      platformLogs = await coreController.getPlatformDiagnosticLogs();
-    } catch (error) {
-      platformLogs = ['platform diagnostics unavailable: ${error.runtimeType}'];
-    }
-    Map<String, Object?> clientDiagnostics = const {};
-    try {
-      clientDiagnostics = parseClientRuntimeDiagnostics(
-        await coreController.clientDiagnostics(),
-      );
-    } catch (_) {}
-    List<TrackerInfo> trackers = const [];
-    try {
-      trackers = await coreController.getConnections();
-    } catch (_) {}
-    final groups = ref.read(groupsProvider);
-    final tunInterfaceEstablished =
-        platformLogs.any(
-          (line) => RegExp(r'^desktop\.tunUp=[1-9][0-9]*$').hasMatch(line),
-        ) ||
-        platformLogs.any((line) => line.contains('interface established'));
-    final selectedMap = ref.read(selectedMapProvider);
-    final managedGroup = groups.getGroup('HARBORPROXY-SERVER');
-    final selectedServer =
-        selectedMap['HARBORPROXY-SERVER'] ?? managedGroup?.now ?? '';
-    final selectedGroup = groups.getGroup(selectedServer);
-    final selectionMode = selectedServer.isEmpty
-        ? 'unset'
-        : switch (selectedGroup?.type) {
-            GroupType.URLTest ||
-            GroupType.Fallback ||
-            GroupType.LoadBalance => 'automatic',
-            _ => 'manual',
-          };
-    final probes = <String, Object?>{};
-    if (ref.read(coreStatusProvider) == CoreStatus.connected) {
-      final results = await Future.wait<Delay?>([
-        coreController
-            .getDelay('https://www.baidu.com/favicon.ico', 'DIRECT')
-            .catchError((_) => const Delay(name: '', url: '', value: -1)),
-        coreController
-            .getDelay('https://www.gstatic.com/generate_204', 'DIRECT')
-            .catchError((_) => const Delay(name: '', url: '', value: -1)),
-        coreController
-            .getDelay('https://www.gstatic.com/generate_204', 'HARBORPROXY-SERVER')
-            .catchError((_) => const Delay(name: '', url: '', value: -1)),
-      ]);
-      probes
-        ..addAll(diagnosticProbeResult('mainlandDirect', results[0]))
-        ..addAll(diagnosticProbeResult('overseasDirect', results[1]))
-        ..addAll(diagnosticProbeResult('selectedProxy', results[2]));
-    } else {
-      probes
-        ..addAll(diagnosticProbeResult('mainlandDirect', null))
-        ..addAll(diagnosticProbeResult('overseasDirect', null))
-        ..addAll(diagnosticProbeResult('selectedProxy', null));
-    }
-    final currentLogs = ref.read(logsProvider).list;
-    final recentRequests = ref.read(requestsProvider).list;
-    final packageInfo = globalState.packageInfo;
-    final report = buildDiagnosticReport(
-      applicationName: appName,
-      status: {
-        'generatedAt': DateTime.now().toIso8601String(),
-        'app.version': packageInfo.version,
-        'app.build': packageInfo.buildNumber,
-        'platform.os': SupportPlatform.currentPlatform.name,
-        'platform.version': platformVersion,
-        'platform.description': Platform.operatingSystemVersion,
-        'platform.runtime': Platform.version,
-        'core.status': ref.read(coreStatusProvider).name,
-        'core.runtimeSeconds': ref.read(runTimeProvider),
-        'core.binarySha256': globalState.coreSHA256.isEmpty
-            ? 'unknown'
-            : globalState.coreSHA256.safeSubstring(0, 12),
-        'config.mode': patchConfig.mode.name,
-        'config.routeMode': network.routeMode.name,
-        'config.managedRouteMode': network.managedRouteMode.wireValue,
-        'config.systemProxyConfigured': system.isAndroid
-            ? vpn.systemProxy
-            : network.systemProxy,
-        'config.systemProxyEffective': system.isAndroid
-            ? effectiveClientVpnSystemProxy(
-                configured: vpn.systemProxy,
-                privateClientMode: true,
-                isAndroid: true,
-              )
-            : false,
-        'config.tunRequested': system.isAndroid
-            ? vpn.enable
-            : patchConfig.tun.enable,
-        'config.tunActive': diagnosticTunActive(
-          isAndroid: system.isAndroid,
-          runtimeTunEnabled:
-              patchConfig.tun.enable &&
-              ref.read(authorizedTunEnableProvider) ==
-                  TunAuthorizationState.authorized,
-          platformTunEstablished: tunInterfaceEstablished,
-        ),
-        'config.ipv6Configured': system.isAndroid ? vpn.ipv6 : patchConfig.ipv6,
-        'config.ipv6Effective': effectiveClientIpv6(
-          configured: system.isAndroid ? vpn.ipv6 : patchConfig.ipv6,
-          privateClientMode: true,
-          isAndroid: system.isAndroid,
-        ),
-        'config.coreIpv6Effective': effectiveClientCoreIpv6(
-          configured: patchConfig.ipv6,
-          privateClientMode: true,
-          isAndroid: system.isAndroid,
-          managedRouteMode: network.managedRouteMode,
-        ),
-        'config.groups': groups.length,
-        'selection.mode': selectionMode,
-        'platform.tunInterfaceEstablished': tunInterfaceEstablished,
-        'platform.tunCoreStarted':
-            tunInterfaceEstablished ||
-            platformLogs.any((line) => line.contains('TUN core started')),
-        ...clientDiagnostics,
-        ...buildConnectionSummary(trackers),
-        ...buildDiagnosticLogSummary(currentLogs),
-        ...probes,
-      },
-      logs: currentLogs,
-      platformLogs: platformLogs,
-      visitedDestinations: collectVisitedDestinations([
-        ...recentRequests,
-        ...trackers,
-      ]),
-      routeSamples: collectDiagnosticRouteSamples([
-        ...recentRequests,
-        ...trackers,
-      ]),
-    );
-    await Clipboard.setData(ClipboardData(text: report));
-    if (mounted) {
-      context.showSnackBar(context.appLocalizations.copySuccess);
-    }
-  }
-
   List<Widget> _buildActions(bool isEdit) {
     return [
-      if (!isEdit && kPrivateClientMode)
-        IconButton(
-          tooltip: context.appLocalizations.exportLogs,
-          onPressed: _copyDiagnosticLogs,
-          icon: const Icon(Icons.bug_report_outlined),
-        ),
       if (!isEdit && coreLib == null) const CoreStatusButton(),
       if (isEdit)
         ValueListenableBuilder(

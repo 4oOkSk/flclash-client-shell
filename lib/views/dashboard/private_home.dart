@@ -64,7 +64,7 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
               Card(
                 margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -90,7 +90,7 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(text.clientCurrentLine),
@@ -108,7 +108,7 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _navigate(PageLabel.profiles),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
@@ -141,7 +141,7 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               const PrivateClientAccountCard(adaptive: true),
             ],
           ),

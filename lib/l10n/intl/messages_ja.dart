@@ -182,6 +182,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("接続先を変更"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("接続"),
+    "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage("診断レポートをコピー"),
+    "clientCopyDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "診断レポートをコピーできませんでした。もう一度お試しください。",
+    ),
+    "clientCopyDiagnosticsHint": MessageLookupByLibrary.simpleMessage(
+      "機密情報を除いた診断レポートをクリップボードにコピーします。",
+    ),
     "clientCredentialsRequired": MessageLookupByLibrary.simpleMessage(
       "メールアドレスとパスワードを入力してください。",
     ),

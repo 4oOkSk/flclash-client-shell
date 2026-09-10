@@ -33,7 +33,6 @@ class PrivateClientAccountCard extends ConsumerWidget {
           label: text.clientAccountOverview,
           iconData: Icons.account_balance_wallet_outlined,
         ),
-        onPressed: () {},
         child: Padding(
           padding: baseInfoEdgeInsets.copyWith(top: 0),
           child: account.when(
@@ -85,7 +84,9 @@ TextStyle? _sharedValueStyle(
   double availableWidth,
   List<String> values,
 ) {
-  final baseStyle = context.textTheme.bodyMedium?.toLight;
+  final baseStyle = kPrivateClientMode
+      ? context.textTheme.bodyLarge
+      : context.textTheme.bodyMedium?.toLight;
   if (baseStyle == null || !availableWidth.isFinite || values.isEmpty) {
     return baseStyle;
   }
@@ -127,7 +128,14 @@ class _AccountValue extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: context.textTheme.bodySmall?.toLighter),
+        Text(
+          label,
+          style: kPrivateClientMode
+              ? context.textTheme.bodySmall?.copyWith(
+                  color: context.colorScheme.onSurfaceVariant,
+                )
+              : context.textTheme.bodySmall?.toLighter,
+        ),
         const SizedBox(height: 4),
         Text(
           value,
@@ -153,7 +161,7 @@ class PrivateClientWebsiteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: getWidgetHeight(1),
+      height: kPrivateClientMode ? null : getWidgetHeight(1),
       child: CommonCard(
         info: Info(
           label: context.appLocalizations.clientOfficialWebsite,
@@ -168,7 +176,11 @@ class PrivateClientWebsiteCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   context.appLocalizations.clientVisitWebsite,
-                  style: context.textTheme.bodyMedium?.toLight,
+                  style: kPrivateClientMode
+                      ? context.textTheme.bodyMedium?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                        )
+                      : context.textTheme.bodyMedium?.toLight,
                 ),
               ),
               Icon(Icons.open_in_new, color: context.colorScheme.primary),

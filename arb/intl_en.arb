@@ -1,4 +1,7 @@
 {
+  "clientCopyDiagnostics": "Copy diagnostic report",
+  "clientCopyDiagnosticsHint": "Copy a redacted report to the clipboard.",
+  "clientCopyDiagnosticsFailed": "Could not copy diagnostics. Try again.",
   "clientAccountOverview": "Account overview",
   "clientDataRemaining": "Data remaining",
   "clientExpiresOn": "Expires on",

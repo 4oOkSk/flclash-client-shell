@@ -89,7 +89,9 @@ class AdvancedConfigView extends StatelessWidget {
     return BaseScaffold(
       title: appLocalizations.advancedConfig,
       body: generateListView(
-        items.separated(const Divider(height: 0)).toList(),
+        kPrivateClientMode
+            ? generateSection(items: items)
+            : items.separated(const Divider(height: 0)).toList(),
       ),
     );
   }

@@ -246,6 +246,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("Сменить сервер"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("Подключиться"),
+    "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage(
+      "Копировать отчёт диагностики",
+    ),
+    "clientCopyDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось скопировать отчёт. Попробуйте ещё раз.",
+    ),
+    "clientCopyDiagnosticsHint": MessageLookupByLibrary.simpleMessage(
+      "Скопировать отчёт без конфиденциальных данных в буфер обмена.",
+    ),
     "clientCredentialsRequired": MessageLookupByLibrary.simpleMessage(
       "Введите адрес электронной почты и пароль.",
     ),

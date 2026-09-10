@@ -54,6 +54,36 @@ class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
+  /// `Copy diagnostic report`
+  String get clientCopyDiagnostics {
+    return Intl.message(
+      'Copy diagnostic report',
+      name: 'clientCopyDiagnostics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy a redacted report to the clipboard.`
+  String get clientCopyDiagnosticsHint {
+    return Intl.message(
+      'Copy a redacted report to the clipboard.',
+      name: 'clientCopyDiagnosticsHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not copy diagnostics. Try again.`
+  String get clientCopyDiagnosticsFailed {
+    return Intl.message(
+      'Could not copy diagnostics. Try again.',
+      name: 'clientCopyDiagnosticsFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Account overview`
   String get clientAccountOverview {
     return Intl.message(

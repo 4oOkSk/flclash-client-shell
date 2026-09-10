@@ -1,4 +1,7 @@
 {
+  "clientCopyDiagnostics": "Копировать отчёт диагностики",
+  "clientCopyDiagnosticsHint": "Скопировать отчёт без конфиденциальных данных в буфер обмена.",
+  "clientCopyDiagnosticsFailed": "Не удалось скопировать отчёт. Попробуйте ещё раз.",
   "clientAccountOverview": "Сведения об аккаунте",
   "clientDataRemaining": "Осталось трафика",
   "clientExpiresOn": "Срок действия",

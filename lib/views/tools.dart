@@ -20,6 +20,7 @@ import 'package:path/path.dart' show dirname, join;
 
 import 'config/advanced.dart';
 import 'developer.dart';
+import 'diagnostic_export.dart';
 import 'theme.dart';
 import 'dashboard/widgets/private_client_account.dart';
 
@@ -50,7 +51,11 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         for (final navigationItem in navigationItems) ...[
           _buildNavigationMenuItem(navigationItem),
           navigationItems.last != navigationItem
-              ? const Divider(height: 0)
+              ? Divider(
+                  height: kPrivateClientMode ? 1 : 0,
+                  indent: kPrivateClientMode ? 16 : 0,
+                  endIndent: kPrivateClientMode ? 16 : 0,
+                )
               : Container(),
         ],
       ],
@@ -75,20 +80,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       items: [
         const _LocaleItem(),
         const _ThemeItem(),
-        if (kPrivateClientMode) ...[
-          const _SettingItem(),
-          ExpansionTile(
-            title: Text(context.appLocalizations.advancedConfig),
-            children: [
-              const _BackupItem(),
-              if (system.isDesktop) const _HotkeyItem(),
-              if (system.isWindows) const _LoopbackItem(),
-              if (system.isAndroid) const _AccessItem(),
-              const _ConfigItem(),
-              const _AdvancedConfigItem(),
-            ],
-          ),
-        ],
+        if (kPrivateClientMode) const _SettingItem(),
         if (!kPrivateClientMode) ...[
           const _BackupItem(),
           if (system.isDesktop) const _HotkeyItem(),
@@ -99,6 +91,26 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           const _SettingItem(),
         ],
       ],
+    );
+  }
+
+  Widget _buildManagedMenu({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Card(
+        child: ExpansionTile(
+          leading: Icon(icon, size: 20),
+          title: Text(title, style: context.textTheme.titleMedium),
+          children: [
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            ...children,
+          ],
+        ),
+      ),
     );
   }
 
@@ -123,15 +135,22 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       Consumer(
         builder: (_, ref, _) {
           final state = ref.watch(moreToolsSelectorStateProvider);
-          if (state.navigationItems.isEmpty) {
+          if (state.navigationItems.isEmpty && !kPrivateClientMode) {
             return Container();
           }
           return Column(
             children: [
               if (kPrivateClientMode)
-                ExpansionTile(
-                  title: Text(context.appLocalizations.clientDiagnostics),
-                  children: [_buildNavigationMenu(state.navigationItems)],
+                _buildManagedMenu(
+                  title: context.appLocalizations.clientDiagnostics,
+                  icon: Icons.bug_report_outlined,
+                  children: [
+                    const DiagnosticExportItem(),
+                    if (state.navigationItems.isNotEmpty) ...[
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      _buildNavigationMenu(state.navigationItems),
+                    ],
+                  ],
                 )
               else ...[
                 ListHeader(title: context.appLocalizations.more),
@@ -142,6 +161,19 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         },
       ),
       ..._getSettingList(),
+      if (kPrivateClientMode)
+        _buildManagedMenu(
+          title: context.appLocalizations.advancedConfig,
+          icon: Icons.tune,
+          children: [
+            const _BackupItem(),
+            if (system.isDesktop) const _HotkeyItem(),
+            if (system.isWindows) const _LoopbackItem(),
+            if (system.isAndroid) const _AccessItem(),
+            const _ConfigItem(),
+            const _AdvancedConfigItem(),
+          ],
+        ),
       ..._getOtherList(vm2.b),
     ];
     return CommonScaffold(

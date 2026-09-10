@@ -239,6 +239,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("Change server"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("Connect"),
+    "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage(
+      "Copy diagnostic report",
+    ),
+    "clientCopyDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not copy diagnostics. Try again.",
+    ),
+    "clientCopyDiagnosticsHint": MessageLookupByLibrary.simpleMessage(
+      "Copy a redacted report to the clipboard.",
+    ),
     "clientCredentialsRequired": MessageLookupByLibrary.simpleMessage(
       "Enter your email address and password.",
     ),

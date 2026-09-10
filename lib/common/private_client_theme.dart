@@ -63,8 +63,35 @@ ThemeData classicClientTheme(ThemeData base) {
     cardTheme: CardThemeData(
       color: surface,
       surfaceTintColor: Colors.transparent,
-      elevation: 1,
-      shape: shape,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      shape: shape.copyWith(
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      iconColor: scheme.onSurfaceVariant,
+      textColor: scheme.onSurface,
+      titleTextStyle: base.textTheme.bodyLarge?.copyWith(
+        color: scheme.onSurface,
+        letterSpacing: 0,
+      ),
+      subtitleTextStyle: base.textTheme.bodyMedium?.copyWith(
+        color: scheme.onSurfaceVariant,
+        letterSpacing: 0,
+      ),
+    ),
+    expansionTileTheme: ExpansionTileThemeData(
+      backgroundColor: surface,
+      collapsedBackgroundColor: surface,
+      textColor: scheme.onSurface,
+      collapsedTextColor: scheme.onSurface,
+      iconColor: scheme.onSurfaceVariant,
+      collapsedIconColor: scheme.onSurfaceVariant,
+      shape: const Border(),
+      collapsedShape: const Border(),
+      tilePadding: const EdgeInsets.symmetric(horizontal: 16),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: surface,

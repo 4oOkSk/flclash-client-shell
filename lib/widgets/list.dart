@@ -542,6 +542,31 @@ List<Widget> generateSection({
   bool isFirst = false,
   bool separated = true,
 }) {
+  if (kPrivateClientMode) {
+    if (items.isEmpty) return [];
+    return [
+      Padding(
+        padding: EdgeInsets.fromLTRB(16, isFirst ? 8 : 16, 16, 0),
+        child: Card(
+          child: Column(
+            children: [
+              if (title != null)
+                InfoHeader(
+                  info: Info(label: title),
+                  actions: actions,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                ),
+              ...separated
+                  ? items.separated(
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                    )
+                  : items,
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
   final genItems = separated
       ? items.separated(const Divider(height: 0))
       : items;
@@ -625,11 +650,20 @@ List<Widget> generateInfoSection({
 }
 
 Widget generateListView(List<Widget> items) {
-  return ListView.builder(
+  final list = ListView.builder(
     itemCount: items.length,
     itemBuilder: (_, index) => items[index],
     padding: const EdgeInsets.only(bottom: 16),
   );
+  return kPrivateClientMode
+      ? Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1040),
+            child: list,
+          ),
+        )
+      : list;
 }
 
 class CommonSelectedListItem extends StatelessWidget {

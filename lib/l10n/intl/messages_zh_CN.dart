@@ -172,6 +172,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("更换线路"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("连接"),
+    "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage("复制诊断日志"),
+    "clientCopyDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "复制失败，请重试。",
+    ),
+    "clientCopyDiagnosticsHint": MessageLookupByLibrary.simpleMessage(
+      "将脱敏后的诊断信息复制到剪贴板。",
+    ),
     "clientCredentialsRequired": MessageLookupByLibrary.simpleMessage(
       "请输入邮箱地址和密码。",
     ),

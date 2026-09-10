@@ -1,4 +1,4 @@
-import 'package:fl_clash/common/context.dart';
+import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/views/config/general.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +10,11 @@ class ConfigView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseScaffold(
       title: context.appLocalizations.basicConfig,
-      body: generateListView(generalItems),
+      body: generateListView(
+        kPrivateClientMode
+            ? generateSection(items: generalItems)
+            : generalItems,
+      ),
     );
   }
 }

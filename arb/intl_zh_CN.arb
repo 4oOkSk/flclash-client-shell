@@ -1,4 +1,7 @@
 {
+  "clientCopyDiagnostics": "复制诊断日志",
+  "clientCopyDiagnosticsHint": "将脱敏后的诊断信息复制到剪贴板。",
+  "clientCopyDiagnosticsFailed": "复制失败，请重试。",
   "clientAccountOverview": "账户状态",
   "clientDataRemaining": "剩余流量",
   "clientExpiresOn": "过期时间",
