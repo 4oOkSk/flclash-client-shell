@@ -50,7 +50,7 @@ void main() {
     expect(item.builder(testContext), isA<PrivateRoutingView>());
     expect(
       navigationItemLabel(testContext, item, managedClientMode: true),
-      'Routing',
+      'Rules',
     );
   });
 

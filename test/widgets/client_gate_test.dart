@@ -41,6 +41,18 @@ void main() {
 
     expect(sessionChecks, 1);
     expect(find.byType(TextField), findsNWidgets(3));
+    expect(find.text(AppLocalizations.current.clientEmail), findsOneWidget);
+    expect(find.text(AppLocalizations.current.clientSignIn), findsOneWidget);
+    expect(
+      find.text(AppLocalizations.current.clientVerificationCode),
+      findsOneWidget,
+    );
+    await tester.tap(find.text(AppLocalizations.current.clientSignIn));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(AppLocalizations.current.clientCredentialsRequired),
+      findsOneWidget,
+    );
   });
 
   testWidgets('enters the app with an existing encrypted session', (
@@ -105,6 +117,11 @@ void main() {
 
     expect(setupAttempts, 1);
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(
+      find.text(AppLocalizations.current.clientSessionRestoreFailed),
+      findsOneWidget,
+    );
+    expect(find.text(AppLocalizations.current.clientRetry), findsOneWidget);
     expect(find.byIcon(Icons.refresh), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(TextField), findsNothing);

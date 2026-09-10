@@ -131,7 +131,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
     final password = _passwordController.text;
     if (email.isEmpty || password.isEmpty) {
       final l10n = context.appLocalizations;
-      context.showSnackBar('${l10n.account} / ${l10n.password}');
+      context.showSnackBar(l10n.clientCredentialsRequired);
       return;
     }
     setState(() {
@@ -201,7 +201,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    l10n.restoreException,
+                    l10n.clientSessionRestoreFailed,
                     textAlign: TextAlign.center,
                     style: context.textTheme.titleLarge,
                   ),
@@ -209,7 +209,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
                   FilledButton.icon(
                     onPressed: _retryRestore,
                     icon: const Icon(Icons.refresh),
-                    label: Text(l10n.restore),
+                    label: Text(l10n.clientRetry),
                   ),
                 ],
               ),
@@ -244,7 +244,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.username],
-                  decoration: InputDecoration(labelText: l10n.account),
+                  decoration: InputDecoration(labelText: l10n.clientEmail),
                   onSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 12),
@@ -259,7 +259,9 @@ class _ClientGateState extends ConsumerState<ClientGate> {
                 TextField(
                   controller: _codeController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: '2FA'),
+                  decoration: InputDecoration(
+                    labelText: l10n.clientVerificationCode,
+                  ),
                   onSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 24),
@@ -272,7 +274,7 @@ class _ClientGateState extends ConsumerState<ClientGate> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.login),
-                  label: Text(l10n.confirm),
+                  label: Text(l10n.clientSignIn),
                 ),
               ],
             ),

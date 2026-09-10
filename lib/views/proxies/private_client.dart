@@ -183,7 +183,7 @@ class _PrivateRoutingModePickerState
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    '${context.appLocalizations.routeMode} · ${context.appLocalizations.routeDirect}',
+                    '${context.appLocalizations.clientTrafficMode} · ${context.appLocalizations.routeDirect}',
                   ),
                 ),
               if (horizontal)

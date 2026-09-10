@@ -1,6 +1,6 @@
 # Managed client interface and routing
 
-The managed client uses Home, Routes, Routing and Account as its four primary destinations.
+The managed client uses Home, Servers, Rules and Account as its four primary destinations.
 Requests, connections and resources remain available under Account → Diagnostics. Advanced
 settings and routing editors remain available; generic builds retain the upstream dashboard.
 The classic Material theme uses neutral window chrome and navigation, white cards, a light grey
@@ -37,6 +37,17 @@ application remains available, and reconnect is under its overflow menu with the
 confirmation. Failed application and unsaved recovery state retain explicit warning feedback.
 
 ## Exceptions
+
+English UI copy distinguishes a selected **server** from traffic **rules**. The three traffic
+modes are **Bypass mainland China**, **Proxy mainland China**, and **Proxy all traffic**;
+their descriptions spell out direct access, the return-to-China server, and required system
+exceptions. This wording does not rename configuration keys, change server selection, or alter
+the core's routing policy. The simple editor uses **Custom rules** and **Check rule match**;
+the checker remains a prediction, not a live connectivity test.
+
+Account overview, remaining data, expiry, account errors, website links, and sign-in/retry
+prompts use the same ARB localization path as the rest of the interface. These labels must
+follow language changes rather than contain hardcoded Chinese or reuse unrelated action names.
 
 The simple editor accepts a domain, HTTP(S) URL or literal IP address. A URL is normalized to its
 hostname; paths and query strings do not become routing criteria. Domain suffix matching is

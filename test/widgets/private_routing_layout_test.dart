@@ -56,7 +56,12 @@ void main() {
       expect(tester.getTopLeft(checker).dy, tester.getTopLeft(exceptions).dy);
       final input = find.byKey(const ValueKey('route-preview-destination'));
       await tester.enterText(input, '10.0.0.0/8');
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Check routing'));
+      await tester.tap(
+        find.widgetWithText(
+          OutlinedButton,
+          AppLocalizations.current.routeCheck,
+        ),
+      );
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('route-preview-result')),
@@ -102,7 +107,7 @@ void main() {
           const PrivateRouteApplyState(phase: PrivateRouteApplyPhase.applying);
       await tester.pumpWidget(_RoutingTestApp(container: container));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Proxy all'));
+      await tester.tap(find.text(AppLocalizations.current.clientAllProxy));
       await tester.pump();
       expect(
         container.read(networkSettingProvider).managedRouteMode,

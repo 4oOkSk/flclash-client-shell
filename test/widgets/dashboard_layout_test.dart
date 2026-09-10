@@ -49,13 +49,77 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('剩余流量'), findsOneWidget);
+      expect(
+        find.text(AppLocalizations.current.clientDataRemaining),
+        findsOneWidget,
+      );
       expect(
         tester.getSize(find.byType(PrivateClientAccountCard)).height,
         greaterThan(100),
       );
     },
   );
+
+  testWidgets('account and website cards follow locale changes and errors', (
+    tester,
+  ) async {
+    var failAccount = false;
+    final container = ProviderContainer(
+      overrides: [
+        privateClientAccountInfoProvider.overrideWith((_) async {
+          if (failAccount) throw StateError('account unavailable');
+          return const PrivateClientAccountInfo(
+            remainingBytes: 1048576,
+            expireAt: 1800000000,
+          );
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    for (final locale in [const Locale('en'), const Locale('zh', 'CN')]) {
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _TestApp(
+            locale: locale,
+            child: const Scaffold(
+              body: SizedBox(
+                width: 360,
+                child: Column(
+                  children: [
+                    PrivateClientAccountCard(adaptive: true),
+                    PrivateClientWebsiteCard(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final text = AppLocalizations.current;
+      for (final label in [
+        text.clientAccountOverview,
+        text.clientDataRemaining,
+        text.clientExpiresOn,
+        text.clientOfficialWebsite,
+        text.clientVisitWebsite,
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+      if (locale.languageCode == 'en') {
+        expect(find.textContaining(RegExp(r'[\u4e00-\u9fff]')), findsNothing);
+      }
+      failAccount = true;
+      container.invalidate(privateClientAccountInfoProvider);
+      await tester.pumpAndSettle();
+      expect(find.text(text.clientAccountUnavailable), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      failAccount = false;
+      container.invalidate(privateClientAccountInfoProvider);
+    }
+  });
 
   testWidgets('dashboard limits a wide grid to 16 centered columns', (
     tester,
@@ -93,12 +157,14 @@ void main() {
 
 class _TestApp extends StatelessWidget {
   final Widget child;
+  final Locale locale;
 
-  const _TestApp({required this.child});
+  const _TestApp({required this.child, this.locale = const Locale('en')});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: locale,
       navigatorKey: globalState.navigatorKey,
       localizationsDelegates: const [
         AppLocalizations.delegate,

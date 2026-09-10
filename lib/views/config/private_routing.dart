@@ -419,7 +419,10 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 children: [
-                  Text(text.routeMode, style: context.textTheme.titleMedium),
+                  Text(
+                    text.clientTrafficMode,
+                    style: context.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 12),
                   const PrivateRoutingModePicker(),
                   const SizedBox(height: 8),

@@ -234,30 +234,57 @@ class MessageLookup extends MessageLookupByLibrary {
       "Текущее приложение уже является последней версией",
     ),
     "clearData": MessageLookupByLibrary.simpleMessage("Очистить данные"),
+    "clientAccountOverview": MessageLookupByLibrary.simpleMessage(
+      "Сведения об аккаунте",
+    ),
+    "clientAccountUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Не удалось загрузить данные аккаунта. Повторите попытку позже.",
+    ),
     "clientAllProxy": MessageLookupByLibrary.simpleMessage("Всё через прокси"),
     "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
       "Через выбранный сервер, кроме необходимых системных исключений.",
     ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("Сменить сервер"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("Подключиться"),
+    "clientCredentialsRequired": MessageLookupByLibrary.simpleMessage(
+      "Введите адрес электронной почты и пароль.",
+    ),
     "clientCurrentLine": MessageLookupByLibrary.simpleMessage("Текущий сервер"),
+    "clientDataRemaining": MessageLookupByLibrary.simpleMessage(
+      "Осталось трафика",
+    ),
     "clientDiagnostics": MessageLookupByLibrary.simpleMessage("Диагностика"),
     "clientDisconnect": MessageLookupByLibrary.simpleMessage("Отключиться"),
+    "clientEmail": MessageLookupByLibrary.simpleMessage("Электронная почта"),
+    "clientExpiresOn": MessageLookupByLibrary.simpleMessage("Срок действия"),
     "clientHome": MessageLookupByLibrary.simpleMessage("Главная"),
     "clientLines": MessageLookupByLibrary.simpleMessage("Серверы"),
     "clientMe": MessageLookupByLibrary.simpleMessage("Аккаунт"),
+    "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage(
+      "Официальный сайт",
+    ),
     "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
       "Сайты материкового Китая — напрямую, остальные — через выбранный сервер.",
     ),
+    "clientRetry": MessageLookupByLibrary.simpleMessage("Повторить"),
     "clientReturnHint": MessageLookupByLibrary.simpleMessage(
       "Сайты материкового Китая — через сервер возврата, остальные — напрямую.",
     ),
+    "clientSessionRestoreFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось восстановить сеанс",
+    ),
+    "clientSignIn": MessageLookupByLibrary.simpleMessage("Войти"),
     "clientSmartOutbound": MessageLookupByLibrary.simpleMessage(
       "Умный зарубежный",
     ),
     "clientSmartReturn": MessageLookupByLibrary.simpleMessage(
       "Умный доступ в Китай",
     ),
+    "clientTrafficMode": MessageLookupByLibrary.simpleMessage("Режим трафика"),
+    "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
+      "Код 2FA (если включена)",
+    ),
+    "clientVisitWebsite": MessageLookupByLibrary.simpleMessage("Открыть сайт"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage(
       "Экспорт в буфер обмена",
     ),

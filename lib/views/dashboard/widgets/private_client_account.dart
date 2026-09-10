@@ -25,11 +25,12 @@ class PrivateClientAccountCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final account = ref.watch(privateClientAccountInfoProvider);
+    final text = context.appLocalizations;
     return SizedBox(
       height: adaptive ? null : getWidgetHeight(1),
       child: CommonCard(
-        info: const Info(
-          label: '账户状态',
+        info: Info(
+          label: text.clientAccountOverview,
           iconData: Icons.account_balance_wallet_outlined,
         ),
         onPressed: () {},
@@ -52,7 +53,7 @@ class PrivateClientAccountCard extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _AccountValue(
-                          label: '剩余流量',
+                          label: text.clientDataRemaining,
                           value: remaining,
                           valueStyle: valueStyle,
                         ),
@@ -60,7 +61,7 @@ class PrivateClientAccountCard extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _AccountValue(
-                          label: '过期时间',
+                          label: text.clientExpiresOn,
                           value: expiry,
                           valueStyle: valueStyle,
                         ),
@@ -70,7 +71,7 @@ class PrivateClientAccountCard extends ConsumerWidget {
                 },
               );
             },
-            error: (_, _) => const Center(child: Text('暂时无法读取账户信息')),
+            error: (_, _) => Center(child: Text(text.clientAccountUnavailable)),
             loading: () => const Center(child: CommonCircleLoading()),
           ),
         ),
@@ -154,14 +155,22 @@ class PrivateClientWebsiteCard extends StatelessWidget {
     return SizedBox(
       height: getWidgetHeight(1),
       child: CommonCard(
-        info: const Info(label: '官方网站', iconData: Icons.public),
+        info: Info(
+          label: context.appLocalizations.clientOfficialWebsite,
+          iconData: Icons.public,
+        ),
         onPressed: kPrivateClientWebsiteUrl.isEmpty ? null : _open,
         child: Padding(
           padding: baseInfoEdgeInsets.copyWith(top: 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('点我去官网', style: context.textTheme.bodyMedium?.toLight),
+              Expanded(
+                child: Text(
+                  context.appLocalizations.clientVisitWebsite,
+                  style: context.textTheme.bodyMedium?.toLight,
+                ),
+              ),
               Icon(Icons.open_in_new, color: context.colorScheme.primary),
             ],
           ),

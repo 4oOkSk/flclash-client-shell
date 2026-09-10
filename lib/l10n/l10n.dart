@@ -54,6 +54,126 @@ class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
+  /// `Account overview`
+  String get clientAccountOverview {
+    return Intl.message(
+      'Account overview',
+      name: 'clientAccountOverview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Data remaining`
+  String get clientDataRemaining {
+    return Intl.message(
+      'Data remaining',
+      name: 'clientDataRemaining',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Expires on`
+  String get clientExpiresOn {
+    return Intl.message(
+      'Expires on',
+      name: 'clientExpiresOn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not load account details. Try again later.`
+  String get clientAccountUnavailable {
+    return Intl.message(
+      'Could not load account details. Try again later.',
+      name: 'clientAccountUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Official website`
+  String get clientOfficialWebsite {
+    return Intl.message(
+      'Official website',
+      name: 'clientOfficialWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Visit website`
+  String get clientVisitWebsite {
+    return Intl.message(
+      'Visit website',
+      name: 'clientVisitWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Email address`
+  String get clientEmail {
+    return Intl.message(
+      'Email address',
+      name: 'clientEmail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in`
+  String get clientSignIn {
+    return Intl.message('Sign in', name: 'clientSignIn', desc: '', args: []);
+  }
+
+  /// `Enter your email address and password.`
+  String get clientCredentialsRequired {
+    return Intl.message(
+      'Enter your email address and password.',
+      name: 'clientCredentialsRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `2FA code (if enabled)`
+  String get clientVerificationCode {
+    return Intl.message(
+      '2FA code (if enabled)',
+      name: 'clientVerificationCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not restore your session`
+  String get clientSessionRestoreFailed {
+    return Intl.message(
+      'Could not restore your session',
+      name: 'clientSessionRestoreFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Try again`
+  String get clientRetry {
+    return Intl.message('Try again', name: 'clientRetry', desc: '', args: []);
+  }
+
+  /// `Traffic mode`
+  String get clientTrafficMode {
+    return Intl.message(
+      'Traffic mode',
+      name: 'clientTrafficMode',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Rule`
   String get rule {
     return Intl.message('Rule', name: 'rule', desc: '', args: []);
@@ -129,9 +249,9 @@ class AppLocalizations {
     return Intl.message('Profiles', name: 'profiles', desc: '', args: []);
   }
 
-  /// `Routing`
+  /// `Rules`
   String get routing {
-    return Intl.message('Routing', name: 'routing', desc: '', args: []);
+    return Intl.message('Rules', name: 'routing', desc: '', args: []);
   }
 
   /// `These settings only control where traffic goes. They do not display or modify server configuration.`
@@ -154,10 +274,10 @@ class AppLocalizations {
     return Intl.message('Logs', name: 'logs', desc: '', args: []);
   }
 
-  /// `Log capture records`
+  /// `View app and connection logs`
   String get logsDesc {
     return Intl.message(
-      'Log capture records',
+      'View app and connection logs',
       name: 'logsDesc',
       desc: '',
       args: [],
@@ -169,10 +289,10 @@ class AppLocalizations {
     return Intl.message('Resources', name: 'resources', desc: '', args: []);
   }
 
-  /// `External resource related info`
+  /// `View and update external resources`
   String get resourcesDesc {
     return Intl.message(
-      'External resource related info',
+      'View and update external resources',
       name: 'resourcesDesc',
       desc: '',
       args: [],
@@ -209,10 +329,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Network detection`
+  /// `Connection check`
   String get networkDetection {
     return Intl.message(
-      'Network detection',
+      'Connection check',
       name: 'networkDetection',
       desc: '',
       args: [],
@@ -299,10 +419,10 @@ class AppLocalizations {
     return Intl.message('Theme', name: 'theme', desc: '', args: []);
   }
 
-  /// `Set dark mode,adjust the color`
+  /// `Choose light or dark mode and an accent color`
   String get themeDesc {
     return Intl.message(
-      'Set dark mode,adjust the color',
+      'Choose light or dark mode and an accent color',
       name: 'themeDesc',
       desc: '',
       args: [],
@@ -314,15 +434,20 @@ class AppLocalizations {
     return Intl.message('Override', name: 'override', desc: '', args: []);
   }
 
-  /// `AllowLan`
+  /// `Allow LAN access`
   String get allowLan {
-    return Intl.message('AllowLan', name: 'allowLan', desc: '', args: []);
+    return Intl.message(
+      'Allow LAN access',
+      name: 'allowLan',
+      desc: '',
+      args: [],
+    );
   }
 
-  /// `Allow access proxy through the LAN`
+  /// `Let other devices on your local network use this proxy`
   String get allowLanDesc {
     return Intl.message(
-      'Allow access proxy through the LAN',
+      'Let other devices on your local network use this proxy',
       name: 'allowLanDesc',
       desc: '',
       args: [],
@@ -334,55 +459,60 @@ class AppLocalizations {
     return Intl.message('TUN', name: 'tun', desc: '', args: []);
   }
 
-  /// `only effective in administrator mode`
+  /// `Requires administrator privileges`
   String get tunDesc {
     return Intl.message(
-      'only effective in administrator mode',
+      'Requires administrator privileges',
       name: 'tunDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Minimize on exit`
+  /// `Keep running when closed`
   String get minimizeOnExit {
     return Intl.message(
-      'Minimize on exit',
+      'Keep running when closed',
       name: 'minimizeOnExit',
       desc: '',
       args: [],
     );
   }
 
-  /// `Modify the default system exit event`
+  /// `Keep the app running in the background when you close it`
   String get minimizeOnExitDesc {
     return Intl.message(
-      'Modify the default system exit event',
+      'Keep the app running in the background when you close it',
       name: 'minimizeOnExitDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Auto launch`
+  /// `Launch at startup`
   String get autoLaunch {
-    return Intl.message('Auto launch', name: 'autoLaunch', desc: '', args: []);
+    return Intl.message(
+      'Launch at startup',
+      name: 'autoLaunch',
+      desc: '',
+      args: [],
+    );
   }
 
-  /// `Follow the system self startup`
+  /// `Open the app when you sign in to your computer`
   String get autoLaunchDesc {
     return Intl.message(
-      'Follow the system self startup',
+      'Open the app when you sign in to your computer',
       name: 'autoLaunchDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `SilentLaunch`
+  /// `Launch in background`
   String get silentLaunch {
     return Intl.message(
-      'SilentLaunch',
+      'Launch in background',
       name: 'silentLaunch',
       desc: '',
       args: [],
@@ -399,40 +529,45 @@ class AppLocalizations {
     );
   }
 
-  /// `AutoRun`
+  /// `Connect on launch`
   String get autoRun {
-    return Intl.message('AutoRun', name: 'autoRun', desc: '', args: []);
+    return Intl.message(
+      'Connect on launch',
+      name: 'autoRun',
+      desc: '',
+      args: [],
+    );
   }
 
-  /// `Auto run when the application is opened`
+  /// `Connect automatically when the app opens`
   String get autoRunDesc {
     return Intl.message(
-      'Auto run when the application is opened',
+      'Connect automatically when the app opens',
       name: 'autoRunDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Logcat`
+  /// `Enable logs`
   String get logcat {
-    return Intl.message('Logcat', name: 'logcat', desc: '', args: []);
+    return Intl.message('Enable logs', name: 'logcat', desc: '', args: []);
   }
 
-  /// `Disabling will hide the log entry`
+  /// `Record logs and show the Logs page`
   String get logcatDesc {
     return Intl.message(
-      'Disabling will hide the log entry',
+      'Record logs and show the Logs page',
       name: 'logcatDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Auto check updates`
+  /// `Check for updates automatically`
   String get autoCheckUpdate {
     return Intl.message(
-      'Auto check updates',
+      'Check for updates automatically',
       name: 'autoCheckUpdate',
       desc: '',
       args: [],
@@ -449,35 +584,40 @@ class AppLocalizations {
     );
   }
 
-  /// `AccessControl`
+  /// `App filtering`
   String get accessControl {
     return Intl.message(
-      'AccessControl',
+      'App filtering',
       name: 'accessControl',
       desc: '',
       args: [],
     );
   }
 
-  /// `Configure application access proxy`
+  /// `Choose which apps use the VPN`
   String get accessControlDesc {
     return Intl.message(
-      'Configure application access proxy',
+      'Choose which apps use the VPN',
       name: 'accessControlDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Application`
+  /// `App settings`
   String get application {
-    return Intl.message('Application', name: 'application', desc: '', args: []);
+    return Intl.message(
+      'App settings',
+      name: 'application',
+      desc: '',
+      args: [],
+    );
   }
 
-  /// `Modify application related settings`
+  /// `Startup, background behavior, and traffic statistics`
   String get applicationDesc {
     return Intl.message(
-      'Modify application related settings',
+      'Startup, background behavior, and traffic statistics',
       name: 'applicationDesc',
       desc: '',
       args: [],
@@ -704,20 +844,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Blacklist mode`
+  /// `Exclude selected apps`
   String get blacklistMode {
     return Intl.message(
-      'Blacklist mode',
+      'Exclude selected apps',
       name: 'blacklistMode',
       desc: '',
       args: [],
     );
   }
 
-  /// `Whitelist mode`
+  /// `Only selected apps`
   String get whitelistMode {
     return Intl.message(
-      'Whitelist mode',
+      'Only selected apps',
       name: 'whitelistMode',
       desc: '',
       args: [],
@@ -729,40 +869,40 @@ class AppLocalizations {
     return Intl.message('Select all', name: 'selectAll', desc: '', args: []);
   }
 
-  /// `Cancel select all`
+  /// `Deselect all`
   String get cancelSelectAll {
     return Intl.message(
-      'Cancel select all',
+      'Deselect all',
       name: 'cancelSelectAll',
       desc: '',
       args: [],
     );
   }
 
-  /// `App access control`
+  /// `Apps using the VPN`
   String get appAccessControl {
     return Intl.message(
-      'App access control',
+      'Apps using the VPN',
       name: 'appAccessControl',
       desc: '',
       args: [],
     );
   }
 
-  /// `Only allow selected app to enter VPN`
+  /// `Only selected apps use the VPN`
   String get accessControlAllowDesc {
     return Intl.message(
-      'Only allow selected app to enter VPN',
+      'Only selected apps use the VPN',
       name: 'accessControlAllowDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `The selected application will be excluded from VPN`
+  /// `Selected apps connect without the VPN`
   String get accessControlNotAllowDesc {
     return Intl.message(
-      'The selected application will be excluded from VPN',
+      'Selected apps connect without the VPN',
       name: 'accessControlNotAllowDesc',
       desc: '',
       args: [],
@@ -774,9 +914,9 @@ class AppLocalizations {
     return Intl.message('Selected', name: 'selected', desc: '', args: []);
   }
 
-  /// `ProxyPort`
+  /// `Proxy port`
   String get proxyPort {
-    return Intl.message('ProxyPort', name: 'proxyPort', desc: '', args: []);
+    return Intl.message('Proxy port', name: 'proxyPort', desc: '', args: []);
   }
 
   /// `Port`
@@ -784,9 +924,9 @@ class AppLocalizations {
     return Intl.message('Port', name: 'port', desc: '', args: []);
   }
 
-  /// `LogLevel`
+  /// `Log level`
   String get logLevel {
-    return Intl.message('LogLevel', name: 'logLevel', desc: '', args: []);
+    return Intl.message('Log level', name: 'logLevel', desc: '', args: []);
   }
 
   /// `Show`
@@ -874,9 +1014,9 @@ class AppLocalizations {
     );
   }
 
-  /// `tip`
+  /// `Notice`
   String get tip {
-    return Intl.message('tip', name: 'tip', desc: '', args: []);
+    return Intl.message('Notice', name: 'tip', desc: '', args: []);
   }
 
   /// `Account`
@@ -979,30 +1119,30 @@ class AppLocalizations {
     );
   }
 
-  /// `Discover the new version`
+  /// `Update available`
   String get discoverNewVersion {
     return Intl.message(
-      'Discover the new version',
+      'Update available',
       name: 'discoverNewVersion',
       desc: '',
       args: [],
     );
   }
 
-  /// `The current application is already the latest version`
+  /// `You are using the latest version`
   String get checkUpdateError {
     return Intl.message(
-      'The current application is already the latest version',
+      'You are using the latest version',
       name: 'checkUpdateError',
       desc: '',
       args: [],
     );
   }
 
-  /// `Go to download`
+  /// `Download update`
   String get goDownload {
     return Intl.message(
-      'Go to download',
+      'Download update',
       name: 'goDownload',
       desc: '',
       args: [],
@@ -1044,30 +1184,30 @@ class AppLocalizations {
     );
   }
 
-  /// `ExternalController`
+  /// `External controller`
   String get externalController {
     return Intl.message(
-      'ExternalController',
+      'External controller',
       name: 'externalController',
       desc: '',
       args: [],
     );
   }
 
-  /// `Once enabled, the Clash kernel can be controlled on port 9090`
+  /// `Allow control of the proxy core through its API on port 9090`
   String get externalControllerDesc {
     return Intl.message(
-      'Once enabled, the Clash kernel can be controlled on port 9090',
+      'Allow control of the proxy core through its API on port 9090',
       name: 'externalControllerDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `When turned on it will be able to receive IPv6 traffic`
+  /// `Allow IPv6 traffic`
   String get ipv6Desc {
     return Intl.message(
-      'When turned on it will be able to receive IPv6 traffic',
+      'Allow IPv6 traffic',
       name: 'ipv6Desc',
       desc: '',
       args: [],
@@ -1119,40 +1259,40 @@ class AppLocalizations {
     );
   }
 
-  /// `TCP concurrent`
+  /// `Concurrent TCP connections`
   String get tcpConcurrent {
     return Intl.message(
-      'TCP concurrent',
+      'Concurrent TCP connections',
       name: 'tcpConcurrent',
       desc: '',
       args: [],
     );
   }
 
-  /// `Enabling it will allow TCP concurrency`
+  /// `Try resolved IP addresses in parallel and use the first connection`
   String get tcpConcurrentDesc {
     return Intl.message(
-      'Enabling it will allow TCP concurrency',
+      'Try resolved IP addresses in parallel and use the first connection',
       name: 'tcpConcurrentDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Geo Low Memory Mode`
+  /// `Low-memory geodata loader`
   String get geodataLoader {
     return Intl.message(
-      'Geo Low Memory Mode',
+      'Low-memory geodata loader',
       name: 'geodataLoader',
       desc: '',
       args: [],
     );
   }
 
-  /// `Enabling will use the Geo low memory loader`
+  /// `Use less memory when loading geodata`
   String get geodataLoaderDesc {
     return Intl.message(
-      'Enabling will use the Geo low memory loader',
+      'Use less memory when loading geodata',
       name: 'geodataLoaderDesc',
       desc: '',
       args: [],
@@ -1164,20 +1304,20 @@ class AppLocalizations {
     return Intl.message('Requests', name: 'requests', desc: '', args: []);
   }
 
-  /// `View recently request records`
+  /// `View recent network requests`
   String get requestsDesc {
     return Intl.message(
-      'View recently request records',
+      'View recent network requests',
       name: 'requestsDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Find process`
+  /// `Process detection`
   String get findProcessMode {
     return Intl.message(
-      'Find process',
+      'Process detection',
       name: 'findProcessMode',
       desc: '',
       args: [],
@@ -1189,10 +1329,10 @@ class AppLocalizations {
     return Intl.message('Init', name: 'init', desc: '', args: []);
   }
 
-  /// `Long term effective`
+  /// `Never expires`
   String get infiniteTime {
     return Intl.message(
-      'Long term effective',
+      'Never expires',
       name: 'infiniteTime',
       desc: '',
       args: [],
@@ -1204,10 +1344,10 @@ class AppLocalizations {
     return Intl.message('Connections', name: 'connections', desc: '', args: []);
   }
 
-  /// `View current connections data`
+  /// `View active connections`
   String get connectionsDesc {
     return Intl.message(
-      'View current connections data',
+      'View active connections',
       name: 'connectionsDesc',
       desc: '',
       args: [],
@@ -1239,9 +1379,9 @@ class AppLocalizations {
     return Intl.message('Paste', name: 'paste', desc: '', args: []);
   }
 
-  /// `Test url`
+  /// `Test URL`
   String get testUrl {
-    return Intl.message('Test url', name: 'testUrl', desc: '', args: []);
+    return Intl.message('Test URL', name: 'testUrl', desc: '', args: []);
   }
 
   /// `Sync`
@@ -1249,20 +1389,20 @@ class AppLocalizations {
     return Intl.message('Sync', name: 'sync', desc: '', args: []);
   }
 
-  /// `Hidden from recent tasks`
+  /// `Hide from recent apps`
   String get exclude {
     return Intl.message(
-      'Hidden from recent tasks',
+      'Hide from recent apps',
       name: 'exclude',
       desc: '',
       args: [],
     );
   }
 
-  /// `When the app is in the background, the app is hidden from the recent task`
+  /// `Hide the app from the recent apps screen while it runs in the background`
   String get excludeDesc {
     return Intl.message(
-      'When the app is in the background, the app is hidden from the recent task',
+      'Hide the app from the recent apps screen while it runs in the background',
       name: 'excludeDesc',
       desc: '',
       args: [],
@@ -1294,9 +1434,9 @@ class AppLocalizations {
     return Intl.message('List', name: 'list', desc: '', args: []);
   }
 
-  /// `Delay`
+  /// `Latency`
   String get delay {
-    return Intl.message('Delay', name: 'delay', desc: '', args: []);
+    return Intl.message('Latency', name: 'delay', desc: '', args: []);
   }
 
   /// `Style`
@@ -1349,40 +1489,40 @@ class AppLocalizations {
     );
   }
 
-  /// `Auto close connections`
+  /// `Reconnect after switching servers`
   String get autoCloseConnections {
     return Intl.message(
-      'Auto close connections',
+      'Reconnect after switching servers',
       name: 'autoCloseConnections',
       desc: '',
       args: [],
     );
   }
 
-  /// `Auto close connections after change node`
+  /// `Close existing proxy connections when you switch servers so apps can reconnect`
   String get autoCloseConnectionsDesc {
     return Intl.message(
-      'Auto close connections after change node',
+      'Close existing proxy connections when you switch servers so apps can reconnect',
       name: 'autoCloseConnectionsDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Only statistics proxy`
+  /// `Count proxy traffic only`
   String get onlyStatisticsProxy {
     return Intl.message(
-      'Only statistics proxy',
+      'Count proxy traffic only',
       name: 'onlyStatisticsProxy',
       desc: '',
       args: [],
     );
   }
 
-  /// `When turned on, only statistics proxy traffic`
+  /// `Exclude direct connections from traffic statistics`
   String get onlyStatisticsProxyDesc {
     return Intl.message(
-      'When turned on, only statistics proxy traffic',
+      'Exclude direct connections from traffic statistics',
       name: 'onlyStatisticsProxyDesc',
       desc: '',
       args: [],
@@ -1399,10 +1539,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Tcp keep alive interval`
+  /// `TCP keepalive interval`
   String get keepAliveIntervalDesc {
     return Intl.message(
-      'Tcp keep alive interval',
+      'TCP keepalive interval',
       name: 'keepAliveIntervalDesc',
       desc: '',
       args: [],
@@ -1534,10 +1674,10 @@ class AppLocalizations {
     return Intl.message('Stop', name: 'stop', desc: '', args: []);
   }
 
-  /// `Update DNS related settings`
+  /// `Configure how domain names are resolved`
   String get dnsDesc {
     return Intl.message(
-      'Update DNS related settings',
+      'Configure how domain names are resolved',
       name: 'dnsDesc',
       desc: '',
       args: [],
@@ -2044,10 +2184,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Make sure to reset`
+  /// `Reset these settings to their defaults?`
   String get resetTip {
     return Intl.message(
-      'Make sure to reset',
+      'Reset these settings to their defaults?',
       name: 'resetTip',
       desc: '',
       args: [],
@@ -2064,9 +2204,9 @@ class AppLocalizations {
     return Intl.message('No data', name: 'noData', desc: '', args: []);
   }
 
-  /// `FontFamily`
+  /// `Font family`
   String get fontFamily {
-    return Intl.message('FontFamily', name: 'fontFamily', desc: '', args: []);
+    return Intl.message('Font family', name: 'fontFamily', desc: '', args: []);
   }
 
   /// `Toggle`
@@ -2084,20 +2224,20 @@ class AppLocalizations {
     return Intl.message('Route mode', name: 'routeMode', desc: '', args: []);
   }
 
-  /// `Bypass private route address`
+  /// `Bypass private networks`
   String get routeMode_bypassPrivate {
     return Intl.message(
-      'Bypass private route address',
+      'Bypass private networks',
       name: 'routeMode_bypassPrivate',
       desc: '',
       args: [],
     );
   }
 
-  /// `Use config`
+  /// `Use profile settings`
   String get routeMode_config {
     return Intl.message(
-      'Use config',
+      'Use profile settings',
       name: 'routeMode_config',
       desc: '',
       args: [],
@@ -2214,10 +2354,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Relying on third-party api is for reference only`
+  /// `Results come from third-party services and may be inaccurate`
   String get detectionTip {
     return Intl.message(
-      'Relying on third-party api is for reference only',
+      'Results come from third-party services and may be inaccurate',
       name: 'detectionTip',
       desc: '',
       args: [],
@@ -2244,40 +2384,40 @@ class AppLocalizations {
     return Intl.message('none', name: 'none', desc: '', args: []);
   }
 
-  /// `Basic configuration`
+  /// `Connection settings`
   String get basicConfig {
     return Intl.message(
-      'Basic configuration',
+      'Connection settings',
       name: 'basicConfig',
       desc: '',
       args: [],
     );
   }
 
-  /// `Modify the basic configuration globally`
+  /// `Proxy ports, logging, and connection behavior`
   String get basicConfigDesc {
     return Intl.message(
-      'Modify the basic configuration globally',
+      'Proxy ports, logging, and connection behavior',
       name: 'basicConfigDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Advanced configuration`
+  /// `Advanced settings`
   String get advancedConfig {
     return Intl.message(
-      'Advanced configuration',
+      'Advanced settings',
       name: 'advancedConfig',
       desc: '',
       args: [],
     );
   }
 
-  /// `Provide diverse configuration options`
+  /// `Network, DNS, and automatic connection settings`
   String get advancedConfigDesc {
     return Intl.message(
-      'Provide diverse configuration options',
+      'Network, DNS, and automatic connection settings',
       name: 'advancedConfigDesc',
       desc: '',
       args: [],
@@ -2339,10 +2479,10 @@ class AppLocalizations {
     );
   }
 
-  /// `There is a certain performance loss after opening`
+  /// `Identify the app behind each connection; may increase CPU usage`
   String get findProcessModeDesc {
     return Intl.message(
-      'There is a certain performance loss after opening',
+      'Identify the app behind each connection; may increase CPU usage',
       name: 'findProcessModeDesc',
       desc: '',
       args: [],
@@ -2509,9 +2649,9 @@ class AppLocalizations {
     return Intl.message('Clear Data', name: 'clearData', desc: '', args: []);
   }
 
-  /// `Text Scaling`
+  /// `Text size`
   String get textScale {
-    return Intl.message('Text Scaling', name: 'textScale', desc: '', args: []);
+    return Intl.message('Text size', name: 'textScale', desc: '', args: []);
   }
 
   /// `Internet`
@@ -3329,10 +3469,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Access Control Settings`
+  /// `App filtering settings`
   String get accessControlSettings {
     return Intl.message(
-      'Access Control Settings',
+      'App filtering settings',
       name: 'accessControlSettings',
       desc: '',
       args: [],
@@ -3404,30 +3544,30 @@ class AppLocalizations {
     );
   }
 
-  /// `Unknown network error`
+  /// `Could not connect. Check your network and try again.`
   String get unknownNetworkError {
     return Intl.message(
-      'Unknown network error',
+      'Could not connect. Check your network and try again.',
       name: 'unknownNetworkError',
       desc: '',
       args: [],
     );
   }
 
-  /// `Recovery exception`
+  /// `Could not restore data`
   String get restoreException {
     return Intl.message(
-      'Recovery exception',
+      'Could not restore data',
       name: 'restoreException',
       desc: '',
       args: [],
     );
   }
 
-  /// `Network exception, please check your connection and try again`
+  /// `Network error. Check your connection and try again.`
   String get networkException {
     return Intl.message(
-      'Network exception, please check your connection and try again',
+      'Network error. Check your connection and try again.',
       name: 'networkException',
       desc: '',
       args: [],
@@ -3529,9 +3669,9 @@ class AppLocalizations {
     return Intl.message('Add Profile', name: 'addProfile', desc: '', args: []);
   }
 
-  /// `Delay Test`
+  /// `Test latency`
   String get delayTest {
-    return Intl.message('Delay Test', name: 'delayTest', desc: '', args: []);
+    return Intl.message('Test latency', name: 'delayTest', desc: '', args: []);
   }
 
   /// `Proxy group is empty`
@@ -4554,10 +4694,10 @@ class AppLocalizations {
     return Intl.message('On Demand', name: 'onDemand', desc: '', args: []);
   }
 
-  /// `Configure the program running state for specific scenarios`
+  /// `Connect or disconnect automatically based on your network`
   String get onDemandDesc {
     return Intl.message(
-      'Configure the program running state for specific scenarios',
+      'Connect or disconnect automatically based on your network',
       name: 'onDemandDesc',
       desc: '',
       args: [],
@@ -4719,9 +4859,9 @@ class AppLocalizations {
     return Intl.message('Home', name: 'clientHome', desc: '', args: []);
   }
 
-  /// `Routes`
+  /// `Servers`
   String get clientLines {
-    return Intl.message('Routes', name: 'clientLines', desc: '', args: []);
+    return Intl.message('Servers', name: 'clientLines', desc: '', args: []);
   }
 
   /// `Account`
@@ -4729,90 +4869,90 @@ class AppLocalizations {
     return Intl.message('Account', name: 'clientMe', desc: '', args: []);
   }
 
-  /// `Smart outbound`
+  /// `Bypass mainland China`
   String get clientSmartOutbound {
     return Intl.message(
-      'Smart outbound',
+      'Bypass mainland China',
       name: 'clientSmartOutbound',
       desc: '',
       args: [],
     );
   }
 
-  /// `Smart return`
+  /// `Proxy mainland China`
   String get clientSmartReturn {
     return Intl.message(
-      'Smart return',
+      'Proxy mainland China',
       name: 'clientSmartReturn',
       desc: '',
       args: [],
     );
   }
 
-  /// `Proxy all`
+  /// `Proxy all traffic`
   String get clientAllProxy {
     return Intl.message(
-      'Proxy all',
+      'Proxy all traffic',
       name: 'clientAllProxy',
       desc: '',
       args: [],
     );
   }
 
-  /// `Mainland sites connect directly; other sites use your selected route.`
+  /// `Mainland China sites connect directly. Other sites use your selected server.`
   String get clientOutboundHint {
     return Intl.message(
-      'Mainland sites connect directly; other sites use your selected route.',
+      'Mainland China sites connect directly. Other sites use your selected server.',
       name: 'clientOutboundHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Mainland sites use your return route; other sites connect directly.`
+  /// `Mainland China sites use a return-to-China server. Other sites connect directly.`
   String get clientReturnHint {
     return Intl.message(
-      'Mainland sites use your return route; other sites connect directly.',
+      'Mainland China sites use a return-to-China server. Other sites connect directly.',
       name: 'clientReturnHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Use your selected route, with necessary system exceptions.`
+  /// `Use your selected server for all traffic, except required system connections.`
   String get clientAllProxyHint {
     return Intl.message(
-      'Use your selected route, with necessary system exceptions.',
+      'Use your selected server for all traffic, except required system connections.',
       name: 'clientAllProxyHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Exceptions`
+  /// `Custom rules`
   String get routeExceptions {
     return Intl.message(
-      'Exceptions',
+      'Custom rules',
       name: 'routeExceptions',
       desc: '',
       args: [],
     );
   }
 
-  /// `The first matching exception takes priority over the default mode.`
+  /// `Rules override the traffic mode and are checked from top to bottom. The first match wins.`
   String get routeExceptionsHint {
     return Intl.message(
-      'The first matching exception takes priority over the default mode.',
+      'Rules override the traffic mode and are checked from top to bottom. The first match wins.',
       name: 'routeExceptionsHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Advanced routing`
+  /// `Advanced rules`
   String get routeAdvanced {
     return Intl.message(
-      'Advanced routing',
+      'Advanced rules',
       name: 'routeAdvanced',
       desc: '',
       args: [],
@@ -4829,10 +4969,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Add exception`
+  /// `Add rule`
   String get routeAddException {
     return Intl.message(
-      'Add exception',
+      'Add rule',
       name: 'routeAddException',
       desc: '',
       args: [],
@@ -4859,20 +4999,20 @@ class AppLocalizations {
     );
   }
 
-  /// `A pasted URL is matched by hostname, not by page path. Use advanced rules for networks.`
+  /// `URLs match the website's hostname, not a specific page. Use advanced rules for IP ranges.`
   String get routeDomainHint {
     return Intl.message(
-      'A pasted URL is matched by hostname, not by page path. Use advanced rules for networks.',
+      'URLs match the website\'s hostname, not a specific page. Use advanced rules for IP ranges.',
       name: 'routeDomainHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Use selected route`
+  /// `Use selected server`
   String get routeViaLine {
     return Intl.message(
-      'Use selected route',
+      'Use selected server',
       name: 'routeViaLine',
       desc: '',
       args: [],
@@ -4919,40 +5059,40 @@ class AppLocalizations {
     );
   }
 
-  /// `Check routing`
+  /// `Check rule match`
   String get routeCheck {
     return Intl.message(
-      'Check routing',
+      'Check rule match',
       name: 'routeCheck',
       desc: '',
       args: [],
     );
   }
 
-  /// `Predicts the currently applied HTTPS/TCP rules without sending traffic. This is not a connectivity test.`
+  /// `Preview how the active rules handle an HTTPS/TCP connection. No traffic is sent; this does not test connectivity.`
   String get routeCheckHint {
     return Intl.message(
-      'Predicts the currently applied HTTPS/TCP rules without sending traffic. This is not a connectivity test.',
+      'Preview how the active rules handle an HTTPS/TCP connection. No traffic is sent; this does not test connectivity.',
       name: 'routeCheckHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `An earlier rule needs a resolved IP or application context. No routing conclusion can be made from this input alone.`
+  /// `An earlier rule needs the destination's resolved IP address or app details. This input is not enough to predict the result.`
   String get routeNeedsContext {
     return Intl.message(
-      'An earlier rule needs a resolved IP or application context. No routing conclusion can be made from this input alone.',
+      'An earlier rule needs the destination\'s resolved IP address or app details. This input is not enough to predict the result.',
       name: 'routeNeedsContext',
       desc: '',
       args: [],
     );
   }
 
-  /// `No applied routing is available. Connect or apply your rules first.`
+  /// `No active rules are available. Connect or apply your rules first.`
   String get routeUnavailable {
     return Intl.message(
-      'No applied routing is available. Connect or apply your rules first.',
+      'No active rules are available. Connect or apply your rules first.',
       name: 'routeUnavailable',
       desc: '',
       args: [],
@@ -4989,20 +5129,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Changes rejected; previous valid rules restored`
+  /// `Could not apply changes. Your previous rules have been restored.`
   String get routeRestored {
     return Intl.message(
-      'Changes rejected; previous valid rules restored',
+      'Could not apply changes. Your previous rules have been restored.',
       name: 'routeRestored',
       desc: '',
       args: [],
     );
   }
 
-  /// `Could not apply these changes. Check your rules; no default-rule fallback was performed.`
+  /// `Could not apply changes. Check your rules. The app has not switched to default rules.`
   String get routeApplyFailed {
     return Intl.message(
-      'Could not apply these changes. Check your rules; no default-rule fallback was performed.',
+      'Could not apply changes. Check your rules. The app has not switched to default rules.',
       name: 'routeApplyFailed',
       desc: '',
       args: [],
@@ -5029,10 +5169,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Reconnect existing traffic`
+  /// `Reconnect active connections`
   String get routeReconnect {
     return Intl.message(
-      'Reconnect existing traffic',
+      'Reconnect active connections',
       name: 'routeReconnect',
       desc: '',
       args: [],
@@ -5059,10 +5199,10 @@ class AppLocalizations {
     );
   }
 
-  /// `No exceptions. The selected mode handles your traffic.`
+  /// `No custom rules. Traffic follows the selected mode.`
   String get routeNoExceptions {
     return Intl.message(
-      'No exceptions. The selected mode handles your traffic.',
+      'No custom rules. Traffic follows the selected mode.',
       name: 'routeNoExceptions',
       desc: '',
       args: [],
@@ -5079,20 +5219,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Current route`
+  /// `Selected server`
   String get clientCurrentLine {
     return Intl.message(
-      'Current route',
+      'Selected server',
       name: 'clientCurrentLine',
       desc: '',
       args: [],
     );
   }
 
-  /// `Change route`
+  /// `Change server`
   String get clientChangeLine {
     return Intl.message(
-      'Change route',
+      'Change server',
       name: 'clientChangeLine',
       desc: '',
       args: [],
@@ -5124,20 +5264,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Edit exception`
+  /// `Edit rule`
   String get routeEditException {
     return Intl.message(
-      'Edit exception',
+      'Edit rule',
       name: 'routeEditException',
       desc: '',
       args: [],
     );
   }
 
-  /// `Delete this exception?`
+  /// `Delete this rule?`
   String get routeDeleteException {
     return Intl.message(
-      'Delete this exception?',
+      'Delete this rule?',
       name: 'routeDeleteException',
       desc: '',
       args: [],
