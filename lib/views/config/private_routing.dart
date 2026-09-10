@@ -169,6 +169,226 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
     _ => context.appLocalizations.routeAdvancedRule,
   };
 
+  Widget _buildExceptions(AsyncValue<List<Rule>> rules, bool applying) {
+    final text = context.appLocalizations;
+    return Card(
+      key: const ValueKey('route-exceptions-panel'),
+      margin: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        text.routeExceptions,
+                        style: context.textTheme.titleMedium,
+                      ),
+                    ),
+                    FilledButton.icon(
+                      onPressed: applying ? null : () => _edit(),
+                      icon: const Icon(Icons.add, size: 20),
+                      label: Text(text.routeAddException),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  text.routeExceptionsHint,
+                  style: context.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          rules.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, _) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(text.routeApplyFailed),
+            ),
+            data: (items) => items.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(text.routeNoExceptions),
+                  )
+                : Column(
+                    children: [
+                      for (final (index, rule) in items.indexed) ...[
+                        if (index != 0) const Divider(height: 1),
+                        ListTile(
+                          leading: Text('${index + 1}'),
+                          title: Text(
+                            rule.realContent ?? text.routeAdvancedRule,
+                          ),
+                          subtitle: Text(
+                            '${_targetLabel(rule)} · ${isSimplePrivateRoute(rule) ? (rule.ruleAction.name == 'DOMAIN_SUFFIX' ? text.routeIncludeSubdomains : text.routeDestination) : text.routeAdvancedRule}',
+                          ),
+                          onTap: applying ? null : () => _edit(rule),
+                          trailing: IconButton(
+                            tooltip: text.delete,
+                            onPressed: applying ? null : () => _delete(rule),
+                            icon: const Icon(Icons.delete_outline),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChecker(bool applying) {
+    final text = context.appLocalizations;
+    return Card(
+      key: const ValueKey('route-check-panel'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(text.routeCheck, style: context.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(text.routeCheckHint, style: context.textTheme.bodySmall),
+            const SizedBox(height: 16),
+            TextField(
+              key: const ValueKey('route-preview-destination'),
+              controller: _destination,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: InputDecoration(
+                labelText: text.routeDestination,
+                hintText: 'example.com',
+              ),
+              onSubmitted: (_) => _check(),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: applying ? null : _check,
+              icon: const Icon(Icons.travel_explore, size: 20),
+              label: Text(text.routeCheck),
+            ),
+            if (_preview != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _preview!,
+                    key: const ValueKey('route-preview-result'),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApplyStatus(
+    PrivateRouteApplyState status,
+    String statusText,
+    bool applying,
+  ) {
+    final text = context.appLocalizations;
+    final warning =
+        status.phase == PrivateRouteApplyPhase.failed ||
+        status.phase == PrivateRouteApplyPhase.restored ||
+        (status.phase == PrivateRouteApplyPhase.applied &&
+            !status.recoverySaved);
+    final message = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          warning
+              ? Icons.warning_amber
+              : status.phase == PrivateRouteApplyPhase.applied
+              ? Icons.check_circle_outline
+              : Icons.sync,
+          color: warning
+              ? context.colorScheme.error
+              : context.colorScheme.primary,
+          size: 22,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(statusText, style: context.textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(
+                text.routeNewConnections,
+                style: context.textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+    final actions = Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      children: [
+        TextButton.icon(
+          onPressed: applying ? null : _apply,
+          icon: const Icon(Icons.refresh, size: 20),
+          label: Text(text.routeSaveApply),
+        ),
+        PopupMenuButton<String>(
+          enabled: !applying,
+          tooltip: text.more,
+          icon: const Icon(Icons.more_horiz),
+          onSelected: (_) => _reconnect(),
+          itemBuilder: (_) => [
+            PopupMenuItem(value: 'reconnect', child: Text(text.routeReconnect)),
+          ],
+        ),
+      ],
+    );
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: warning
+            ? context.colorScheme.errorContainer.withValues(alpha: 0.35)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) =>
+            constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) >=
+                660
+            ? Row(
+                children: [
+                  Expanded(child: message),
+                  const SizedBox(width: 16),
+                  actions,
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  message,
+                  const SizedBox(height: 8),
+                  Align(alignment: Alignment.centerRight, child: actions),
+                ],
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = context.appLocalizations;
@@ -183,9 +403,6 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
       PrivateRouteApplyPhase.failed => text.routeApplyFailed,
       PrivateRouteApplyPhase.idle => text.routeNotApplied,
     };
-    final failed =
-        status.phase == PrivateRouteApplyPhase.failed ||
-        status.phase == PrivateRouteApplyPhase.restored;
     return CommonScaffold(
       managedRoot: true,
       title: text.routing,
@@ -193,186 +410,70 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1040),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            children: [
-              Card(
-                margin: EdgeInsets.zero,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      title: Text(
-                        text.routeMode,
-                        style: context.textTheme.titleMedium,
-                      ),
-                    ),
-                    const PrivateRoutingModePicker(),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: Icon(
-                        failed
-                            ? Icons.warning_amber
-                            : status.phase == PrivateRouteApplyPhase.applied
-                            ? Icons.check_circle_outline
-                            : Icons.sync,
-                        color: failed
-                            ? context.colorScheme.error
-                            : context.colorScheme.primary,
-                      ),
-                      title: Text(statusText),
-                      subtitle: Text(text.routeNewConnections),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton(
-                            onPressed: applying ? null : _apply,
-                            child: Text(text.routeSaveApply),
-                          ),
-                          TextButton(
-                            onPressed: applying ? null : _reconnect,
-                            child: Text(text.routeReconnect),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final sideBySide =
+                  (constraints.maxWidth - 32) /
+                      MediaQuery.textScalerOf(context).scale(1) >=
+                  860;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 children: [
-                  Expanded(
-                    child: Text(
-                      text.routeExceptions,
-                      style: context.textTheme.titleMedium,
+                  Text(text.routeMode, style: context.textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  const PrivateRoutingModePicker(),
+                  const SizedBox(height: 8),
+                  _buildApplyStatus(status, statusText, applying),
+                  const SizedBox(height: 12),
+                  if (sideBySide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _buildExceptions(rules, applying)),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 304, child: _buildChecker(applying)),
+                      ],
+                    )
+                  else ...[
+                    _buildExceptions(rules, applying),
+                    const SizedBox(height: 16),
+                    _buildChecker(applying),
+                  ],
+                  const SizedBox(height: 20),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    child: ExpansionTile(
+                      title: Text(text.routeAdvanced),
+                      subtitle: Text(text.routeAdvancedHint),
+                      children: [
+                        ListTile(
+                          title: Text(text.localRules),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => BaseNavigator.push(
+                            context,
+                            const AddedRulesView(),
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(text.privateRuleProviders),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => BaseNavigator.push(
+                            context,
+                            const PrivateRuleProvidersView(),
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(text.routeScript),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () =>
+                              BaseNavigator.push(context, const ScriptsView()),
+                        ),
+                      ],
                     ),
-                  ),
-                  FilledButton.icon(
-                    onPressed: applying ? null : () => _edit(),
-                    icon: const Icon(Icons.add),
-                    label: Text(text.routeAddException),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                text.routeExceptionsHint,
-                style: context.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 12),
-              Card(
-                margin: EdgeInsets.zero,
-                child: rules.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (_, _) => Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(text.routeApplyFailed),
-                  ),
-                  data: (items) => items.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(text.routeNoExceptions),
-                        )
-                      : Column(
-                          children: [
-                            for (final (index, rule) in items.indexed) ...[
-                              if (index != 0) const Divider(height: 1),
-                              ListTile(
-                                leading: Text('${index + 1}'),
-                                title: Text(
-                                  rule.realContent ?? text.routeAdvancedRule,
-                                ),
-                                subtitle: Text(
-                                  '${_targetLabel(rule)} · ${isSimplePrivateRoute(rule) ? (rule.ruleAction.name == 'DOMAIN_SUFFIX' ? text.routeIncludeSubdomains : text.routeDestination) : text.routeAdvancedRule}',
-                                ),
-                                onTap: applying ? null : () => _edit(rule),
-                                trailing: IconButton(
-                                  tooltip: text.delete,
-                                  onPressed: applying
-                                      ? null
-                                      : () => _delete(rule),
-                                  icon: const Icon(Icons.delete_outline),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(text.routeCheck, style: context.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(text.routeCheckHint, style: context.textTheme.bodySmall),
-              TextField(
-                controller: _destination,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: InputDecoration(
-                  labelText: text.routeDestination,
-                  hintText: 'example.com',
-                  suffixIcon: IconButton(
-                    tooltip: text.routeCheck,
-                    onPressed: applying ? null : _check,
-                    icon: const Icon(Icons.search),
-                  ),
-                ),
-                onSubmitted: (_) => _check(),
-              ),
-              if (_preview != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    _preview!,
-                    key: const ValueKey('route-preview-result'),
-                  ),
-                ),
-              const SizedBox(height: 24),
-              Card(
-                margin: EdgeInsets.zero,
-                child: ExpansionTile(
-                  title: Text(text.routeAdvanced),
-                  subtitle: Text(text.routeAdvancedHint),
-                  children: [
-                    ListTile(
-                      title: Text(text.localRules),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () =>
-                          BaseNavigator.push(context, const AddedRulesView()),
-                    ),
-                    ListTile(
-                      title: Text(text.privateRuleProviders),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => BaseNavigator.push(
-                        context,
-                        const PrivateRuleProvidersView(),
-                      ),
-                    ),
-                    ListTile(
-                      title: Text(text.routeScript),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () =>
-                          BaseNavigator.push(context, const ScriptsView()),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

@@ -129,26 +129,83 @@ class _PrivateRoutingModePickerState
       onChanged: (value) {
         if (value != null && !_busy && !applying) _select(value);
       },
-      child: Column(
-        children: [
-          if (mode == ManagedRouteMode.directAllLegacy)
-            ListTile(
-              title: Text(
-                '${context.appLocalizations.routeMode} · ${context.appLocalizations.routeDirect}',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontal =
+              constraints.maxWidth /
+                  MediaQuery.textScalerOf(context).scale(1) >=
+              740;
+          final options = [
+            for (final option in const [
+              ManagedRouteMode.bypassMainland,
+              ManagedRouteMode.bypassOverseas,
+              ManagedRouteMode.global,
+            ])
+              Material(
+                color: option == mode
+                    ? context.colorScheme.secondaryContainer
+                    : context.colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  side: BorderSide(
+                    color: option == mode
+                        ? context.colorScheme.primary
+                        : context.colorScheme.outlineVariant,
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: RadioListTile<ManagedRouteMode>(
+                  value: option,
+                  enabled: !_busy && !applying,
+                  selected: option == mode,
+                  dense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: horizontal ? 12 : 4,
+                  ),
+                  title: Text(
+                    option.label(context),
+                    style: context.textTheme.titleSmall,
+                  ),
+                  subtitle: Text(
+                    option.description(context),
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          for (final option in const [
-            ManagedRouteMode.bypassMainland,
-            ManagedRouteMode.bypassOverseas,
-            ManagedRouteMode.global,
-          ])
-            RadioListTile<ManagedRouteMode>(
-              value: option,
-              enabled: !_busy && !applying,
-              title: Text(option.label(context)),
-              subtitle: Text(option.description(context)),
-            ),
-        ],
+          ];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (mode == ManagedRouteMode.directAllLegacy)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    '${context.appLocalizations.routeMode} · ${context.appLocalizations.routeDirect}',
+                  ),
+                ),
+              if (horizontal)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final (index, option) in options.indexed) ...[
+                        if (index != 0) const SizedBox(width: 12),
+                        Expanded(child: option),
+                      ],
+                    ],
+                  ),
+                )
+              else
+                for (final (index, option) in options.indexed) ...[
+                  if (index != 0) const SizedBox(height: 8),
+                  option,
+                ],
+            ],
+          );
+        },
       ),
     );
   }

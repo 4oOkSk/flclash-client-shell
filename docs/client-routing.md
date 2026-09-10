@@ -26,6 +26,12 @@ Visual acceptance includes the entire window, not isolated content widgets: all 
 pages, wide and medium desktop layouts, compact/mobile navigation, and dark mode. Component
 screenshots with demonstration data are not substitutes for native package acceptance.
 
+Routing presents the three modes side by side when width and text scale permit. Exceptions
+remain the primary task, with the rule checker alongside them on wide layouts and below them
+on compact layouts. Application status stays visible without a separate large card; manual
+application remains available, and reconnect is under its overflow menu with the existing
+confirmation. Failed application and unsaved recovery state retain explicit warning feedback.
+
 ## Exceptions
 
 The simple editor accepts a domain, HTTP(S) URL or literal IP address. A URL is normalized to its
