@@ -5,14 +5,12 @@ This file is the entry point for AI coding agents working in this repository. Ke
 
 ## Start Here
 
-Read these files before making changes:
+Use this entry point, then read the references needed for the current task. Do not preload every linked file for a
+documentation edit or an unrelated small change. Reuse already-read, unchanged context.
 
-- [.agents/project.md](.agents/project.md): project overview, versions, and build dependencies.
-- [.agents/commands.md](.agents/commands.md): build, development, code generation, and test commands.
-- [.agents/rules.md](.agents/rules.md): lint, testing, generated-code, and workflow rules.
-
-Read these only when the task touches their area:
-
+- [.agents/rules.md](.agents/rules.md): before code, configuration, or test edits; also when changing repository policy.
+- [.agents/project.md](.agents/project.md): project orientation, versions, or build dependencies.
+- [.agents/commands.md](.agents/commands.md): when running builds, code generation, or tests; select the relevant commands.
 - [.agents/architecture.md](.agents/architecture.md): core integration, providers, database, managers, build system, and
   local plugins.
 - [.agents/agent-config.md](.agents/agent-config.md): how to choose between `AGENTS.md`, `.agents`, skills, Codex config,
@@ -24,25 +22,20 @@ Read these only when the task touches their area:
 - When the user explicitly requests a scoped, low-risk change, inspect the relevant context and implement it directly.
   Do not require brainstorming, design documents, implementation plans, multiple-option proposals, or repeated confirmation.
   Ask only when material ambiguity, destructive impact, additional authority, or scope expansion could change the result.
-- Do not add code or configuration comments unless the user explicitly asks for comments. This includes explanatory,
-  narrative, TODO, and documentation comments. Never annotate line by line; comments belong only at the few key points
-  that cannot be understood without one, and there you must propose the exact text and wait for approval. Delete
-  commented-out code and stale notes whenever you touch the surrounding code. Put assertable behavior in a test,
-  repository-wide invariants in `.agents/`, and keep a comment only for a fact that is local to one call site.
-  See [.agents/rules.md](.agents/rules.md) for the full policy.
+- Keep comments sparse and useful; no exact-text approval ritual or unrelated cleanup.
+  See [.agents/rules.md](.agents/rules.md) for comment and verification conventions.
 - Use `flutter test`, not `dart test`, because models pull in Flutter types.
-- Run code generation after modifying models, providers, or database schema.
+- Run code generation when changes to model, provider, or database declarations affect generated output.
 - Do not manually edit generated files.
 - Preserve lifecycle ownership: desktop Core process convergence belongs to `lib/core/desktop/`; Android service intent
   arbitration belongs to `ServiceState`. UI/provider code may request a transition but must not become a second source of
   truth.
-- Keep start/stop/restart paths latest-intent-safe. Flutter-to-Android service commands are deliberately optimistic, while
-  native state serializes the actual work; desktop lifecycle results distinguish applied, coalesced, and superseded
-  requests.
+- Keep start/stop/restart paths latest-intent-safe. Android start acknowledges queued intent; stop awaits the native
+  operation. `ServiceState` remains the single owner. See `.agents/architecture.md` for the lifecycle contract.
 - Follow `analysis_options.yaml`, especially single quotes, trailing commas, `child:` last, no `print()`, const/final
   preferences, and declared return types.
-- For CI parity, verify with `flutter pub get`, `flutter analyze --no-fatal-infos`, and
-  `flutter test --reporter expanded` when practical.
+- Select checks through [.agents/rules.md](.agents/rules.md#testing-rules); command lists are references, not a mandatory
+  suite. Documentation-only edits do not require an application build.
 
 ## Repo Skills
 

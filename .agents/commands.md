@@ -92,6 +92,10 @@ flutter test plugins/proxy/test/proxy_test.dart
 
 Root `flutter test` only discovers the root package's `test/` directory by default. Include bundled plugin Dart tests by passing paths explicitly, or run `flutter test` from that plugin package directory. Native plugin tests under platform folders are not run by `flutter test`.
 
+Managed UI/selection regressions use `bash tool/test_managed.sh`. It enables managed mode with a non-secret test marker
+and runs only the applicable suites. Do not run the entire generic dashboard suite in managed mode or use real API/session
+inputs for these mocked tests. The public workflow runs both generic and managed groups before native Core compilation.
+
 For the current Core/service architecture, useful focused checks are:
 
 ```bash
@@ -135,8 +139,9 @@ should at minimum compile the modules they touch; use JDK 17 in this checkout:
 
 ```bash
 cd android
-JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew :service:compileDebugKotlin
-JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew :app:compileDebugKotlin
+java -version # use the existing host's JDK 17; set JAVA_HOME only if needed
+./gradlew :service:compileDebugKotlin
+./gradlew :app:compileDebugKotlin
 ```
 
 Always-on VPN entry, system VPN revoke, actual permission UI, and rapid device start/stop still require Android device or
@@ -150,9 +155,12 @@ The public release workflow is started manually through `workflow_dispatch` and 
 flutter pub get
 flutter analyze --no-fatal-warnings --no-fatal-infos
 flutter test --reporter expanded
+bash tool/test_managed.sh
 ```
 
-Run `flutter analyze` locally before committing when practical.
+Choose local checks using [Testing Rules](rules.md#testing-rules), preferably affected `flutter test` files/cases.
+The sequence above is required for release-workflow parity, not for every edit or commit; reuse valid CI results rather
+than manually rerunning the same gate.
 
 The workflow has no tag-push or pull-request trigger. Root analysis excludes `plugins/**`, and root tests do not discover
 nested plugin packages. Release verification separately checks the setup build tool and Go Core; other nested plugin

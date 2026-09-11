@@ -85,9 +85,9 @@ The design follows Material's [large-screen layout and navigation](https://m2.ma
 and [navigation rail guidance](https://m2.material.io/components/navigation-rail), preserving
 the website's classic Material styling rather than combining unrelated window and page themes.
 
-Visual acceptance includes the entire window, not isolated content widgets: all four primary
-pages, wide and medium desktop layouts, compact/mobile navigation, and dark mode. Component
-screenshots with demonstration data are not substitutes for native package acceptance.
+Visual acceptance covers the affected window and interactions, not only isolated content widgets.
+Whole-shell redesigns cover all four primary pages, desktop/mobile layouts and dark mode; local edits
+check affected views. Component screenshots with demonstration data do not prove native behavior.
 
 Routing presents the three modes side by side when width and text scale permit. Exceptions
 remain the primary task, with the rule checker alongside them on wide layouts and below them
@@ -183,6 +183,7 @@ verified Go login/config or destination DoH transports, and does not change DNS 
 
 Changes to the rule editor require domain/URL/IP normalization and advanced-rule preservation
 checks. Changes to application feedback require invalid input, recovery and authentication
-error checks. Device acceptance must exercise the released candidate on Windows, Linux and
-the Android emulator; cold-start smoke alone does not prove proxy/TUN or rule effectiveness.
+error checks. Select device acceptance by affected platform/behavior or explicit task requirements,
+using the exact candidate build. Publication alone does not add a three-platform device suite;
+cold-start smoke alone does not prove proxy/TUN or rule effectiveness.
 macOS remains a build-only result when no device is available.

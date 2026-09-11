@@ -7,7 +7,8 @@ description: Use when changing FlClash UI text, scanning for hardcoded Chinese s
 
 ## When To Use
 
-Use this for localization work inside `/Users/Shared/follow/FlClash`, especially hardcoded UI text in `lib/`, ARB updates, missing translations, or generated `lib/l10n/` output that does not match source ARB values.
+Use this in the current repository for UI text in `lib/`, ARB updates, missing translations, or generated `lib/l10n/`
+output that does not match source ARB values. Paths below are relative to the repository root.
 
 Do not use this for README translation sync or manual edits to generated localization Dart.
 

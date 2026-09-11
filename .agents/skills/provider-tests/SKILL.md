@@ -9,7 +9,8 @@ description: Use when adding or updating FlClash Riverpod provider tests, notifi
 
 Use this for tests under `test/providers/` or any change that validates Riverpod providers, generated notifiers, app state defaults, or provider interactions.
 
-For broader test expansion, pair this with `.agents/rules.md` and `.agents/commands.md`.
+Use `.agents/rules.md` and `.agents/commands.md` for the applicable test conventions and commands; they do not authorize
+broader test expansion by themselves.
 
 ## Workflow
 
@@ -22,13 +23,9 @@ For broader test expansion, pair this with `.agents/rules.md` and `.agents/comma
    notifier.update((state) => newValue);
    ```
 
-5. Mock external dependencies with `mocktail`; register fallback values for freezed params used with `any()`.
-6. Keep tests focused on behavior: defaults, state transitions, persistence boundaries, and side effects.
-7. Run the narrowest relevant test first:
-
-   ```bash
-   flutter test test/providers/
-   ```
+5. Reuse existing setup. When a mock is necessary, use `mocktail` and register fallback values for freezed params
+   used with `any()`.
+6. Apply `.agents/rules.md` Testing Rules and run the affected `flutter test` files/cases from `.agents/commands.md`.
 
 ## Pitfalls
 

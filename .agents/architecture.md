@@ -92,7 +92,7 @@ before each spawn, and owns the direct child through both the Dart lease and the
 
 ### Android Service Lifecycle
 
-Android deliberately keeps Flutter requests optimistic and the native layer authoritative:
+Android keeps intent arbitration and operation completion authoritative in the native layer:
 
 - `ServicePlugin.start()` and `stop()` acknowledge immediately after submitting intent. They do not wait for service
   creation, VPN permission, binding, TUN establishment, or teardown.

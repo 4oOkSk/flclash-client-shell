@@ -1,6 +1,8 @@
 # Project Context
 
-FlClash is a multi-platform proxy client based on ClashMeta (mihomo), built with Flutter. It supports Android, Windows, macOS, and Linux, using a Material You design with Surfboard-like UI.
+This repository maintains the managed FlClash client and the generic FlClash interface on Flutter and mihomo.
+It supports Android, Windows, macOS, and Linux. Managed UI contracts live in `docs/client-routing.md`; generic builds
+retain upstream Material You styling.
 
 ## Version Notes
 
@@ -19,7 +21,8 @@ sudo apt-get install libayatana-appindicator3-dev libkeybinder-3.0-dev
 
 Windows:
 
-- GCC and Inno Setup.
+- Visual Studio C++ build tools and the existing Rust/Flutter toolchain; the release workflow supplies pinned tools.
+- Formal Windows output uses `tool/windows_sfx/`, not an Inno Setup installer.
 - `ANDROID_NDK` env var for Android builds.
 
 macOS:

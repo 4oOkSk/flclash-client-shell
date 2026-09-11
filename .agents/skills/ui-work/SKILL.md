@@ -12,23 +12,19 @@ Use this for user-facing Flutter UI changes in `lib/`, including widgets, screen
 ## Workflow
 
 1. Locate existing nearby widgets and reuse their patterns before adding new abstractions.
-2. Managed HarborProxy UI follows the website's classic Material language: blue app bars, white surfaces, small corners and clear lists. Generic builds keep upstream Material You conventions. See `docs/client-routing.md` for the managed interaction contract.
+2. Follow `docs/client-routing.md` for managed appearance and interactions; generic builds keep upstream Material You
+   conventions. Do not infer managed styling from the generic dashboard.
 3. Use existing providers, notifiers, and helpers where possible.
 4. Keep `child:` last in widget constructors.
 5. Prefer `const` constructors and final locals.
 6. Localize user-facing text through ARB; use `localization` when text changes are non-trivial.
-7. Add focused widget tests when behavior changes, especially for rendering states, taps, scrolling, and empty/error states.
-8. For asynchronous controls, define separately:
+7. Apply `.agents/rules.md` Testing Rules; use existing widget tests for affected behavior.
+8. When the change affects asynchronous control behavior, distinguish:
    - authoritative provider/domain state;
    - display-only state such as a minimum progress duration;
    - tap policy while work or display holds are active;
    - failure/disposal cleanup, normally in `finally` for animations and timers.
-9. Run targeted verification:
-
-   ```bash
-   flutter analyze
-   flutter test test/widgets/
-   ```
+9. Select affected `flutter test` files/cases and relevant Dart analysis from `.agents/commands.md`.
 
 ## Pitfalls
 
@@ -37,7 +33,8 @@ Use this for user-facing Flutter UI changes in `lib/`, including widgets, screen
 - Avoid broad layout rewrites unless the requested change requires them.
 - Do not mutate provider/domain state merely to smooth a transition. Keep presentation holds local and let real errors
   bypass them immediately.
-- Do not leave loading animations active when callbacks throw. Test the exception path, not only the successful tap.
+- Do not leave loading animations active when callbacks throw. If the change affects that path, verify its cleanup;
+  unrelated visual edits do not require adding a full success/failure/disposal/timer matrix.
 
 ## Current Interaction Examples
 
