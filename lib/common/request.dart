@@ -92,55 +92,34 @@ class Request {
   final Map<String, IpInfo Function(Map<String, dynamic>)> _ipInfoSources = {
     'https://ipwho.is': IpInfo.fromIpWhoIsJson,
     'https://api.myip.com': IpInfo.fromMyIpJson,
-    'https://ipapi.co/json': IpInfo.fromIpApiCoJson,
-    'https://ident.me/json': IpInfo.fromIdentMeJson,
-    'http://ip-api.com/json': IpInfo.fromIpAPIJson,
-    'https://api.ip.sb/geoip': IpInfo.fromIpSbJson,
-    'https://ipinfo.io/json': IpInfo.fromIpInfoIoJson,
   };
 
   Future<Result<IpInfo?>> checkIp({CancelToken? cancelToken}) async {
-    var failureCount = 0;
-    final token = cancelToken ?? CancelToken();
-    final futures = _ipInfoSources.entries.map((source) async {
-      final Completer<Result<IpInfo?>> completer = Completer();
-      void handleFailRes() {
-        if (!completer.isCompleted && failureCount == _ipInfoSources.length) {
-          completer.complete(Result.success(null));
+    for (final source in _ipInfoSources.entries) {
+      if (cancelToken?.isCancelled == true) return Result.error('cancelled');
+      final token = CancelToken();
+      cancelToken?.whenCancel.then((_) => token.cancel());
+      try {
+        final response = await dio
+            .get<Map<String, dynamic>>(
+              source.key,
+              cancelToken: token,
+              options: Options(responseType: ResponseType.json),
+            )
+            .timeout(const Duration(seconds: 4));
+        if (response.statusCode == HttpStatus.ok && response.data != null) {
+          final info = source.value(response.data!);
+          if (InternetAddress.tryParse(info.ip) != null) {
+            return Result.success(info);
+          }
         }
+      } catch (_) {
+        if (cancelToken?.isCancelled == true) return Result.error('cancelled');
+      } finally {
+        token.cancel();
       }
-
-      final future = dio
-          .get<Map<String, dynamic>>(
-            source.key,
-            cancelToken: token,
-            options: Options(responseType: ResponseType.json),
-          )
-          .timeout(const Duration(seconds: 10));
-      future
-          .then((res) {
-            if (res.statusCode == HttpStatus.ok && res.data != null) {
-              completer.complete(Result.success(source.value(res.data!)));
-              return;
-            }
-            commonPrint.log('checkIp data empty', logLevel: LogLevel.info);
-            failureCount++;
-            handleFailRes();
-          })
-          .catchError((e) {
-            failureCount++;
-            if (e is DioException && e.type == DioExceptionType.cancel) {
-              completer.complete(Result.error('cancelled'));
-              return;
-            }
-            commonPrint.log('checkIp error $e', logLevel: LogLevel.warning);
-            handleFailRes();
-          });
-      return completer.future;
-    });
-    final res = await Future.any(futures);
-    token.cancel();
-    return res;
+    }
+    return Result.success(null);
   }
 }
 

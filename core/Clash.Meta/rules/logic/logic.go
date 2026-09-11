@@ -183,7 +183,7 @@ func matchSubRules(metadata *C.Metadata, name string, subRules map[string][]C.Ru
 				m, a = matchSubRules(metadata, rule.Adapter(), subRules, helper)
 			}
 			if m && (a == "PASS-RULE" || (helper.CheckPassRule != nil && helper.CheckPassRule(a))) {
-				continue 
+				continue
 			}
 			return m, a
 		}
@@ -224,6 +224,10 @@ func (logic *Logic) Match(metadata *C.Metadata, helper C.RuleMatchHelper) (bool,
 
 func (logic *Logic) Adapter() string {
 	return logic.adapter
+}
+
+func (logic *Logic) Rules() []C.Rule {
+	return append([]C.Rule(nil), logic.rules...)
 }
 
 func (logic *Logic) Payload() string {

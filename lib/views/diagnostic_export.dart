@@ -5,6 +5,7 @@ import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
+import 'package:fl_clash/providers/client_health.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -125,6 +126,33 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
           'platform.version': platformVersion,
           'platform.runtime': Platform.version,
           'core.status': ref.read(coreStatusProvider).name,
+          'health.phase': ref.read(clientHealthProvider).phase.name,
+          'health.scope': 'core-selected-outbound-https-not-browser-tun',
+          'health.checkedAt':
+              ref.read(clientHealthProvider).checkedAt?.toIso8601String() ??
+              'none',
+          'health.latencyMs': ref.read(clientHealthProvider).latencyMs,
+          'selection.lastOutcome': ref
+              .read(proxiesActionProvider.notifier)
+              .lastSelectionOutcome,
+          'selection.lastAt':
+              ref
+                  .read(proxiesActionProvider.notifier)
+                  .lastSelectionAt
+                  ?.toIso8601String() ??
+              'none',
+          'routing.applyPhase': ref.read(privateRouteStatusProvider).phase.name,
+          'routing.appliedMode':
+              ref
+                  .read(privateRouteStatusProvider)
+                  .applied
+                  ?.managedRouting
+                  ?.mode
+                  .wireValue ??
+              'unknown',
+          'routing.recoverySaved': ref
+              .read(privateRouteStatusProvider)
+              .recoverySaved,
           'core.runtimeSeconds': ref.read(runTimeProvider),
           'core.binarySha256': globalState.coreSHA256.isEmpty
               ? 'unknown'

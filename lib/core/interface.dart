@@ -158,6 +158,26 @@ abstract class CoreHandlerInterface with CoreInterface {
     Duration? timeout,
   });
 
+  Future<String> _invokeAcknowledged({
+    required CoreMethod method,
+    Object? arguments,
+    Duration? timeout,
+  }) async {
+    final result = await _invokeMethod<String>(
+      method: method,
+      arguments: arguments,
+      timeout: timeout,
+    );
+    if (result == null) {
+      throw const CoreMethodException(
+        code: 'unconfirmed',
+        message:
+            'Core did not acknowledge the operation; its outcome is unknown',
+      );
+    }
+    return result;
+  }
+
   @override
   Future<List<String>> getPlatformDiagnosticLogs() async => const [];
 
@@ -182,20 +202,18 @@ abstract class CoreHandlerInterface with CoreInterface {
 
   @override
   Future<String> validateConfig(String path) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.validateConfig,
-          arguments: path,
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.validateConfig,
+      arguments: path,
+    );
   }
 
   @override
   Future<String> updateConfig(UpdateParams updateParams) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.updateConfig,
-          arguments: updateParams.toJson(),
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.updateConfig,
+      arguments: updateParams.toJson(),
+    );
   }
 
   @override
@@ -215,11 +233,10 @@ abstract class CoreHandlerInterface with CoreInterface {
 
   @override
   Future<String> setupConfig(SetupParams setupParams) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.setupConfig,
-          arguments: setupParams.toJson(),
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.setupConfig,
+      arguments: setupParams.toJson(),
+    );
   }
 
   Future<String> _invokeEnroll(
@@ -327,6 +344,7 @@ abstract class CoreHandlerInterface with CoreInterface {
   Future<ProxiesData> getProxies() async {
     final data = await _invokeMethod<Map<String, dynamic>>(
       method: CoreMethod.getProxies,
+      timeout: _clientLocalMethodTimeout,
     );
     return data != null
         ? ProxiesData.fromJson(data)
@@ -335,11 +353,11 @@ abstract class CoreHandlerInterface with CoreInterface {
 
   @override
   Future<String> changeProxy(ChangeProxyParams changeProxyParams) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.changeProxy,
-          arguments: changeProxyParams.toJson(),
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.changeProxy,
+      arguments: changeProxyParams.toJson(),
+      timeout: _clientLocalMethodTimeout,
+    );
   }
 
   @override
@@ -370,11 +388,10 @@ abstract class CoreHandlerInterface with CoreInterface {
 
   @override
   Future<String> updateGeoData(String type) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.updateGeoData,
-          arguments: type,
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.updateGeoData,
+      arguments: type,
+    );
   }
 
   @override
@@ -382,20 +399,18 @@ abstract class CoreHandlerInterface with CoreInterface {
     required String providerName,
     required String data,
   }) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.sideLoadExternalProvider,
-          arguments: {'providerName': providerName, 'data': data},
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.sideLoadExternalProvider,
+      arguments: {'providerName': providerName, 'data': data},
+    );
   }
 
   @override
   Future<String> updateExternalProvider(String providerName) async {
-    return await _invokeMethod<String>(
-          method: CoreMethod.updateExternalProvider,
-          arguments: providerName,
-        ) ??
-        '';
+    return _invokeAcknowledged(
+      method: CoreMethod.updateExternalProvider,
+      arguments: providerName,
+    );
   }
 
   @override

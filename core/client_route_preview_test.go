@@ -4,8 +4,34 @@ import (
 	"testing"
 
 	C "github.com/metacubex/mihomo/constant"
+	Rules "github.com/metacubex/mihomo/rules"
 	R "github.com/metacubex/mihomo/rules/common"
 )
+
+func TestClientRoutePreviewLogicalRules(test *testing.T) {
+	cases := []struct{ name, kind, payload, status, action string }{
+		{"managed UDP guard", "AND", "((NETWORK,UDP),(DST-PORT,443))", "matched", "direct"},
+		{"unknown AND false", "AND", "((IP-CIDR,192.0.2.0/24),(NETWORK,UDP))", "matched", "direct"},
+		{"unknown OR true", "OR", "((IP-CIDR,192.0.2.0/24),(NETWORK,TCP))", "matched", "reject"},
+		{"unknown AND true", "AND", "((IP-CIDR,192.0.2.0/24),(NETWORK,TCP))", "needs-ip", ""},
+		{"unknown OR false", "OR", "((IP-CIDR,192.0.2.0/24),(NETWORK,UDP))", "needs-ip", ""},
+		{"NOT unknown", "NOT", "((IP-CIDR,192.0.2.0/24))", "needs-ip", ""},
+		{"NOT UDP", "NOT", "((NETWORK,UDP))", "matched", "reject"},
+		{"nested", "AND", "((NOT,((NETWORK,UDP))),(DST-PORT,443))", "matched", "reject"},
+	}
+	for _, item := range cases {
+		test.Run(item.name, func(test *testing.T) {
+			rule, err := Rules.ParseRule(item.kind, item.payload, "REJECT", nil, nil)
+			if err != nil {
+				test.Fatal(err)
+			}
+			result := previewClientRouteRules("example.com", []C.Rule{rule, R.NewMatch("DIRECT")})
+			if result.Status != item.status || result.Action != item.action {
+				test.Fatalf("got %+v", result)
+			}
+		})
+	}
+}
 
 func TestClientRoutePreviewUsesCoreRuleOrder(test *testing.T) {
 	rules := []C.Rule{

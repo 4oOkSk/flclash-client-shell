@@ -127,6 +127,47 @@ contains a result category, direct/proxy/reject action and rule index/type, neve
 proxy-chain definition. If an earlier rule requires an IP address, process information or
 unsupported context, the result is indeterminate rather than a guessed match.
 
+Logical AND/OR/NOT rules use bounded three-valued evaluation: a known false AND branch or
+true OR branch can resolve a rule even when another branch needs context. In particular, the
+managed UDP/443 guard cannot match the checker's TCP input. Unknown branches are never guessed;
+no DNS lookup is added. Editing the destination or changing rules/application state invalidates
+both displayed results and in-flight replies. Applied rules do not show a redundant save button;
+manual reapplication remains in the overflow menu and unsuccessful application offers Retry.
+
+## Connection feedback and servers
+
+Home distinguishes the VPN's lifecycle state from an observational server check. A disconnected
+underlying network is shown explicitly; otherwise a bounded HTTPS check through the selected
+core outbound reports checking, reachable or unavailable. This is not a browser/TUN end-to-end
+test and never claims every site is reachable. Network changes and successful server switches
+invalidate old results; foreground checks are debounced and repeated at most once a minute,
+and background/stop cancels scheduled checks. The observer never starts, stops or switches the
+core. Existing automatic groups retain the core's health checking, failure threshold and latency
+tolerance; manual selection is never silently replaced by a second Flutter failover algorithm.
+
+Server changes are serialized. A missing RPC reply is unconfirmed, not an empty success;
+current core selection is read back before committing a lost-ACK result. Failed storage writes
+attempt to restore the previous actual selection; failed rollback reports the observed selection
+and an unsaved/unconfirmed outcome. Diagnostic reports include the latest attempt/outcome,
+health scope/time and desired/applied routing state. No endpoint or connection parameters are
+added to these fields.
+
+Servers share inset card rows, searchable display names, four-at-a-time HTTPS checks and an
+optional available-first ordering. Results show the local check time and do not imply download
+speed or unrestricted reachability. Automatic entries show the current leaf server. Names that
+differ only in whitespace receive stable display suffixes; raw identities are never trimmed or
+rewritten for core calls or storage. Check buttons retain a 48-pixel touch target.
+
+System text scaling, including nonlinear accessibility scaling, is preserved unless the user
+explicitly enables an application font-size override. Managed Home no longer performs hidden
+seven-site IP lookups. Generic IP detection uses one HTTPS source with one sequential fallback,
+validates the parsed IP, cancels each completed/timed-out request and has an eight-second maximum
+request budget. There is no cross-server IP cache that could report a previous outbound address.
+
+Application HTTP uses the platform's normal certificate verification; the previous global
+accept-any-certificate callback is removed. This does not change the separately certificate-
+verified Go login/config or destination DoH transports, and does not change DNS split policies.
+
 ## Acceptance
 
 Changes to the rule editor require domain/URL/IP normalization and advanced-rule preservation

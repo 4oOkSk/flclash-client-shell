@@ -18,7 +18,9 @@ import 'rules.dart';
 import 'scripts.dart';
 
 class PrivateRoutingView extends ConsumerStatefulWidget {
-  const PrivateRoutingView({super.key});
+  final Future<String> Function(String)? preview;
+
+  const PrivateRoutingView({super.key, this.preview});
 
   @override
   ConsumerState<PrivateRoutingView> createState() => _PrivateRoutingViewState();
@@ -28,6 +30,12 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
   final _destination = TextEditingController();
   bool _busy = false;
   String? _preview;
+  int _previewRevision = 0;
+
+  void _invalidatePreview() {
+    _previewRevision++;
+    if (mounted) setState(() => _preview = null);
+  }
 
   @override
   void dispose() {
@@ -107,6 +115,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
 
   Future<void> _check() async {
     if (_busy) return;
+    final revision = ++_previewRevision;
     String destination;
     try {
       destination = normalizePrivateRouteDestination(_destination.text);
@@ -116,12 +125,19 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
       );
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _preview = null;
+    });
     try {
       final response =
-          jsonDecode(await coreController.clientRoutePreview(destination))
+          jsonDecode(
+                await (widget.preview ?? coreController.clientRoutePreview)(
+                  destination,
+                ),
+              )
               as Map;
-      if (!mounted) return;
+      if (!mounted || revision != _previewRevision) return;
       final text = context.appLocalizations;
       final action = switch (response['action']) {
         'direct' => text.routeDirect,
@@ -134,14 +150,16 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
             action,
             response['rule-index'] as int,
           ),
-          'needs-ip' || 'needs-context' => text.routeNeedsContext,
+          'needs-ip' => text.routeNeedsIp,
+          'needs-context' => text.routeNeedsContext,
           'invalid' => text.routeInvalidDestination,
           _ => text.routeUnavailable,
         };
       });
     } catch (_) {
-      if (mounted)
+      if (mounted && revision == _previewRevision) {
         setState(() => _preview = context.appLocalizations.routeUnavailable);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -265,6 +283,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
             TextField(
               key: const ValueKey('route-preview-destination'),
               controller: _destination,
+              onChanged: (_) => _invalidatePreview(),
               autocorrect: false,
               enableSuggestions: false,
               decoration: InputDecoration(
@@ -342,17 +361,19 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 4,
       children: [
-        TextButton.icon(
-          onPressed: applying ? null : _apply,
-          icon: const Icon(Icons.refresh, size: 20),
-          label: Text(text.routeSaveApply),
-        ),
+        if (status.phase != PrivateRouteApplyPhase.applied || warning)
+          TextButton.icon(
+            onPressed: applying ? null : _apply,
+            icon: const Icon(Icons.refresh, size: 20),
+            label: Text(text.retry),
+          ),
         PopupMenuButton<String>(
           enabled: !applying,
           tooltip: text.more,
           icon: const Icon(Icons.more_horiz),
-          onSelected: (_) => _reconnect(),
+          onSelected: (value) => value == 'apply' ? _apply() : _reconnect(),
           itemBuilder: (_) => [
+            PopupMenuItem(value: 'apply', child: Text(text.routeSaveApply)),
             PopupMenuItem(value: 'reconnect', child: Text(text.routeReconnect)),
           ],
         ),
@@ -391,6 +412,9 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(privateRouteStatusProvider, (_, _) => _invalidatePreview());
+    ref.listen(globalRulesProvider, (_, _) => _invalidatePreview());
+    ref.listen(networkSettingProvider, (_, _) => _invalidatePreview());
     final text = context.appLocalizations;
     final rules = ref.watch(globalRulesProvider);
     final status = ref.watch(privateRouteStatusProvider);

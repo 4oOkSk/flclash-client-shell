@@ -145,7 +145,46 @@ class _EmptyClientCoreHandler extends _RecordingCoreHandler {
   }
 }
 
+class _UnconfirmedCoreHandler extends _RecordingCoreHandler {
+  Duration? lastTimeout;
+
+  @override
+  Future<T?> invokeMethod<T>({
+    required CoreMethod method,
+    Object? arguments,
+    Duration? timeout,
+  }) async {
+    lastTimeout = timeout;
+    return null;
+  }
+}
+
 void main() {
+  test(
+    'missing mutation ACK is not success and switching has a bounded deadline',
+    () async {
+      final handler = _UnconfirmedCoreHandler();
+      await expectLater(
+        handler.changeProxy(
+          const ChangeProxyParams(groupName: 'group', proxyName: 'server'),
+        ),
+        throwsA(isA<CoreMethodException>()),
+      );
+      expect(handler.lastTimeout, const Duration(seconds: 10));
+      await expectLater(
+        handler.validateConfig('config'),
+        throwsA(isA<CoreMethodException>()),
+      );
+      await expectLater(
+        handler.updateGeoData('geoip'),
+        throwsA(isA<CoreMethodException>()),
+      );
+      await expectLater(
+        handler.updateExternalProvider('rules'),
+        throwsA(isA<CoreMethodException>()),
+      );
+    },
+  );
   test('method call keeps structured arguments', () async {
     final fixture =
         json.decode(
@@ -302,14 +341,11 @@ void main() {
       );
     }
 
-    expect(
-      handler.timeouts,
-      const [
-        Duration(seconds: 10),
-        Duration(seconds: 30),
-        Duration(seconds: 30),
-      ],
-    );
+    expect(handler.timeouts, const [
+      Duration(seconds: 10),
+      Duration(seconds: 30),
+      Duration(seconds: 30),
+    ]);
   });
 
   test('method response separates result and structured errors', () async {

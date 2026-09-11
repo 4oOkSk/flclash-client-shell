@@ -170,6 +170,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
       "通过所选线路访问，保留必要的系统例外。",
     ),
+    "clientAutomatic": MessageLookupByLibrary.simpleMessage("自动选择"),
+    "clientAvailableFirst": MessageLookupByLibrary.simpleMessage("可用优先"),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("更换线路"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("连接"),
     "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage("复制诊断日志"),
@@ -188,9 +190,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientDisconnect": MessageLookupByLibrary.simpleMessage("断开连接"),
     "clientEmail": MessageLookupByLibrary.simpleMessage("邮箱地址"),
     "clientExpiresOn": MessageLookupByLibrary.simpleMessage("过期时间"),
+    "clientHealthChecking": MessageLookupByLibrary.simpleMessage("正在检查所选线路…"),
+    "clientHealthPaused": MessageLookupByLibrary.simpleMessage("后台已暂停线路检查。"),
     "clientHome": MessageLookupByLibrary.simpleMessage("首页"),
     "clientLines": MessageLookupByLibrary.simpleMessage("线路"),
     "clientMe": MessageLookupByLibrary.simpleMessage("我的"),
+    "clientNetworkOffline": MessageLookupByLibrary.simpleMessage("网络已断开"),
+    "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
+      "请连接 Wi-Fi 或移动网络。VPN 仍保持开启。",
+    ),
+    "clientNotTested": MessageLookupByLibrary.simpleMessage("未检测"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage("官方网站"),
     "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
       "国内网站直连，其他网站走所选线路。",
@@ -199,13 +208,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientReturnHint": MessageLookupByLibrary.simpleMessage(
       "国内网站走回国线路，其他网站直连。",
     ),
+    "clientSelectionFailed": MessageLookupByLibrary.simpleMessage(
+      "未能确认或保存切换结果，请查看当前线路后重试。",
+    ),
+    "clientServerReachable": MessageLookupByLibrary.simpleMessage(
+      "线路检查通过，不代表所有应用或网站都能访问。",
+    ),
+    "clientServerUnreachable": MessageLookupByLibrary.simpleMessage(
+      "线路检查未通过。可以重试或更换线路；未自动更改你的选择。",
+    ),
     "clientSessionRestoreFailed": MessageLookupByLibrary.simpleMessage(
       "无法恢复登录状态",
     ),
     "clientSignIn": MessageLookupByLibrary.simpleMessage("登录"),
     "clientSmartOutbound": MessageLookupByLibrary.simpleMessage("智能出国"),
     "clientSmartReturn": MessageLookupByLibrary.simpleMessage("智能回国"),
+    "clientTestHint": MessageLookupByLibrary.simpleMessage(
+      "检测 HTTPS 响应时间，不是下载速度；结果仅代表测试网站。自动选择由内核负责。",
+    ),
+    "clientTestServers": MessageLookupByLibrary.simpleMessage("检测线路"),
+    "clientTestUnavailable": MessageLookupByLibrary.simpleMessage("检测失败 · 重试"),
+    "clientTestedAt": MessageLookupByLibrary.simpleMessage("检测于"),
+    "clientTesting": MessageLookupByLibrary.simpleMessage("检测中…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("分流模式"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN 已开启"),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "两步验证码（已启用时填写）",
     ),
@@ -635,6 +661,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "restoreStrategy_compatible": MessageLookupByLibrary.simpleMessage("兼容"),
     "restoreStrategy_override": MessageLookupByLibrary.simpleMessage("覆盖"),
     "restoreSuccess": MessageLookupByLibrary.simpleMessage("恢复成功"),
+    "retry": MessageLookupByLibrary.simpleMessage("重试"),
     "routeAddException": MessageLookupByLibrary.simpleMessage("添加规则"),
     "routeAddress": MessageLookupByLibrary.simpleMessage("路由地址"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage("配置监听路由地址"),
@@ -674,6 +701,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "routeMode_config": MessageLookupByLibrary.simpleMessage("使用配置"),
     "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
       "前面的规则需要解析后的 IP 或应用信息，仅凭此输入无法确定走向。",
+    ),
+    "routeNeedsIp": MessageLookupByLibrary.simpleMessage(
+      "前面的 IP 规则需要目标 IP。请输入 IP 地址检查；这里不会发送 DNS 查询。",
     ),
     "routeNewConnections": MessageLookupByLibrary.simpleMessage(
       "修改作用于新建连接，不会自动中断现有连接。",

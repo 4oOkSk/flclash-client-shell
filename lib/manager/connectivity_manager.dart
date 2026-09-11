@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/providers/app.dart';
+import 'package:fl_clash/providers/client_health.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/material.dart';
 import 'package:wifi_ssid/wifi_ssid.dart';
@@ -33,10 +33,9 @@ class _ConnectivityManagerState extends State<ConnectivityManager> {
       // present, that callback throws outside the stream's onError handler.
       // A catchable preflight prevents the plugin from starting that listener
       // in minimal desktops and build/test environments.
-      if (Platform.isLinux) {
-        await Connectivity().checkConnectivity();
-      }
+      final initial = await Connectivity().checkConnectivity();
       if (!mounted) return;
+      _handleConnectivityChanged(initial);
       subscription = Connectivity().onConnectivityChanged.listen(
         _handleConnectivityChanged,
         onError: _handleConnectivityError,
@@ -47,6 +46,11 @@ class _ConnectivityManagerState extends State<ConnectivityManager> {
   }
 
   void _handleConnectivityChanged(List<ConnectivityResult> results) {
+    if (kPrivateClientMode) {
+      globalState.container
+          .read(clientHealthProvider.notifier)
+          .networkChanged(results);
+    }
     if (results.contains(ConnectivityResult.wifi)) {
       unawaited(
         WifiSsidManager.instance

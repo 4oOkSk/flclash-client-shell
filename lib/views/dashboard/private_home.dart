@@ -2,6 +2,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
+import 'package:fl_clash/providers/client_health.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +43,7 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
   Widget build(BuildContext context) {
     final text = context.appLocalizations;
     final running = ref.watch(isStartProvider);
+    final health = ref.watch(clientHealthProvider);
     final group = findPrivateClientPrimaryGroup(ref.watch(groupsProvider));
     final selected = group == null
         ? null
@@ -83,7 +85,9 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
                               _busy
                                   ? text.loading
                                   : running
-                                  ? text.connected
+                                  ? health.phase == ClientHealthPhase.offline
+                                        ? text.clientNetworkOffline
+                                        : text.clientTunnelActive
                                   : text.disconnected,
                               style: context.textTheme.headlineSmall,
                             ),
@@ -91,11 +95,40 @@ class _PrivateHomeViewState extends ConsumerState<PrivateHomeView> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      if (running) ...[
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(switch (health.phase) {
+                            ClientHealthPhase.offline =>
+                              text.clientNetworkOfflineHint,
+                            ClientHealthPhase.reachable =>
+                              text.clientServerReachable,
+                            ClientHealthPhase.unavailable =>
+                              text.clientServerUnreachable,
+                            ClientHealthPhase.paused => text.clientHealthPaused,
+                            _ => text.clientHealthChecking,
+                          }),
+                        ),
+                        if (health.phase == ClientHealthPhase.unavailable)
+                          TextButton.icon(
+                            onPressed: ref
+                                .read(clientHealthProvider.notifier)
+                                .refresh,
+                            icon: const Icon(Icons.refresh),
+                            label: Text(text.retry),
+                          ),
+                        const SizedBox(height: 8),
+                      ],
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(text.clientCurrentLine),
                         subtitle: Text(
-                          selected ?? group?.realNow ?? text.noInfo,
+                          privateClientSelectionLabel(
+                            context,
+                            ref.watch(groupsProvider),
+                            group,
+                            selected,
+                          ),
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _navigate(PageLabel.proxies),

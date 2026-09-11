@@ -237,6 +237,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
       "Use your selected server for all traffic, except required system connections.",
     ),
+    "clientAutomatic": MessageLookupByLibrary.simpleMessage("Automatic"),
+    "clientAvailableFirst": MessageLookupByLibrary.simpleMessage(
+      "Available first",
+    ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("Change server"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("Connect"),
     "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage(
@@ -261,9 +265,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientDisconnect": MessageLookupByLibrary.simpleMessage("Disconnect"),
     "clientEmail": MessageLookupByLibrary.simpleMessage("Email address"),
     "clientExpiresOn": MessageLookupByLibrary.simpleMessage("Expires on"),
+    "clientHealthChecking": MessageLookupByLibrary.simpleMessage(
+      "Checking the selected server…",
+    ),
+    "clientHealthPaused": MessageLookupByLibrary.simpleMessage(
+      "Server check paused in the background.",
+    ),
     "clientHome": MessageLookupByLibrary.simpleMessage("Home"),
     "clientLines": MessageLookupByLibrary.simpleMessage("Servers"),
     "clientMe": MessageLookupByLibrary.simpleMessage("Account"),
+    "clientNetworkOffline": MessageLookupByLibrary.simpleMessage(
+      "No network connection",
+    ),
+    "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
+      "Connect to Wi-Fi or mobile data. The VPN remains on.",
+    ),
+    "clientNotTested": MessageLookupByLibrary.simpleMessage("Not checked"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage(
       "Official website",
     ),
@@ -273,6 +290,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientRetry": MessageLookupByLibrary.simpleMessage("Try again"),
     "clientReturnHint": MessageLookupByLibrary.simpleMessage(
       "Mainland China sites use a return-to-China server. Other sites connect directly.",
+    ),
+    "clientSelectionFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not confirm or save the change. Check the current selection and try again.",
+    ),
+    "clientServerReachable": MessageLookupByLibrary.simpleMessage(
+      "Server check passed. This does not test every app or website.",
+    ),
+    "clientServerUnreachable": MessageLookupByLibrary.simpleMessage(
+      "Server check failed. Retry or choose another server; your selection has not been changed.",
     ),
     "clientSessionRestoreFailed": MessageLookupByLibrary.simpleMessage(
       "Could not restore your session",
@@ -284,7 +310,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientSmartReturn": MessageLookupByLibrary.simpleMessage(
       "Proxy mainland China",
     ),
+    "clientTestHint": MessageLookupByLibrary.simpleMessage(
+      "HTTPS response time, not download speed. Results apply only to the test site; automatic selection is managed by the core.",
+    ),
+    "clientTestServers": MessageLookupByLibrary.simpleMessage("Check servers"),
+    "clientTestUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Check failed · retry",
+    ),
+    "clientTestedAt": MessageLookupByLibrary.simpleMessage("Checked at"),
+    "clientTesting": MessageLookupByLibrary.simpleMessage("Checking…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("Traffic mode"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN is on"),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "2FA code (if enabled)",
     ),
@@ -908,6 +944,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Override",
     ),
     "restoreSuccess": MessageLookupByLibrary.simpleMessage("Restore success"),
+    "retry": MessageLookupByLibrary.simpleMessage("Retry"),
     "routeAddException": MessageLookupByLibrary.simpleMessage("Add rule"),
     "routeAddress": MessageLookupByLibrary.simpleMessage("Route address"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage(
@@ -961,6 +998,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
       "An earlier rule needs the destination\'s resolved IP address or app details. This input is not enough to predict the result.",
+    ),
+    "routeNeedsIp": MessageLookupByLibrary.simpleMessage(
+      "An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent.",
     ),
     "routeNewConnections": MessageLookupByLibrary.simpleMessage(
       "Changes affect new connections. Existing connections are not interrupted.",

@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/private_client_theme.dart';
 import 'package:fl_clash/common/theme.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
+import 'package:fl_clash/manager/theme_manager.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/config/private_routing.dart';
+import 'package:fl_clash/views/proxies/private_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,6 +34,110 @@ ProviderContainer _container(Size size) {
 }
 
 void main() {
+  testWidgets(
+    'late checker response is discarded after editing or applying rules',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final container = _container(tester.view.physicalSize);
+      addTearDown(container.dispose);
+      var pending = Completer<String>();
+      await tester.pumpWidget(
+        _RoutingTestApp(
+          container: container,
+          home: PrivateRoutingView(preview: (_) => pending.future),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final input = find.byKey(const ValueKey('route-preview-destination'));
+      for (final editInput in [true, false]) {
+        pending = Completer<String>();
+        await tester.enterText(input, '8.8.8.8');
+        await tester.tap(
+          find.widgetWithText(
+            OutlinedButton,
+            AppLocalizations.current.routeCheck,
+          ),
+        );
+        await tester.pump();
+        if (editInput) {
+          await tester.enterText(input, '127.0.0.1');
+        } else {
+          container
+              .read(privateRouteStatusProvider.notifier)
+              .value = const PrivateRouteApplyState(
+            phase: PrivateRouteApplyPhase.applying,
+          );
+          await tester.pump();
+        }
+        pending.complete(
+          '{"status":"matched","action":"proxy","rule-index":1}',
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('route-preview-result')),
+          findsNothing,
+        );
+      }
+    },
+  );
+
+  testWidgets('server rows support large text and distinct aliases', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = _container(tester.view.physicalSize);
+    addTearDown(container.dispose);
+    container.read(groupsProvider.notifier).value = [
+      const Group(
+        type: GroupType.Selector,
+        name: 'HARBORPROXY-SERVER',
+        now: 'Backup',
+        all: [
+          Proxy(name: 'Backup', type: 'Vless'),
+          Proxy(name: 'Backup ', type: 'Vless'),
+        ],
+      ),
+    ];
+    await tester.pumpWidget(
+      _RoutingTestApp(
+        container: container,
+        textScale: 2,
+        throughTheme: true,
+        home: const PrivateClientProxiesView(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Backup · 1'), findsOneWidget);
+    expect(find.text('Backup · 2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('ThemeManager preserves system large text on a narrow phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = _container(tester.view.physicalSize);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      _RoutingTestApp(container: container, textScale: 2, throughTheme: true),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      MediaQuery.textScalerOf(
+        tester.element(find.byType(PrivateRoutingView)),
+      ).scale(16),
+      32,
+    );
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'responsive routing preserves check input and validation result',
     (tester) async {
@@ -91,6 +199,9 @@ void main() {
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
+      await tester.enterText(input, 'example.org');
+      await tester.pump();
+      expect(find.byKey(const ValueKey('route-preview-result')), findsNothing);
     },
   );
 
@@ -151,8 +262,15 @@ void main() {
 class _RoutingTestApp extends StatelessWidget {
   final ProviderContainer container;
   final double textScale;
+  final bool throughTheme;
+  final Widget home;
 
-  const _RoutingTestApp({required this.container, this.textScale = 1});
+  const _RoutingTestApp({
+    required this.container,
+    this.textScale = 1,
+    this.throughTheme = false,
+    this.home = const PrivateRoutingView(),
+  });
 
   @override
   Widget build(BuildContext context) => UncontrolledProviderScope(
@@ -175,10 +293,10 @@ class _RoutingTestApp extends StatelessWidget {
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.linear(textScale)),
-          child: child!,
+          child: throughTheme ? ThemeManager(child: child!) : child!,
         );
       },
-      home: const PrivateRoutingView(),
+      home: home,
     ),
   );
 }

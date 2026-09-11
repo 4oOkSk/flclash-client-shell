@@ -54,6 +54,176 @@ class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
+  /// `Retry`
+  String get retry {
+    return Intl.message('Retry', name: 'retry', desc: '', args: []);
+  }
+
+  /// `An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent.`
+  String get routeNeedsIp {
+    return Intl.message(
+      'An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent.',
+      name: 'routeNeedsIp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `VPN is on`
+  String get clientTunnelActive {
+    return Intl.message(
+      'VPN is on',
+      name: 'clientTunnelActive',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No network connection`
+  String get clientNetworkOffline {
+    return Intl.message(
+      'No network connection',
+      name: 'clientNetworkOffline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect to Wi-Fi or mobile data. The VPN remains on.`
+  String get clientNetworkOfflineHint {
+    return Intl.message(
+      'Connect to Wi-Fi or mobile data. The VPN remains on.',
+      name: 'clientNetworkOfflineHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Server check passed. This does not test every app or website.`
+  String get clientServerReachable {
+    return Intl.message(
+      'Server check passed. This does not test every app or website.',
+      name: 'clientServerReachable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Server check failed. Retry or choose another server; your selection has not been changed.`
+  String get clientServerUnreachable {
+    return Intl.message(
+      'Server check failed. Retry or choose another server; your selection has not been changed.',
+      name: 'clientServerUnreachable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Server check paused in the background.`
+  String get clientHealthPaused {
+    return Intl.message(
+      'Server check paused in the background.',
+      name: 'clientHealthPaused',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking the selected server…`
+  String get clientHealthChecking {
+    return Intl.message(
+      'Checking the selected server…',
+      name: 'clientHealthChecking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Automatic`
+  String get clientAutomatic {
+    return Intl.message(
+      'Automatic',
+      name: 'clientAutomatic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not confirm or save the change. Check the current selection and try again.`
+  String get clientSelectionFailed {
+    return Intl.message(
+      'Could not confirm or save the change. Check the current selection and try again.',
+      name: 'clientSelectionFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking…`
+  String get clientTesting {
+    return Intl.message('Checking…', name: 'clientTesting', desc: '', args: []);
+  }
+
+  /// `Check servers`
+  String get clientTestServers {
+    return Intl.message(
+      'Check servers',
+      name: 'clientTestServers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Available first`
+  String get clientAvailableFirst {
+    return Intl.message(
+      'Available first',
+      name: 'clientAvailableFirst',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `HTTPS response time, not download speed. Results apply only to the test site; automatic selection is managed by the core.`
+  String get clientTestHint {
+    return Intl.message(
+      'HTTPS response time, not download speed. Results apply only to the test site; automatic selection is managed by the core.',
+      name: 'clientTestHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not checked`
+  String get clientNotTested {
+    return Intl.message(
+      'Not checked',
+      name: 'clientNotTested',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check failed · retry`
+  String get clientTestUnavailable {
+    return Intl.message(
+      'Check failed · retry',
+      name: 'clientTestUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checked at`
+  String get clientTestedAt {
+    return Intl.message(
+      'Checked at',
+      name: 'clientTestedAt',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Copy diagnostic report`
   String get clientCopyDiagnostics {
     return Intl.message(

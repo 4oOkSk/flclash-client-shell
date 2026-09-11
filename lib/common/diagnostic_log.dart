@@ -536,7 +536,7 @@ String buildDiagnosticReport({
   var statusIncluded = writer.addSection(
     'status',
     primaryStatus,
-    byteLimit: 2400,
+    byteLimit: 2800,
   );
   final errorsIncluded = writer.addSection(
     'errors/warnings (redacted duplicates grouped)',
@@ -607,6 +607,8 @@ bool _isPrimaryDiagnosticStatus(String key) =>
       'probe.',
       'collection.',
       'selection.',
+      'health.',
+      'routing.',
       'recent.',
       'routes.',
       'dns.',

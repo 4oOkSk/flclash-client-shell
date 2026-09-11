@@ -2,6 +2,9 @@ part of '../action.dart';
 
 @Riverpod(keepAlive: true)
 class ProxiesAction extends _$ProxiesAction {
+  Future<void> _selectionTail = Future<void>.value();
+  String lastSelectionOutcome = 'none';
+  DateTime? lastSelectionAt;
   @override
   void build() {}
 
@@ -80,20 +83,53 @@ class ProxiesAction extends _$ProxiesAction {
     required String groupName,
     required String proxyName,
   }) async {
+    if (!kPrivateClientMode) {
+      return _changeProxy(groupName: groupName, proxyName: proxyName);
+    }
+    final operation = _selectionTail.then(
+      (_) => _changeProxy(groupName: groupName, proxyName: proxyName),
+    );
+    _selectionTail = operation.catchError((Object _) {});
+    return operation;
+  }
+
+  Future<void> _changeProxy({
+    required String groupName,
+    required String proxyName,
+  }) async {
     if (kPrivateClientMode) {
-      final next = await applyPrivateClientProxySelection(
-        current: privateClientSelectedMap,
-        groupName: groupName,
-        proxyName: proxyName,
-        changeCore: () async => await coreController.changeProxy(
-          ChangeProxyParams(groupName: groupName, proxyName: proxyName),
-        ),
-        persist: preferences.savePrivateClientSelectedMap,
-      );
-      privateClientSelectedMap
-        ..clear()
-        ..addAll(next);
-      ref.invalidate(selectedMapProvider);
+      lastSelectionAt = DateTime.now();
+      lastSelectionOutcome = 'pending';
+      try {
+        final next = await applyPrivateClientProxySelection(
+          current: privateClientSelectedMap,
+          groupName: groupName,
+          proxyName: proxyName,
+          changeCore: (name) async => await coreController.changeProxy(
+            ChangeProxyParams(groupName: groupName, proxyName: name),
+          ),
+          readCore: () => coreController.currentProxySelection(groupName),
+          persist: preferences.savePrivateClientSelectedMap,
+        );
+        privateClientSelectedMap
+          ..clear()
+          ..addAll(next);
+        ref.invalidate(selectedMapProvider);
+        lastSelectionOutcome = 'saved';
+      } on PrivateClientSelectionFailure catch (failure) {
+        lastSelectionOutcome = failure.outcome;
+        if (failure.actualSelection case final String actual) {
+          privateClientSelectedMap[groupName] = actual;
+        } else {
+          privateClientSelectedMap.remove(groupName);
+        }
+        ref.invalidate(selectedMapProvider);
+        await updateGroups();
+        rethrow;
+      } catch (_) {
+        lastSelectionOutcome = 'unconfirmed';
+        rethrow;
+      }
     } else {
       final message = await coreController.changeProxy(
         ChangeProxyParams(groupName: groupName, proxyName: proxyName),

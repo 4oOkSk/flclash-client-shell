@@ -204,6 +204,11 @@ class CoreController {
     return await _interface.changeProxy(changeProxyParams);
   }
 
+  Future<String?> currentProxySelection(String groupName) async {
+    final group = (await _interface.getProxies()).proxies[groupName];
+    return group is Map ? group['now'] as String? : null;
+  }
+
   Future<List<TrackerInfo>> getConnections() async {
     return _interface.getConnections();
   }

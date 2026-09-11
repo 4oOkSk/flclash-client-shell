@@ -244,6 +244,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
       "Через выбранный сервер, кроме необходимых системных исключений.",
     ),
+    "clientAutomatic": MessageLookupByLibrary.simpleMessage("Автоматически"),
+    "clientAvailableFirst": MessageLookupByLibrary.simpleMessage(
+      "Доступные сначала",
+    ),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("Сменить сервер"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("Подключиться"),
     "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage(
@@ -266,9 +270,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientDisconnect": MessageLookupByLibrary.simpleMessage("Отключиться"),
     "clientEmail": MessageLookupByLibrary.simpleMessage("Электронная почта"),
     "clientExpiresOn": MessageLookupByLibrary.simpleMessage("Срок действия"),
+    "clientHealthChecking": MessageLookupByLibrary.simpleMessage(
+      "Проверка выбранного сервера…",
+    ),
+    "clientHealthPaused": MessageLookupByLibrary.simpleMessage(
+      "Проверка сервера приостановлена в фоне.",
+    ),
     "clientHome": MessageLookupByLibrary.simpleMessage("Главная"),
     "clientLines": MessageLookupByLibrary.simpleMessage("Серверы"),
     "clientMe": MessageLookupByLibrary.simpleMessage("Аккаунт"),
+    "clientNetworkOffline": MessageLookupByLibrary.simpleMessage(
+      "Нет подключения к сети",
+    ),
+    "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
+      "Подключитесь к Wi-Fi или мобильной сети. VPN остаётся включённым.",
+    ),
+    "clientNotTested": MessageLookupByLibrary.simpleMessage("Не проверено"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage(
       "Официальный сайт",
     ),
@@ -278,6 +295,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientRetry": MessageLookupByLibrary.simpleMessage("Повторить"),
     "clientReturnHint": MessageLookupByLibrary.simpleMessage(
       "Сайты материкового Китая — через сервер возврата, остальные — напрямую.",
+    ),
+    "clientSelectionFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось подтвердить или сохранить изменение. Проверьте текущий выбор и повторите попытку.",
+    ),
+    "clientServerReachable": MessageLookupByLibrary.simpleMessage(
+      "Проверка сервера пройдена. Это не проверка всех приложений и сайтов.",
+    ),
+    "clientServerUnreachable": MessageLookupByLibrary.simpleMessage(
+      "Проверка сервера не пройдена. Повторите её или выберите другой сервер. Ваш выбор не изменён.",
     ),
     "clientSessionRestoreFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось восстановить сеанс",
@@ -289,7 +315,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientSmartReturn": MessageLookupByLibrary.simpleMessage(
       "Умный доступ в Китай",
     ),
+    "clientTestHint": MessageLookupByLibrary.simpleMessage(
+      "Время ответа HTTPS, не скорость загрузки. Результат относится только к тестовому сайту. Автовыбором управляет ядро.",
+    ),
+    "clientTestServers": MessageLookupByLibrary.simpleMessage(
+      "Проверить серверы",
+    ),
+    "clientTestUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Ошибка · повторить",
+    ),
+    "clientTestedAt": MessageLookupByLibrary.simpleMessage("Проверено в"),
+    "clientTesting": MessageLookupByLibrary.simpleMessage("Проверка…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("Режим трафика"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN включён"),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "Код 2FA (если включена)",
     ),
@@ -949,6 +987,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "restoreSuccess": MessageLookupByLibrary.simpleMessage(
       "Восстановление успешно",
     ),
+    "retry": MessageLookupByLibrary.simpleMessage("Повторить"),
     "routeAddException": MessageLookupByLibrary.simpleMessage(
       "Добавить исключение",
     ),
@@ -1010,6 +1049,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
       "Предыдущему правилу нужен IP или контекст приложения. Этих данных недостаточно для вывода.",
+    ),
+    "routeNeedsIp": MessageLookupByLibrary.simpleMessage(
+      "Для предыдущего IP-правила нужен IP назначения. Введите IP-адрес; DNS-запросы не отправляются.",
     ),
     "routeNewConnections": MessageLookupByLibrary.simpleMessage(
       "Изменения действуют для новых соединений. Текущие не прерываются.",

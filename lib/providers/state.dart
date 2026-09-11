@@ -510,7 +510,7 @@ VM3<bool, int, bool> checkIp(Ref ref) {
           state.dashboardWidgets.contains(DashboardWidget.networkDetection),
     ),
   );
-  return VM3(isInit, checkIpNum, containsDetection);
+  return VM3(isInit, checkIpNum, !kPrivateClientMode && containsDetection);
 }
 
 @riverpod

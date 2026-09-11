@@ -180,6 +180,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientAllProxyHint": MessageLookupByLibrary.simpleMessage(
       "必要なシステム例外を除き、選択した接続先を使用します。",
     ),
+    "clientAutomatic": MessageLookupByLibrary.simpleMessage("自動選択"),
+    "clientAvailableFirst": MessageLookupByLibrary.simpleMessage("利用可能な順"),
     "clientChangeLine": MessageLookupByLibrary.simpleMessage("接続先を変更"),
     "clientConnect": MessageLookupByLibrary.simpleMessage("接続"),
     "clientCopyDiagnostics": MessageLookupByLibrary.simpleMessage("診断レポートをコピー"),
@@ -198,9 +200,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientDisconnect": MessageLookupByLibrary.simpleMessage("切断"),
     "clientEmail": MessageLookupByLibrary.simpleMessage("メールアドレス"),
     "clientExpiresOn": MessageLookupByLibrary.simpleMessage("有効期限"),
+    "clientHealthChecking": MessageLookupByLibrary.simpleMessage(
+      "選択したサーバーを確認中…",
+    ),
+    "clientHealthPaused": MessageLookupByLibrary.simpleMessage(
+      "バックグラウンドでは確認を一時停止します。",
+    ),
     "clientHome": MessageLookupByLibrary.simpleMessage("ホーム"),
     "clientLines": MessageLookupByLibrary.simpleMessage("接続先"),
     "clientMe": MessageLookupByLibrary.simpleMessage("アカウント"),
+    "clientNetworkOffline": MessageLookupByLibrary.simpleMessage("ネットワーク未接続"),
+    "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
+      "Wi-Fi またはモバイル通信に接続してください。VPN は有効のままです。",
+    ),
+    "clientNotTested": MessageLookupByLibrary.simpleMessage("未確認"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage("公式サイト"),
     "clientOutboundHint": MessageLookupByLibrary.simpleMessage(
       "中国本土のサイトは直接、その他は選択した接続先を使用します。",
@@ -209,13 +222,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientReturnHint": MessageLookupByLibrary.simpleMessage(
       "中国本土のサイトは帰国用接続先、その他は直接接続します。",
     ),
+    "clientSelectionFailed": MessageLookupByLibrary.simpleMessage(
+      "変更の確認または保存ができませんでした。現在の選択を確認して再試行してください。",
+    ),
+    "clientServerReachable": MessageLookupByLibrary.simpleMessage(
+      "サーバー確認に成功しました。すべてのアプリやサイトの接続を保証するものではありません。",
+    ),
+    "clientServerUnreachable": MessageLookupByLibrary.simpleMessage(
+      "サーバー確認に失敗しました。再試行するか別のサーバーを選んでください。選択は変更していません。",
+    ),
     "clientSessionRestoreFailed": MessageLookupByLibrary.simpleMessage(
       "ログイン状態を復元できませんでした",
     ),
     "clientSignIn": MessageLookupByLibrary.simpleMessage("ログイン"),
     "clientSmartOutbound": MessageLookupByLibrary.simpleMessage("海外向け自動振り分け"),
     "clientSmartReturn": MessageLookupByLibrary.simpleMessage("中国向け自動振り分け"),
+    "clientTestHint": MessageLookupByLibrary.simpleMessage(
+      "HTTPS の応答時間であり、ダウンロード速度ではありません。結果はテスト先のみを示します。自動選択はコアが管理します。",
+    ),
+    "clientTestServers": MessageLookupByLibrary.simpleMessage("サーバーを確認"),
+    "clientTestUnavailable": MessageLookupByLibrary.simpleMessage("確認失敗 · 再試行"),
+    "clientTestedAt": MessageLookupByLibrary.simpleMessage("確認時刻"),
+    "clientTesting": MessageLookupByLibrary.simpleMessage("確認中…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("接続モード"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN は有効です"),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "2段階認証コード（有効な場合）",
     ),
@@ -721,6 +751,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "restoreStrategy_compatible": MessageLookupByLibrary.simpleMessage("互換"),
     "restoreStrategy_override": MessageLookupByLibrary.simpleMessage("上書き"),
     "restoreSuccess": MessageLookupByLibrary.simpleMessage("復元に成功しました"),
+    "retry": MessageLookupByLibrary.simpleMessage("再試行"),
     "routeAddException": MessageLookupByLibrary.simpleMessage("例外を追加"),
     "routeAddress": MessageLookupByLibrary.simpleMessage("ルートアドレス"),
     "routeAddressDesc": MessageLookupByLibrary.simpleMessage("ルートアドレスを設定"),
@@ -766,6 +797,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "routeMode_config": MessageLookupByLibrary.simpleMessage("設定を使用"),
     "routeNeedsContext": MessageLookupByLibrary.simpleMessage(
       "先行ルールに解決済み IP またはアプリ情報が必要です。この入力だけでは判定できません。",
+    ),
+    "routeNeedsIp": MessageLookupByLibrary.simpleMessage(
+      "先行する IP ルールの確認には宛先 IP が必要です。IP アドレスを入力してください。DNS 問い合わせは行いません。",
     ),
     "routeNewConnections": MessageLookupByLibrary.simpleMessage(
       "変更は新規接続に適用されます。既存の接続は切断されません。",

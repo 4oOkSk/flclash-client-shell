@@ -44,16 +44,15 @@ class ThemeManager extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, ref) {
-    final textScale = ref.read(
+    final textScale = ref.watch(
       themeSettingProvider.select((state) => state.textScale),
     );
-    final double textScaleFactor = max(
-      min(
-        textScale.enable ? textScale.scale : defaultTextScaleFactor,
-        maxTextScale,
-      ),
-      minTextScale,
-    );
+    final textScaler = textScale.enable
+        ? TextScaler.linear(
+            max(min(textScale.scale, maxTextScale), minTextScale),
+          )
+        : MediaQuery.textScalerOf(context);
+    final textScaleFactor = textScaler.scale(16) / 16;
 
     globalState.measure = Measure.of(context, textScaleFactor);
     globalState.theme = CommonTheme.of(context, textScaleFactor);
@@ -61,7 +60,7 @@ class ThemeManager extends ConsumerWidget {
     final height = MediaQuery.of(context).size.height;
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(
-        textScaler: TextScaler.linear(textScaleFactor),
+        textScaler: textScaler,
         padding: padding.copyWith(
           top: padding.top > height * 0.3 ? 20.0 : padding.top,
         ),
