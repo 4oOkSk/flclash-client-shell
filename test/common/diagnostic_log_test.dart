@@ -6,6 +6,32 @@ import 'package:fl_clash/models/common.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('node markers and unclassified endpoints never retain server ports', () {
+    expect(
+      sanitizeVisitedDestination('[server-endpoint]:8443'),
+      '[server-endpoint]',
+    );
+    expect(
+      sanitizeVisitedDestination('[server-endpoint]'),
+      '[server-endpoint]',
+    );
+    expect(
+      sanitizePrivateClientLog(
+        '[TCP] 198.18.0.1:1234 --> [server-endpoint] using Private-Node',
+      ),
+      '[TCP] [server-endpoint]',
+    );
+    for (final endpoint in [
+      'node.example.com:8443',
+      '192.0.2.10:8443',
+      '[2001:db8::10]:8443',
+    ]) {
+      final value = sanitizePrivateClientLog('[APP] dial $endpoint timeout');
+      expect(value, contains('timeout'));
+      expect(value, isNot(contains('8443')));
+      expect(value, isNot(contains(endpoint)));
+    }
+  });
   test('diagnostic log sanitizer removes private client data', () {
     const secret =
         'server=192.0.2.10 host=api.private.example.com '
@@ -183,22 +209,19 @@ void main() {
     expect(report, isNot(contains('hidden event')));
   });
 
-  test(
-    'known app URL logs keep the origin but remove route and query data',
-    () {
-      expect(
-        sanitizePrivateClientLog(
-          '[APP] find https://example.com/private/path?token=secret '
-          'proxy=Private-Node',
-        ),
-        '[APP] destination=https://example.com',
-      );
-      expect(
-        sanitizePrivateClientLog('connected using Private-Node'),
-        isNot(contains('Private-Node')),
-      );
-    },
-  );
+  test('unclassified app URL logs do not expose endpoints or route data', () {
+    expect(
+      sanitizePrivateClientLog(
+        '[APP] find https://example.com/private/path?token=secret '
+        'proxy=Private-Node',
+      ),
+      '[APP] find [url] proxy=[redacted]',
+    );
+    expect(
+      sanitizePrivateClientLog('connected using Private-Node'),
+      isNot(contains('Private-Node')),
+    );
+  });
 
   test(
     'diagnostic destination section never accepts arbitrary server labels',
@@ -307,7 +330,8 @@ void main() {
         visitedDestinations: collectVisitedDestinations([tracker]),
         routeSamples: collectDiagnosticRouteSamples([tracker]),
       );
-      expect(report, contains('[server-endpoint]:8443'));
+      expect(report, contains('[server-endpoint]'));
+      expect(report, isNot(contains('8443')));
       expect(report, contains('in=tun'));
       expect(report, isNot(contains('private-node')));
       expect(report, isNot(contains('192.0.2.10')));

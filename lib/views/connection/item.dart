@@ -145,6 +145,11 @@ class TrackerInfoDetailView extends StatelessWidget {
     return rule;
   }
 
+  bool get _hideEndpoint =>
+      kPrivateClientMode &&
+      (trackerInfo.diagnosticDestination == 'server-endpoint' ||
+          trackerInfo.metadata.type.toLowerCase() == 'inner');
+
   String _getProcessText() {
     final process = trackerInfo.metadata.process;
     final uid = trackerInfo.metadata.uid;
@@ -155,6 +160,7 @@ class TrackerInfoDetailView extends StatelessWidget {
   }
 
   String _getDestinationText() {
+    if (_hideEndpoint) return '[server-endpoint]';
     final destinationIP = trackerInfo.metadata.destinationIP;
     if (destinationIP.isEmpty) {
       return '';
@@ -236,11 +242,16 @@ class TrackerInfoDetailView extends StatelessWidget {
         title: appLocalizations.networkType,
         desc: trackerInfo.metadata.network,
       ),
-      _buildItem(title: appLocalizations.rule, desc: _getRuleText()),
+      _buildItem(
+        title: appLocalizations.rule,
+        desc: kPrivateClientMode
+            ? sanitizeDiagnosticLog(_getRuleText())
+            : _getRuleText(),
+      ),
       if (trackerInfo.metadata.host.isNotEmpty)
         _buildItem(
           title: appLocalizations.host,
-          desc: trackerInfo.metadata.host,
+          desc: _hideEndpoint ? '[server-endpoint]' : trackerInfo.metadata.host,
         ),
       if (_getDestinationText().isNotEmpty)
         _buildItem(
@@ -268,7 +279,9 @@ class TrackerInfoDetailView extends StatelessWidget {
       if (trackerInfo.metadata.specialRules.isNotEmpty)
         _buildItem(
           title: appLocalizations.specialRules,
-          desc: trackerInfo.metadata.specialRules,
+          desc: kPrivateClientMode
+              ? sanitizeDiagnosticLog(trackerInfo.metadata.specialRules)
+              : trackerInfo.metadata.specialRules,
         ),
       if (!kPrivateClientMode && trackerInfo.chains.isNotEmpty)
         _buildChains(context),

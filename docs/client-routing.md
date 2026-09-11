@@ -36,9 +36,16 @@ including silent SERVFAIL and timeout results; an absent counter is unavailable,
 Log-derived counts still describe retained logs only. Android socket protection propagates its
 Boolean result across Kotlin/JNI/C/Go: a failure blocks the socket, increments a lifetime counter
 and emits one bounded warning. It must never silently continue with an unprotected socket.
-Configured server/IP/SNI plus port matches use `[server-endpoint]:port` in clipboard samples;
-the inbound category and routing result remain visible. Such a match is a possible reentry
-signal, not proof of a loop, and ordinary visits to another port are not classified as node traffic.
+Configured server/IP/SNI plus port matches use `[server-endpoint]` without the real port in
+lists, connection/request details and clipboard samples. The inbound category and routing result
+remain visible. Such a match is a possible reentry signal, not proof of a loop, and ordinary
+visits to another port are not classified as node traffic. A passive observer of existing proxy
+DNS lookups adds resolved addresses to the diagnostic index without issuing DNS requests or
+changing lookup results. Core log events are filtered before both console output and delivery
+to the UI; known node hosts and their ports are hidden even outside the traffic destination field.
+Unclassified app URL logs use strict redaction; ordinary visited destinations remain available
+from connection metadata. This presentation protection does not hide the actual network peer
+from the operating system or change configuration delivery, secure storage or file sharing.
 
 Managed destination resolution uses certificate-verified DoH over TCP/443 at literal resolver
 IPs, avoiding both a hard TCP/53 dependency on the selected server and recursive resolver-name

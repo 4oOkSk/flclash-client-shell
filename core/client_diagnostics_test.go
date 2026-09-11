@@ -1,12 +1,118 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"net/netip"
+	"strings"
 	"testing"
 
+	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/tunnel/statistic"
 )
+
+func TestClientLogRedactsServerHostsAndPorts(t *testing.T) {
+	setClientDiagnosticEndpoints(`proxies:
+  - server: node.example.com
+    port: 8443
+    sni: sni.example.com
+  - server: 192.0.2.10
+    port: 8443
+  - server: '2001:db8::10'
+    port: 8443
+`)
+	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	for _, address := range []string{
+		"NODE.example.com.:8443", "node.example.com:443", "sni.example.com",
+		"192.0.2.10:8443", "[2001:db8::10]:8443", "2001:db8::10",
+		"[::ffff:192.0.2.10]:8443",
+	} {
+		payload := "[TCP] --> " + address + " using proxy: timeout"
+		if got := sanitizeClientLogPayload(payload); got != "[TCP] --> [server-endpoint] using proxy: timeout" {
+			t.Errorf("endpoint was not fully redacted: %q", got)
+		}
+	}
+	for _, payload := range []string{
+		"[TCP] --> example.com:443 using proxy",
+		"[UDP] --> 192.0.2.11:8443 using direct",
+		"[TCP] --> not-node.example.com:8443 using proxy",
+	} {
+		if got := sanitizeClientLogPayload(payload); got != payload {
+			t.Errorf("ordinary destination changed: %q", got)
+		}
+	}
+	setClientDiagnosticEndpoints("")
+	if got := sanitizeClientLogPayload("node.example.com:8443"); got != "node.example.com:8443" {
+		t.Fatal("endpoint index survived configuration replacement")
+	}
+}
+
+type diagnosticTestResolver struct {
+	resolver.Resolver
+	addresses []netip.Addr
+	err       error
+	lookups   int
+	resets    int
+}
+
+func (upstream *diagnosticTestResolver) LookupIP(context.Context, string) ([]netip.Addr, error) {
+	upstream.lookups++
+	return upstream.addresses, upstream.err
+}
+
+func (upstream *diagnosticTestResolver) LookupIPv4(ctx context.Context, host string) ([]netip.Addr, error) {
+	return upstream.LookupIP(ctx, host)
+}
+
+func (upstream *diagnosticTestResolver) LookupIPv6(ctx context.Context, host string) ([]netip.Addr, error) {
+	return upstream.LookupIP(ctx, host)
+}
+
+func (upstream *diagnosticTestResolver) ResetConnection() {
+	upstream.resets++
+}
+
+func TestClientDiagnosticResolverObservesWithoutChangingLookupResults(t *testing.T) {
+	setClientDiagnosticEndpoints("proxies: [{server: node.example.com, port: 8443}]")
+	previous := resolver.ProxyServerHostResolver
+	t.Cleanup(func() {
+		resolver.ProxyServerHostResolver = previous
+		setClientDiagnosticEndpoints("")
+	})
+	upstream := &diagnosticTestResolver{addresses: []netip.Addr{netip.MustParseAddr("192.0.2.20")}}
+	resolver.ProxyServerHostResolver = upstream
+	observeClientDiagnosticResolver()
+	observeClientDiagnosticResolver()
+	observer := resolver.ProxyServerHostResolver.(*clientDiagnosticResolver)
+	if observer.Resolver != upstream || upstream.lookups != 0 {
+		t.Fatal("observer changed ownership or initiated a DNS lookup")
+	}
+	for _, lookup := range []func(context.Context, string) ([]netip.Addr, error){observer.LookupIP, observer.LookupIPv4, observer.LookupIPv6} {
+		addresses, err := lookup(context.Background(), "node.example.com")
+		if err != nil || len(addresses) != 1 || addresses[0] != upstream.addresses[0] {
+			t.Fatal("observer changed DNS answers")
+		}
+	}
+	if upstream.lookups != 3 {
+		t.Fatal("observer issued additional DNS lookups")
+	}
+	if clientDiagnosticDestination(&constant.Metadata{DstIP: upstream.addresses[0], DstPort: 8443}) != "server-endpoint" {
+		t.Fatal("resolved node address is not classified")
+	}
+	if strings.Contains(sanitizeClientLogPayload("dial 192.0.2.20:8443: timeout"), "192.0.2.20") {
+		t.Fatal("resolved node address leaked into a log")
+	}
+	upstream.err = errors.New("lookup failed")
+	upstream.addresses = nil
+	if _, err := observer.LookupIP(context.Background(), "node.example.com"); err != upstream.err {
+		t.Fatal("observer changed DNS error")
+	}
+	observer.ResetConnection()
+	if upstream.resets != 1 {
+		t.Fatal("observer prevented connection reset")
+	}
+}
 
 func TestClientDiagnosticServerEndpointMatchesArePortScoped(t *testing.T) {
 	setClientDiagnosticEndpoints(`proxies:

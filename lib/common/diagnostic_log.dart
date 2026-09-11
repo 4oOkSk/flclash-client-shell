@@ -23,7 +23,7 @@ bool isDiagnosticFailure(Log log) =>
 
 final _trafficLogPattern = RegExp(r'\[(?:TCP|UDP)\]', caseSensitive: false);
 final _sensitiveValuePattern = RegExp(
-  r'\b(password|passwd|token|session|cookie|authorization|uuid|server|address|host|sni|path|endpoint|email|user|username|proxy|node|chain|outbound)\b\s*[:=]\s*("[^"]*"|\x27[^\x27]*\x27|[^\s,;}]+)',
+  r'\b(password|passwd|token|session|cookie|authorization|uuid|server|address|host|port|sni|path|endpoint|email|user|username|proxy|node|chain|outbound)\b\s*[:=]\s*("[^"]*"|\x27[^\x27]*\x27|[^\s,;}]+)',
   caseSensitive: false,
 );
 final _uriPattern = RegExp(
@@ -40,10 +40,10 @@ final _uuidPattern = RegExp(
 );
 final _ipv4Pattern = RegExp(r'\b(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?\b');
 final _ipv6Pattern = RegExp(
-  r'(?<![A-Za-z0-9])(?:(?:[0-9A-Fa-f]{1,4}:){3,7}[0-9A-Fa-f]{0,4}|[0-9A-Fa-f]{0,4}::[0-9A-Fa-f:]{0,})(?![A-Za-z0-9])',
+  r'\[[0-9A-Fa-f:.]+\](?::\d{1,5})?|(?<![A-Za-z0-9])(?:(?:[0-9A-Fa-f]{1,4}:){3,7}[0-9A-Fa-f]{0,4}|[0-9A-Fa-f]{0,4}::[0-9A-Fa-f:]{0,})(?![A-Za-z0-9])',
 );
 final _domainPattern = RegExp(
-  r'\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b',
+  r'\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b(?::\d{1,5})?',
   caseSensitive: false,
 );
 final _windowsPathPattern = RegExp(r'[A-Za-z]:\\[^\s<>"|]+');
@@ -52,14 +52,6 @@ final _longSecretPattern = RegExp(r'\b[A-Za-z0-9_+=/-]{32,}\b');
 final _usingPattern = RegExp(r'\busing\s+.+$', caseSensitive: false);
 final _trafficDestinationPattern = RegExp(
   r'^\[(TCP|UDP)\].*?-->\s*([^\s]+)(?:\s+using\s+.*)?$',
-  caseSensitive: false,
-);
-final _appFindDestinationPattern = RegExp(
-  r'^\[APP\]\s+find\s+(https?://[^\s]+)\s+proxy=',
-  caseSensitive: false,
-);
-final _appDestinationPattern = RegExp(
-  r'^\[APP\]\s+(https?://[^\s]+|[^\s]+)$',
   caseSensitive: false,
 );
 final _ipv4DestinationPattern = RegExp(
@@ -147,10 +139,10 @@ String? sanitizeVisitedDestination(String value) {
   final candidate = value.trim();
   if (candidate.isEmpty || candidate.length > 512) return null;
   final endpointMatch = RegExp(
-    r'^\[server-endpoint\]:(\d{1,5})$',
+    r'^\[server-endpoint\](?::(\d{1,5}))?$',
   ).firstMatch(candidate);
   if (endpointMatch != null && _isSafePortText(endpointMatch.group(1))) {
-    return candidate;
+    return '[server-endpoint]';
   }
   final uri = Uri.tryParse(candidate);
   if (uri != null &&
@@ -231,16 +223,6 @@ String sanitizePrivateClientLog(String value) {
       return '[${trafficMatch.group(1)!.toUpperCase()}] $destination';
     }
   }
-  final findMatch = _appFindDestinationPattern.firstMatch(normalized);
-  if (findMatch != null) {
-    final destination = sanitizeVisitedDestination(findMatch.group(1) ?? '');
-    if (destination != null) return '[APP] destination=$destination';
-  }
-  final appMatch = _appDestinationPattern.firstMatch(normalized);
-  if (appMatch != null) {
-    final destination = sanitizeVisitedDestination(appMatch.group(1) ?? '');
-    if (destination != null) return '[APP] destination=$destination';
-  }
   return sanitizeDiagnosticLog(normalized);
 }
 
@@ -250,9 +232,7 @@ String? trackerVisitedDestination(TrackerInfo trackerInfo) {
   // user visited. Never let private server addresses cross the report boundary.
   if (metadata.type.toLowerCase() == 'inner') return null;
   if (trackerInfo.diagnosticDestination == 'server-endpoint') {
-    return sanitizeVisitedDestination(
-      '[server-endpoint]:${metadata.destinationPort}',
-    );
+    return '[server-endpoint]';
   }
   final host = metadata.host.trim();
   final address = host.isNotEmpty ? host : metadata.destinationIP.trim();

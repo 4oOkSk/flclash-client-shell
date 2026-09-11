@@ -334,6 +334,7 @@ func updateConfig(params *UpdateParams) {
 		// serving unusable fake AAAA answers from the downloaded profile.
 		selectedMap := snapshotSelectGroup()
 		applyRuntimeConfig(currentConfig)
+		observeClientDiagnosticResolver()
 		patchSelectGroup(selectedMap)
 	}
 	updateListeners()
@@ -378,6 +379,7 @@ func applyConfig(params *SetupParams) error {
 	}
 	setClientDiagnosticEndpoints(params.Config)
 	hub.ApplyConfig(currentConfig)
+	observeClientDiagnosticResolver()
 	patchSelectGroup(params.SelectedMap)
 	if privateConfig {
 		patchPrivateGlobalDefault(params.SelectedMap)

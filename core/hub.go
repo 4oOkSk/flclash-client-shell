@@ -571,6 +571,7 @@ func handleSetupFromEnroll(data []byte) string {
 }
 
 func init() {
+	log.SetPayloadFilter(sanitizeClientLogPayload)
 	adapter.UrlTestHook = func(url string, name string, delay uint16) {
 		delayData := &Delay{
 			Url:  url,

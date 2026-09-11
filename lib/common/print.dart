@@ -4,6 +4,9 @@ import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/material.dart';
 
+import 'constant.dart';
+import 'diagnostic_log.dart';
+
 class CommonPrint {
   static CommonPrint? _instance;
 
@@ -15,7 +18,10 @@ class CommonPrint {
   }
 
   void log(String? text, {LogLevel logLevel = LogLevel.info}) {
-    final payload = '[APP] $text';
+    final rawPayload = '[APP] $text';
+    final payload = kPrivateClientMode
+        ? sanitizeDiagnosticLog(rawPayload)
+        : rawPayload;
     debugPrint(payload);
     if (!globalState.isAttach) {
       return;

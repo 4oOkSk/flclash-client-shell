@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"os"
+	"sync/atomic"
 
 	"github.com/metacubex/mihomo/common/observable"
 
@@ -10,9 +11,10 @@ import (
 )
 
 var (
-	logCh  = make(chan Event)
-	source = observable.NewObservable[Event](logCh)
-	level  = INFO
+	logCh         = make(chan Event)
+	source        = observable.NewObservable[Event](logCh)
+	level         = INFO
+	payloadFilter atomic.Value
 )
 
 func init() {
@@ -59,7 +61,11 @@ func Debugln(format string, v ...any) {
 }
 
 func Fatalln(format string, v ...any) {
-	log.Fatalf(format, v...)
+	log.Fatal(newLog(ERROR, format, v...).Payload)
+}
+
+func SetPayloadFilter(filter func(string) string) {
+	payloadFilter.Store(filter)
 }
 
 func Subscribe() observable.Subscription[Event] {
@@ -97,8 +103,12 @@ func print(data Event) {
 }
 
 func newLog(logLevel LogLevel, format string, v ...any) Event {
+	payload := fmt.Sprintf(format, v...)
+	if filter, _ := payloadFilter.Load().(func(string) string); filter != nil {
+		payload = filter(payload)
+	}
 	return Event{
 		LogLevel: logLevel,
-		Payload:  fmt.Sprintf(format, v...),
+		Payload:  payload,
 	}
 }
