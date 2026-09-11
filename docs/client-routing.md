@@ -73,6 +73,7 @@ Account diagnostics, account advanced settings, and advanced routing use separat
 page-storage keys from their containing lists. Expansion state must never share the scroll
 offset slot. Returning to or recreating these pages preserves expansion and scroll position
 independently; keys do not depend on translated titles.
+The checker's text scrolling has its own storage scope, separate from page scrolling.
 
 Wide windows use an expanded navigation rail with visible text. Medium windows keep labels
 below the icons, and compact layouts use labeled bottom navigation. The managed layout does

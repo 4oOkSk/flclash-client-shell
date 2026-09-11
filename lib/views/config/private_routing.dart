@@ -272,6 +272,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
       key: const ValueKey('route-check-panel'),
       margin: EdgeInsets.zero,
       child: Padding(
+        key: const PageStorageKey('private-routing-checker'),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

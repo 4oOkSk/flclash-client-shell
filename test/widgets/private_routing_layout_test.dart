@@ -74,6 +74,23 @@ void main() {
         .position
         .pixels;
     expect(offset, greaterThan(0));
+    final input = find.byKey(const ValueKey('route-preview-destination'));
+    await tester.ensureVisible(input);
+    await tester.enterText(
+      input,
+      '${List.filled(12, 'subdomain').join('.')}.example.com',
+    );
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    final inputScroll = tester.state<ScrollableState>(
+      find.descendant(of: input, matching: find.byType(Scrollable)),
+    );
+    final pageScroll = tester.state<ScrollableState>(
+      find.byType(Scrollable).first,
+    );
+    pageScroll.position.jumpTo(offset);
+    inputScroll.position.jumpTo(40);
+    await tester.pumpAndSettle();
     visible.value = false;
     await tester.pumpAndSettle();
     visible.value = true;
