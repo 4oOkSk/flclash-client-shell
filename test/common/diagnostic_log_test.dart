@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fl_clash/common/diagnostic_log.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/common.dart';
@@ -63,6 +65,122 @@ void main() {
       ),
       '[TCP] example.com:443',
     );
+  });
+
+  test('clipboard report keeps grouped failures ahead of a routine flood', () {
+    final report = buildDiagnosticReport(
+      applicationName: 'Example Client',
+      status: const {'core.status': 'connected'},
+      logs: [
+        for (final second in ['00', '01'])
+          Log(
+            logLevel: LogLevel.warning,
+            payload:
+                '[TCP] dial --> example.com:443 using Private-Node TLS handshake timeout',
+            dateTime: '2026-09-11T00:00:$second',
+          ),
+        for (var index = 0; index < 400; index++)
+          Log(
+            payload: index.isEven
+                ? '[APP] updateGroups'
+                : '[APP] destination=AppLifecycleState.paused',
+            dateTime: '2026-09-11T00:01:00',
+          ),
+      ],
+      logLineLimit: 1,
+    );
+
+    expect(report, contains('signals=tls,handshake,timeout'));
+    expect(report, contains('x2 first=2026-09-11T00:00:00'));
+    expect(report, contains('2026-09-11T00:00:01 [warning]'));
+    expect(report, contains('logs.total=402 logs.included=1'));
+    expect(report, contains('group-refresh:200 app-lifecycle:200'));
+    expect(report, isNot(contains('Private-Node')));
+    expect(report, isNot(contains('AppLifecycleState')));
+    expect(utf8.encode(report).length, lessThan(1500));
+  });
+
+  test('clipboard byte budget preserves critical evidence and omission counts', () {
+    final longText = List.filled(600, '网络😀').join();
+    final report = buildDiagnosticReport(
+      applicationName: 'Example Client',
+      status: {
+        for (var index = 0; index < 80; index++) 'detail.$index': longText,
+        'app.build': '2026091007',
+        'config.managedRouteMode': 'bypass-mainland',
+        'probe.selectedProxy.success': false,
+      },
+      logs: [
+        for (var index = 0; index < 100; index++)
+          Log(
+            logLevel: LogLevel.error,
+            payload:
+                'DNS timeout event $index $longText token=never-export-this',
+            dateTime: '2026-09-11T00:00:00',
+          ),
+      ],
+      platformLogs: [
+        for (var index = 0; index < 50; index++)
+          'VpnService event $index $longText host=private.example.com',
+        'VpnService start failed',
+      ],
+      routeSamples: [
+        for (var index = 0; index < 30; index++)
+          'destination=web$index.example.com:443 network=tcp route=proxy '
+              'rule=match policy=fallback phase=active duration=active end=pending upload=1 download=2',
+        'destination=failed.example.com:443 network=udp route=reject '
+            'rule=transport policy=other phase=closed duration=lt1s end=refused upload=0 download=0',
+      ],
+    );
+
+    expect(
+      utf8.encode(report).length,
+      lessThanOrEqualTo(diagnosticReportByteLimit),
+    );
+    expect(utf8.decode(utf8.encode(report)), report);
+    expect(report, contains('app.build=2026091007'));
+    expect(report, contains('config.managedRouteMode=bypass-mainland'));
+    expect(report, contains('probe.selectedProxy.success=false'));
+    expect(report, contains('DNS timeout'));
+    expect(report, contains('failed.example.com:443 | udp | reject'));
+    expect(report, contains('VpnService start failed'));
+    expect(report, contains('--- coverage ---'));
+    expect(report, matches(r'routes.omitted=[1-9][0-9]*'));
+    expect(report, matches(r'status.omitted=[1-9][0-9]*'));
+    expect(report, matches(r'logs.omittedGroups=[1-9][0-9]*'));
+    expect(report, contains('…'));
+    expect(report, isNot(contains('never-export-this')));
+    expect(report, isNot(contains('private.example.com')));
+  });
+
+  test('route destinations are not duplicated in the destination section', () {
+    final report = buildDiagnosticReport(
+      applicationName: 'Example Client',
+      status: const {},
+      logs: const [],
+      visitedDestinations: const ['example.com:443', 'other.example.com:80'],
+      routeSamples: const [
+        'destination=example.com:443 network=tcp route=direct rule=match '
+            'policy=fallback phase=active duration=active end=pending upload=1 download=2',
+      ],
+    );
+
+    expect('example.com:443'.allMatches(report), hasLength(1));
+    expect(report, contains('destinations.included=1'));
+    expect(report, contains('other.example.com:80'));
+  });
+
+  test('zero log allowance retains status and reports excluded groups', () {
+    final report = buildDiagnosticReport(
+      applicationName: 'Example Client',
+      status: const {'core.status': 'connected'},
+      logs: const [Log(payload: 'hidden event', dateTime: 'now')],
+      logLineLimit: -1,
+    );
+
+    expect(report, contains('core.status=connected'));
+    expect(report, contains('logs.included=0 logs.omittedGroups=1'));
+    expect(report, isNot(contains('hidden event')));
   });
 
   test(
@@ -161,6 +279,42 @@ void main() {
     expect(collectDiagnosticRouteSamples([internal]), isEmpty);
   });
 
+  test(
+    'server endpoint matches retain reentry evidence without node addresses',
+    () {
+      final tracker = TrackerInfo(
+        id: 'endpoint',
+        start: DateTime.fromMillisecondsSinceEpoch(1),
+        metadata: const Metadata(
+          type: 'Tun',
+          network: 'tcp',
+          host: 'private-node.example.com',
+          destinationIP: '192.0.2.10',
+          destinationPort: '8443',
+        ),
+        chains: const ['private-node'],
+        rule: 'MATCH',
+        rulePayload: '',
+        diagnosticDestination: 'server-endpoint',
+        diagnosticRoute: 'proxy',
+        diagnosticRule: 'match',
+        diagnosticPolicy: 'fallback',
+      );
+      final report = buildDiagnosticReport(
+        applicationName: 'Test',
+        status: {},
+        logs: [],
+        visitedDestinations: collectVisitedDestinations([tracker]),
+        routeSamples: collectDiagnosticRouteSamples([tracker]),
+      );
+      expect(report, contains('[server-endpoint]:8443'));
+      expect(report, contains('in=tun'));
+      expect(report, isNot(contains('private-node')));
+      expect(report, isNot(contains('192.0.2.10')));
+      expect(report, contains('match/fallback'));
+    },
+  );
+
   test('route samples expose only fixed diagnostic categories', () {
     final trackers = [
       TrackerInfo(
@@ -232,25 +386,22 @@ void main() {
     expect(
       report,
       contains(
-        'destination=mmhead.c2c.wechat.com:443 network=tcp '
-        'route=proxy rule=match policy=fallback phase=closed '
-        'duration=5-30s end=closed upload=123 download=456',
+        'mmhead.c2c.wechat.com:443 | tcp | proxy | match/fallback | '
+        'closed/closed | 5-30s | 123/456',
       ),
     );
     expect(
       report,
       contains(
-        'destination=[240e:e1:aa00:101a::48]:443 network=tcp '
-        'route=reject rule=ip policy=ipv6-block phase=closed '
-        'duration=30-120s end=idle-timeout upload=0 download=0',
+        '[240e:e1:aa00:101a::48]:443 | tcp | reject | ip/ipv6-block | '
+        'closed/idle-timeout | 30-120s | 0/0',
       ),
     );
     expect(
       report,
       contains(
-        'destination=[240e:978:d04:3003::27]:443 network=udp '
-        'route=direct rule=ip policy=mainland-ip phase=closed '
-        'duration=lt1s end=eof upload=0 download=0',
+        '[240e:978:d04:3003::27]:443 | udp | direct | ip/mainland-ip | '
+        'closed/eof | lt1s | 0/0',
       ),
     );
     expect(report, isNot(contains('Private-Node-Name')));

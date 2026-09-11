@@ -14,7 +14,8 @@ type Service struct {
 }
 
 // ServeMsg implement [resolver.Service] ResolveMsg
-func (s *Service) ServeMsg(ctx context.Context, msg *D.Msg) (*D.Msg, error) {
+func (s *Service) ServeMsg(ctx context.Context, msg *D.Msg) (response *D.Msg, resultErr error) {
+	defer func() { recordServiceResult(response, resultErr) }()
 	if len(msg.Question) == 0 {
 		return nil, errors.New("at least one question is required")
 	}

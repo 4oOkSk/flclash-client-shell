@@ -376,6 +376,7 @@ func applyConfig(params *SetupParams) error {
 		}
 		privateConfig = false
 	}
+	setClientDiagnosticEndpoints(params.Config)
 	hub.ApplyConfig(currentConfig)
 	patchSelectGroup(params.SelectedMap)
 	if privateConfig {

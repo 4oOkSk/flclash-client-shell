@@ -97,6 +97,7 @@ void main() {
       'routes.activeProxy': 0,
       'routes.activeTcp': 1,
       'routes.activeUdp': 0,
+      'routes.activeServerEndpointMatches': 0,
     });
   });
 
@@ -113,4 +114,32 @@ void main() {
     expect(status.values, isNot(contains('Private Node')));
     expect(status.values, isNot(contains(delay.url)));
   });
+
+  test('DNS service failures are not inferred from retained logs', () {
+    final status = parseClientRuntimeDiagnostics(
+      '{"dns":{"completed":12,"failed":4,"timeouts":3,"last_failure_at":123},"protect_failures":2}',
+    );
+    expect(status['dns.failed'], 4);
+    expect(status['dns.timeouts'], 3);
+    expect(status['vpn.protectFailures'], 2);
+    expect(parseClientRuntimeDiagnostics('{}')['dns.failed'], 'unavailable');
+  });
+
+  test(
+    'DNS timeouts count even when logged as warnings without error text',
+    () {
+      final summary = buildDiagnosticLogSummary(const [
+        Log(
+          logLevel: LogLevel.warning,
+          payload: 'lookup private.example.com: i/o timeout',
+          dateTime: 'now',
+        ),
+        Log(payload: 'dns resolver initialized', dateTime: 'now'),
+      ]);
+
+      expect(summary['recent.dnsErrorCount'], 1);
+      expect(summary['recent.errorCount'], 0);
+      expect(summary['recent.warningCount'], 1);
+    },
+  );
 }

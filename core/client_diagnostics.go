@@ -1,10 +1,57 @@
 package main
 
 import (
+	"fmt"
+	"net"
+	"strconv"
 	"strings"
+	"sync/atomic"
 
+	commonYaml "github.com/metacubex/mihomo/common/yaml"
+	"github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/tunnel/statistic"
 )
+
+var clientDiagnosticEndpoints atomic.Value
+
+func setClientDiagnosticEndpoints(configText string) {
+	endpoints := map[string]struct{}{}
+	var document map[string]any
+	if commonYaml.Unmarshal([]byte(configText), &document) == nil {
+		proxies, _ := document["proxies"].([]any)
+		for _, raw := range proxies {
+			proxy, _ := raw.(map[string]any)
+			port, err := strconv.Atoi(fmt.Sprint(proxy["port"]))
+			if err != nil || port < 1 || port > 65535 {
+				continue
+			}
+			for _, key := range []string{"server", "servername", "sni"} {
+				host, _ := proxy[key].(string)
+				if host != "" {
+					endpoints[clientDiagnosticEndpoint(host, uint16(port))] = struct{}{}
+				}
+			}
+		}
+	}
+	clientDiagnosticEndpoints.Store(endpoints)
+}
+
+func clientDiagnosticEndpoint(host string, port uint16) string {
+	return net.JoinHostPort(strings.ToLower(strings.Trim(strings.TrimSpace(host), "[].")), strconv.Itoa(int(port)))
+}
+
+func clientDiagnosticDestination(metadata *constant.Metadata) string {
+	if metadata == nil {
+		return "unknown"
+	}
+	endpoints, _ := clientDiagnosticEndpoints.Load().(map[string]struct{})
+	for _, host := range []string{metadata.Host, metadata.DstIP.String()} {
+		if _, exists := endpoints[clientDiagnosticEndpoint(host, metadata.DstPort)]; exists {
+			return "server-endpoint"
+		}
+	}
+	return "destination"
+}
 
 // annotateClientTrackerDiagnostics reduces routing details to a fixed set of
 // troubleshooting categories before the tracker crosses the core boundary.
@@ -16,6 +63,7 @@ func annotateClientTrackerDiagnostics(info *statistic.TrackerInfo) {
 	info.DiagnosticRoute = clientDiagnosticRoute(info.Chain)
 	info.DiagnosticRule = clientDiagnosticRule(info.Rule)
 	info.DiagnosticPolicy = clientDiagnosticPolicy(info.Rule, info.RulePayload)
+	info.DiagnosticDestination = clientDiagnosticDestination(info.Metadata)
 }
 
 func clientDiagnosticRoute(chain []string) string {

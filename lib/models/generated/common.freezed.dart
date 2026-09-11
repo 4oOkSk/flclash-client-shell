@@ -897,7 +897,7 @@ as String,
 /// @nodoc
 mixin _$TrackerInfo {
 
- String get id; int get upload; int get download; DateTime get start; Metadata get metadata; List<String> get chains; String get rule; String get rulePayload; int? get downloadSpeed; int? get uploadSpeed; String get lifecycle; int get durationMs; String get endReason; String get diagnosticRoute; String get diagnosticRule; String get diagnosticPolicy;
+ String get id; int get upload; int get download; DateTime get start; Metadata get metadata; List<String> get chains; String get rule; String get rulePayload; int? get downloadSpeed; int? get uploadSpeed; String get lifecycle; int get durationMs; String get endReason; String get diagnosticRoute; String get diagnosticRule; String get diagnosticPolicy; String get diagnosticDestination;
 /// Create a copy of TrackerInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -910,16 +910,16 @@ $TrackerInfoCopyWith<TrackerInfo> get copyWith => _$TrackerInfoCopyWithImpl<Trac
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackerInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.upload, upload) || other.upload == upload)&&(identical(other.download, download) || other.download == download)&&(identical(other.start, start) || other.start == start)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.chains, chains)&&(identical(other.rule, rule) || other.rule == rule)&&(identical(other.rulePayload, rulePayload) || other.rulePayload == rulePayload)&&(identical(other.downloadSpeed, downloadSpeed) || other.downloadSpeed == downloadSpeed)&&(identical(other.uploadSpeed, uploadSpeed) || other.uploadSpeed == uploadSpeed)&&(identical(other.lifecycle, lifecycle) || other.lifecycle == lifecycle)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.endReason, endReason) || other.endReason == endReason)&&(identical(other.diagnosticRoute, diagnosticRoute) || other.diagnosticRoute == diagnosticRoute)&&(identical(other.diagnosticRule, diagnosticRule) || other.diagnosticRule == diagnosticRule)&&(identical(other.diagnosticPolicy, diagnosticPolicy) || other.diagnosticPolicy == diagnosticPolicy));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackerInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.upload, upload) || other.upload == upload)&&(identical(other.download, download) || other.download == download)&&(identical(other.start, start) || other.start == start)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.chains, chains)&&(identical(other.rule, rule) || other.rule == rule)&&(identical(other.rulePayload, rulePayload) || other.rulePayload == rulePayload)&&(identical(other.downloadSpeed, downloadSpeed) || other.downloadSpeed == downloadSpeed)&&(identical(other.uploadSpeed, uploadSpeed) || other.uploadSpeed == uploadSpeed)&&(identical(other.lifecycle, lifecycle) || other.lifecycle == lifecycle)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.endReason, endReason) || other.endReason == endReason)&&(identical(other.diagnosticRoute, diagnosticRoute) || other.diagnosticRoute == diagnosticRoute)&&(identical(other.diagnosticRule, diagnosticRule) || other.diagnosticRule == diagnosticRule)&&(identical(other.diagnosticPolicy, diagnosticPolicy) || other.diagnosticPolicy == diagnosticPolicy)&&(identical(other.diagnosticDestination, diagnosticDestination) || other.diagnosticDestination == diagnosticDestination));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,upload,download,start,metadata,const DeepCollectionEquality().hash(chains),rule,rulePayload,downloadSpeed,uploadSpeed,lifecycle,durationMs,endReason,diagnosticRoute,diagnosticRule,diagnosticPolicy);
+int get hashCode => Object.hash(runtimeType,id,upload,download,start,metadata,const DeepCollectionEquality().hash(chains),rule,rulePayload,downloadSpeed,uploadSpeed,lifecycle,durationMs,endReason,diagnosticRoute,diagnosticRule,diagnosticPolicy,diagnosticDestination);
 
 @override
 String toString() {
-  return 'TrackerInfo(id: $id, upload: $upload, download: $download, start: $start, metadata: $metadata, chains: $chains, rule: $rule, rulePayload: $rulePayload, downloadSpeed: $downloadSpeed, uploadSpeed: $uploadSpeed, lifecycle: $lifecycle, durationMs: $durationMs, endReason: $endReason, diagnosticRoute: $diagnosticRoute, diagnosticRule: $diagnosticRule, diagnosticPolicy: $diagnosticPolicy)';
+  return 'TrackerInfo(id: $id, upload: $upload, download: $download, start: $start, metadata: $metadata, chains: $chains, rule: $rule, rulePayload: $rulePayload, downloadSpeed: $downloadSpeed, uploadSpeed: $uploadSpeed, lifecycle: $lifecycle, durationMs: $durationMs, endReason: $endReason, diagnosticRoute: $diagnosticRoute, diagnosticRule: $diagnosticRule, diagnosticPolicy: $diagnosticPolicy, diagnosticDestination: $diagnosticDestination)';
 }
 
 
@@ -930,7 +930,7 @@ abstract mixin class $TrackerInfoCopyWith<$Res>  {
   factory $TrackerInfoCopyWith(TrackerInfo value, $Res Function(TrackerInfo) _then) = _$TrackerInfoCopyWithImpl;
 @useResult
 $Res call({
- String id, int upload, int download, DateTime start, Metadata metadata, List<String> chains, String rule, String rulePayload, int? downloadSpeed, int? uploadSpeed, String lifecycle, int durationMs, String endReason, String diagnosticRoute, String diagnosticRule, String diagnosticPolicy
+ String id, int upload, int download, DateTime start, Metadata metadata, List<String> chains, String rule, String rulePayload, int? downloadSpeed, int? uploadSpeed, String lifecycle, int durationMs, String endReason, String diagnosticRoute, String diagnosticRule, String diagnosticPolicy, String diagnosticDestination
 });
 
 
@@ -947,7 +947,7 @@ class _$TrackerInfoCopyWithImpl<$Res>
 
 /// Create a copy of TrackerInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? upload = null,Object? download = null,Object? start = null,Object? metadata = null,Object? chains = null,Object? rule = null,Object? rulePayload = null,Object? downloadSpeed = freezed,Object? uploadSpeed = freezed,Object? lifecycle = null,Object? durationMs = null,Object? endReason = null,Object? diagnosticRoute = null,Object? diagnosticRule = null,Object? diagnosticPolicy = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? upload = null,Object? download = null,Object? start = null,Object? metadata = null,Object? chains = null,Object? rule = null,Object? rulePayload = null,Object? downloadSpeed = freezed,Object? uploadSpeed = freezed,Object? lifecycle = null,Object? durationMs = null,Object? endReason = null,Object? diagnosticRoute = null,Object? diagnosticRule = null,Object? diagnosticPolicy = null,Object? diagnosticDestination = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,upload: null == upload ? _self.upload : upload // ignore: cast_nullable_to_non_nullable
@@ -965,6 +965,7 @@ as int,endReason: null == endReason ? _self.endReason : endReason // ignore: cas
 as String,diagnosticRoute: null == diagnosticRoute ? _self.diagnosticRoute : diagnosticRoute // ignore: cast_nullable_to_non_nullable
 as String,diagnosticRule: null == diagnosticRule ? _self.diagnosticRule : diagnosticRule // ignore: cast_nullable_to_non_nullable
 as String,diagnosticPolicy: null == diagnosticPolicy ? _self.diagnosticPolicy : diagnosticPolicy // ignore: cast_nullable_to_non_nullable
+as String,diagnosticDestination: null == diagnosticDestination ? _self.diagnosticDestination : diagnosticDestination // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -1059,10 +1060,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int upload,  int download,  DateTime start,  Metadata metadata,  List<String> chains,  String rule,  String rulePayload,  int? downloadSpeed,  int? uploadSpeed,  String lifecycle,  int durationMs,  String endReason,  String diagnosticRoute,  String diagnosticRule,  String diagnosticPolicy)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int upload,  int download,  DateTime start,  Metadata metadata,  List<String> chains,  String rule,  String rulePayload,  int? downloadSpeed,  int? uploadSpeed,  String lifecycle,  int durationMs,  String endReason,  String diagnosticRoute,  String diagnosticRule,  String diagnosticPolicy,  String diagnosticDestination)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TrackerInfo() when $default != null:
-return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,_that.chains,_that.rule,_that.rulePayload,_that.downloadSpeed,_that.uploadSpeed,_that.lifecycle,_that.durationMs,_that.endReason,_that.diagnosticRoute,_that.diagnosticRule,_that.diagnosticPolicy);case _:
+return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,_that.chains,_that.rule,_that.rulePayload,_that.downloadSpeed,_that.uploadSpeed,_that.lifecycle,_that.durationMs,_that.endReason,_that.diagnosticRoute,_that.diagnosticRule,_that.diagnosticPolicy,_that.diagnosticDestination);case _:
   return orElse();
 
 }
@@ -1080,10 +1081,10 @@ return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int upload,  int download,  DateTime start,  Metadata metadata,  List<String> chains,  String rule,  String rulePayload,  int? downloadSpeed,  int? uploadSpeed,  String lifecycle,  int durationMs,  String endReason,  String diagnosticRoute,  String diagnosticRule,  String diagnosticPolicy)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int upload,  int download,  DateTime start,  Metadata metadata,  List<String> chains,  String rule,  String rulePayload,  int? downloadSpeed,  int? uploadSpeed,  String lifecycle,  int durationMs,  String endReason,  String diagnosticRoute,  String diagnosticRule,  String diagnosticPolicy,  String diagnosticDestination)  $default,) {final _that = this;
 switch (_that) {
 case _TrackerInfo():
-return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,_that.chains,_that.rule,_that.rulePayload,_that.downloadSpeed,_that.uploadSpeed,_that.lifecycle,_that.durationMs,_that.endReason,_that.diagnosticRoute,_that.diagnosticRule,_that.diagnosticPolicy);case _:
+return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,_that.chains,_that.rule,_that.rulePayload,_that.downloadSpeed,_that.uploadSpeed,_that.lifecycle,_that.durationMs,_that.endReason,_that.diagnosticRoute,_that.diagnosticRule,_that.diagnosticPolicy,_that.diagnosticDestination);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1100,10 +1101,10 @@ return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int upload,  int download,  DateTime start,  Metadata metadata,  List<String> chains,  String rule,  String rulePayload,  int? downloadSpeed,  int? uploadSpeed,  String lifecycle,  int durationMs,  String endReason,  String diagnosticRoute,  String diagnosticRule,  String diagnosticPolicy)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int upload,  int download,  DateTime start,  Metadata metadata,  List<String> chains,  String rule,  String rulePayload,  int? downloadSpeed,  int? uploadSpeed,  String lifecycle,  int durationMs,  String endReason,  String diagnosticRoute,  String diagnosticRule,  String diagnosticPolicy,  String diagnosticDestination)?  $default,) {final _that = this;
 switch (_that) {
 case _TrackerInfo() when $default != null:
-return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,_that.chains,_that.rule,_that.rulePayload,_that.downloadSpeed,_that.uploadSpeed,_that.lifecycle,_that.durationMs,_that.endReason,_that.diagnosticRoute,_that.diagnosticRule,_that.diagnosticPolicy);case _:
+return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,_that.chains,_that.rule,_that.rulePayload,_that.downloadSpeed,_that.uploadSpeed,_that.lifecycle,_that.durationMs,_that.endReason,_that.diagnosticRoute,_that.diagnosticRule,_that.diagnosticPolicy,_that.diagnosticDestination);case _:
   return null;
 
 }
@@ -1115,7 +1116,7 @@ return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,
 @JsonSerializable()
 
 class _TrackerInfo implements TrackerInfo {
-  const _TrackerInfo({required this.id, this.upload = 0, this.download = 0, required this.start, required this.metadata, required final  List<String> chains, required this.rule, required this.rulePayload, this.downloadSpeed, this.uploadSpeed, this.lifecycle = 'active', this.durationMs = 0, this.endReason = '', this.diagnosticRoute = 'unknown', this.diagnosticRule = 'unknown', this.diagnosticPolicy = 'unknown'}): _chains = chains;
+  const _TrackerInfo({required this.id, this.upload = 0, this.download = 0, required this.start, required this.metadata, required final  List<String> chains, required this.rule, required this.rulePayload, this.downloadSpeed, this.uploadSpeed, this.lifecycle = 'active', this.durationMs = 0, this.endReason = '', this.diagnosticRoute = 'unknown', this.diagnosticRule = 'unknown', this.diagnosticPolicy = 'unknown', this.diagnosticDestination = 'unknown'}): _chains = chains;
   factory _TrackerInfo.fromJson(Map<String, dynamic> json) => _$TrackerInfoFromJson(json);
 
 @override final  String id;
@@ -1140,6 +1141,7 @@ class _TrackerInfo implements TrackerInfo {
 @override@JsonKey() final  String diagnosticRoute;
 @override@JsonKey() final  String diagnosticRule;
 @override@JsonKey() final  String diagnosticPolicy;
+@override@JsonKey() final  String diagnosticDestination;
 
 /// Create a copy of TrackerInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -1154,16 +1156,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TrackerInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.upload, upload) || other.upload == upload)&&(identical(other.download, download) || other.download == download)&&(identical(other.start, start) || other.start == start)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other._chains, _chains)&&(identical(other.rule, rule) || other.rule == rule)&&(identical(other.rulePayload, rulePayload) || other.rulePayload == rulePayload)&&(identical(other.downloadSpeed, downloadSpeed) || other.downloadSpeed == downloadSpeed)&&(identical(other.uploadSpeed, uploadSpeed) || other.uploadSpeed == uploadSpeed)&&(identical(other.lifecycle, lifecycle) || other.lifecycle == lifecycle)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.endReason, endReason) || other.endReason == endReason)&&(identical(other.diagnosticRoute, diagnosticRoute) || other.diagnosticRoute == diagnosticRoute)&&(identical(other.diagnosticRule, diagnosticRule) || other.diagnosticRule == diagnosticRule)&&(identical(other.diagnosticPolicy, diagnosticPolicy) || other.diagnosticPolicy == diagnosticPolicy));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TrackerInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.upload, upload) || other.upload == upload)&&(identical(other.download, download) || other.download == download)&&(identical(other.start, start) || other.start == start)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other._chains, _chains)&&(identical(other.rule, rule) || other.rule == rule)&&(identical(other.rulePayload, rulePayload) || other.rulePayload == rulePayload)&&(identical(other.downloadSpeed, downloadSpeed) || other.downloadSpeed == downloadSpeed)&&(identical(other.uploadSpeed, uploadSpeed) || other.uploadSpeed == uploadSpeed)&&(identical(other.lifecycle, lifecycle) || other.lifecycle == lifecycle)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.endReason, endReason) || other.endReason == endReason)&&(identical(other.diagnosticRoute, diagnosticRoute) || other.diagnosticRoute == diagnosticRoute)&&(identical(other.diagnosticRule, diagnosticRule) || other.diagnosticRule == diagnosticRule)&&(identical(other.diagnosticPolicy, diagnosticPolicy) || other.diagnosticPolicy == diagnosticPolicy)&&(identical(other.diagnosticDestination, diagnosticDestination) || other.diagnosticDestination == diagnosticDestination));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,upload,download,start,metadata,const DeepCollectionEquality().hash(_chains),rule,rulePayload,downloadSpeed,uploadSpeed,lifecycle,durationMs,endReason,diagnosticRoute,diagnosticRule,diagnosticPolicy);
+int get hashCode => Object.hash(runtimeType,id,upload,download,start,metadata,const DeepCollectionEquality().hash(_chains),rule,rulePayload,downloadSpeed,uploadSpeed,lifecycle,durationMs,endReason,diagnosticRoute,diagnosticRule,diagnosticPolicy,diagnosticDestination);
 
 @override
 String toString() {
-  return 'TrackerInfo(id: $id, upload: $upload, download: $download, start: $start, metadata: $metadata, chains: $chains, rule: $rule, rulePayload: $rulePayload, downloadSpeed: $downloadSpeed, uploadSpeed: $uploadSpeed, lifecycle: $lifecycle, durationMs: $durationMs, endReason: $endReason, diagnosticRoute: $diagnosticRoute, diagnosticRule: $diagnosticRule, diagnosticPolicy: $diagnosticPolicy)';
+  return 'TrackerInfo(id: $id, upload: $upload, download: $download, start: $start, metadata: $metadata, chains: $chains, rule: $rule, rulePayload: $rulePayload, downloadSpeed: $downloadSpeed, uploadSpeed: $uploadSpeed, lifecycle: $lifecycle, durationMs: $durationMs, endReason: $endReason, diagnosticRoute: $diagnosticRoute, diagnosticRule: $diagnosticRule, diagnosticPolicy: $diagnosticPolicy, diagnosticDestination: $diagnosticDestination)';
 }
 
 
@@ -1174,7 +1176,7 @@ abstract mixin class _$TrackerInfoCopyWith<$Res> implements $TrackerInfoCopyWith
   factory _$TrackerInfoCopyWith(_TrackerInfo value, $Res Function(_TrackerInfo) _then) = __$TrackerInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, int upload, int download, DateTime start, Metadata metadata, List<String> chains, String rule, String rulePayload, int? downloadSpeed, int? uploadSpeed, String lifecycle, int durationMs, String endReason, String diagnosticRoute, String diagnosticRule, String diagnosticPolicy
+ String id, int upload, int download, DateTime start, Metadata metadata, List<String> chains, String rule, String rulePayload, int? downloadSpeed, int? uploadSpeed, String lifecycle, int durationMs, String endReason, String diagnosticRoute, String diagnosticRule, String diagnosticPolicy, String diagnosticDestination
 });
 
 
@@ -1191,7 +1193,7 @@ class __$TrackerInfoCopyWithImpl<$Res>
 
 /// Create a copy of TrackerInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? upload = null,Object? download = null,Object? start = null,Object? metadata = null,Object? chains = null,Object? rule = null,Object? rulePayload = null,Object? downloadSpeed = freezed,Object? uploadSpeed = freezed,Object? lifecycle = null,Object? durationMs = null,Object? endReason = null,Object? diagnosticRoute = null,Object? diagnosticRule = null,Object? diagnosticPolicy = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? upload = null,Object? download = null,Object? start = null,Object? metadata = null,Object? chains = null,Object? rule = null,Object? rulePayload = null,Object? downloadSpeed = freezed,Object? uploadSpeed = freezed,Object? lifecycle = null,Object? durationMs = null,Object? endReason = null,Object? diagnosticRoute = null,Object? diagnosticRule = null,Object? diagnosticPolicy = null,Object? diagnosticDestination = null,}) {
   return _then(_TrackerInfo(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,upload: null == upload ? _self.upload : upload // ignore: cast_nullable_to_non_nullable
@@ -1209,6 +1211,7 @@ as int,endReason: null == endReason ? _self.endReason : endReason // ignore: cas
 as String,diagnosticRoute: null == diagnosticRoute ? _self.diagnosticRoute : diagnosticRoute // ignore: cast_nullable_to_non_nullable
 as String,diagnosticRule: null == diagnosticRule ? _self.diagnosticRule : diagnosticRule // ignore: cast_nullable_to_non_nullable
 as String,diagnosticPolicy: null == diagnosticPolicy ? _self.diagnosticPolicy : diagnosticPolicy // ignore: cast_nullable_to_non_nullable
+as String,diagnosticDestination: null == diagnosticDestination ? _self.diagnosticDestination : diagnosticDestination // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

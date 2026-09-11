@@ -33,10 +33,15 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
       final network = ref.read(networkSettingProvider);
       final vpn = ref.read(vpnSettingProvider);
       final platformVersion = Platform.operatingSystemVersion;
+      final collection = <String, Object?>{};
       List<String> platformLogs;
       try {
         platformLogs = await controller.getPlatformDiagnosticLogs();
+        collection['collection.platform'] = platformLogs.isEmpty
+            ? 'empty'
+            : 'ok';
       } catch (error) {
+        collection['collection.platform'] = 'unavailable:${error.runtimeType}';
         platformLogs = [
           'platform diagnostics unavailable: ${error.runtimeType}',
         ];
@@ -46,11 +51,20 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
         clientDiagnostics = parseClientRuntimeDiagnostics(
           await controller.clientDiagnostics(),
         );
-      } catch (_) {}
+        collection['collection.runtime'] = clientDiagnostics.isEmpty
+            ? 'empty'
+            : 'ok';
+      } catch (error) {
+        collection['collection.runtime'] = 'unavailable:${error.runtimeType}';
+      }
       List<TrackerInfo> trackers = const [];
       try {
         trackers = await controller.getConnections();
-      } catch (_) {}
+        collection['collection.connections'] = 'ok';
+      } catch (error) {
+        collection['collection.connections'] =
+            'unavailable:${error.runtimeType}';
+      }
       if (!mounted) return;
       final groups = ref.read(groupsProvider);
       final tunInterfaceEstablished =
@@ -109,7 +123,6 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
           'app.build': packageInfo.buildNumber,
           'platform.os': SupportPlatform.currentPlatform.name,
           'platform.version': platformVersion,
-          'platform.description': Platform.operatingSystemVersion,
           'platform.runtime': Platform.version,
           'core.status': ref.read(coreStatusProvider).name,
           'core.runtimeSeconds': ref.read(runTimeProvider),
@@ -119,6 +132,21 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
           'config.mode': patchConfig.mode.name,
           'config.routeMode': network.routeMode.name,
           'config.managedRouteMode': network.managedRouteMode.wireValue,
+          'config.stack': effectiveClientVpnStackName(
+            configured: patchConfig.tun.stack,
+            privateClientMode: kPrivateClientMode,
+            isWindows: system.isWindows,
+            isAndroid: system.isAndroid,
+            isMacOS: system.isMacOS,
+          ),
+          if (system.isAndroid) ...{
+            'config.dnsHijacking': vpn.dnsHijacking,
+            'config.allowBypass': vpn.allowBypass,
+            'config.accessControlEnabled': vpn.accessControlProps.enable,
+            'config.accessControlMode': vpn.accessControlProps.mode.name,
+            'config.accessControlCount':
+                vpn.accessControlProps.currentList.length,
+          },
           'config.systemProxyConfigured': system.isAndroid
               ? vpn.systemProxy
               : network.systemProxy,
@@ -130,7 +158,7 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
                 )
               : false,
           'config.tunRequested': system.isAndroid
-              ? vpn.enable
+              ? kPrivateClientMode || vpn.enable
               : patchConfig.tun.enable,
           'config.tunActive': diagnosticTunActive(
             isAndroid: system.isAndroid,
@@ -163,6 +191,8 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
           ...clientDiagnostics,
           ...buildConnectionSummary(trackers),
           ...buildDiagnosticLogSummary(currentLogs),
+          ...collection,
+          'probe.scope': 'core-outbound only (not browser or VPN path)',
           ...probes,
         },
         logs: currentLogs,

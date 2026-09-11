@@ -97,11 +97,21 @@ static void free_string_impl(char *str) {
     free(str);
 }
 
-static void call_tun_interface_protect_impl(void *tun_interface, const int fd) {
+static int call_tun_interface_protect_impl(void *tun_interface, const int fd) {
+    if (tun_interface == nullptr) {
+        return 0;
+    }
     ATTACH_JNI();
-    env->CallVoidMethod(static_cast<jobject>(tun_interface),
-                        m_tun_interface_protect,
-                        fd);
+    if (env == nullptr) {
+        return 0;
+    }
+    const auto protected_socket = env->CallBooleanMethod(
+            static_cast<jobject>(tun_interface), m_tun_interface_protect, fd);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return 0;
+    }
+    return protected_socket == JNI_TRUE ? 1 : 0;
 }
 
 static char *
@@ -154,7 +164,7 @@ JNI_OnLoad(JavaVM *vm, void *) {
 
     const auto c_invoke_interface = find_class("com/follow/clash/core/InvokeInterface");
 
-    m_tun_interface_protect = find_method(c_tun_interface, "protect", "(I)V");
+    m_tun_interface_protect = find_method(c_tun_interface, "protect", "(I)Z");
     m_tun_interface_resolve_process = find_method(c_tun_interface, "resolverProcess",
                                                   "(ILjava/lang/String;Ljava/lang/String;I)Ljava/lang/String;");
     m_invoke_interface_result = find_method(c_invoke_interface, "onResult",

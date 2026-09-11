@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -300,7 +302,13 @@ func TestApplyClientRouteOverlayBuildsManagedRouting(t *testing.T) {
 	}
 }
 
-func TestManagedDNSUsesSplitTCPResolversAndFollowsIPRules(t *testing.T) {
+func TestManagedDNSUsesSplitHTTPSResolversAndFollowsIPRules(t *testing.T) {
+	for _, endpoint := range []string{clientMainlandDNS, clientOtherDNS} {
+		parsed, err := url.Parse(endpoint)
+		if err != nil || parsed.Scheme != "https" || parsed.Path != "/dns-query" || net.ParseIP(parsed.Hostname()) == nil || parsed.Port() != "" || parsed.Fragment != "" {
+			t.Fatalf("managed DNS must use certificate-verified HTTPS/443 without hostname bootstrap or an exit override: %q", endpoint)
+		}
+	}
 	wantNameServers := []string{clientOtherDNS}
 	for _, mode := range []ClientManagedRouteMode{
 		clientManagedRouteGlobal,

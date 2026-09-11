@@ -19,6 +19,33 @@ blocks duplicate requests while collecting, and reports copy success or failure.
 during collection must not update disposed widget state. The managed Home has no diagnostic
 export toolbar; generic dashboard behavior is unchanged.
 
+Clipboard reports use format 2 and are bounded to 8192 UTF-8 bytes, independently of a device's
+clipboard limit. Status, errors/warnings, compact route samples and platform evidence precede
+secondary metadata and routine context. Repeated redacted messages keep a count and first/last
+timestamps; group refreshes, HTTP lookups, lifecycle events and GeoSite loads become counters.
+Failures are selected before recent routine messages, with redacted reason text and fixed signal
+labels (such as DNS/TLS/timeout) rather than only a destination. Failed/rejected samples precede other connections;
+the report remains a sample of retained events, not a complete packet trace. Coverage records
+included/omitted groups and rows; an ellipsis marks shortened fields. Destination validation and
+credential/server redaction remain in place. Collection failures are explicit, Android reports
+include access-control counts (not app lists), and probes identify their core-outbound scope;
+probe success does not establish browser, certificate or VPN/TUN-path correctness.
+
+DNS service counters cover completed VPN/listener queries across the core-process lifetime,
+including silent SERVFAIL and timeout results; an absent counter is unavailable, not zero.
+Log-derived counts still describe retained logs only. Android socket protection propagates its
+Boolean result across Kotlin/JNI/C/Go: a failure blocks the socket, increments a lifetime counter
+and emits one bounded warning. It must never silently continue with an unprotected socket.
+Configured server/IP/SNI plus port matches use `[server-endpoint]:port` in clipboard samples;
+the inbound category and routing result remain visible. Such a match is a possible reentry
+signal, not proof of a loop, and ordinary visits to another port are not classified as node traffic.
+
+Managed destination resolution uses certificate-verified DoH over TCP/443 at literal resolver
+IPs, avoiding both a hard TCP/53 dependency on the selected server and recursive resolver-name
+bootstrap. Mainland and overseas DNS continue to follow the selected split policy through
+`respect-rules`; no forced-DIRECT destination fallback is introduced. The separate direct
+proxy-server bootstrap resolvers remain unchanged and do not resolve ordinary visited sites.
+
 ## Shared application layout
 
 The managed Windows and Linux window controls share one quiet, full-width 48-pixel title bar.

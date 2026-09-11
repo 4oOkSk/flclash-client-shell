@@ -1,6 +1,25 @@
+import 'dart:convert';
+
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/common.dart';
 
-const diagnosticLogLineLimit = 200;
+const diagnosticLogLineLimit = 40;
+const diagnosticReportByteLimit = 8192;
+
+final _diagnosticFailurePattern = RegExp(
+  r'\b(error|failed|failure|timeout|refused|unreachable|rejected)\b|'
+  r'timed out|no such host|reset by peer|unknown authority',
+  caseSensitive: false,
+);
+final _diagnosticSignalPattern = RegExp(
+  r'\b(dns|tls|ssl|x509|certificate|handshake|timeout|refused|unreachable|rejected)\b|'
+  r'timed out|no such host|reset by peer|unknown authority',
+  caseSensitive: false,
+);
+
+bool isDiagnosticFailure(Log log) =>
+    log.logLevel == LogLevel.error ||
+    _diagnosticFailurePattern.hasMatch(log.payload);
 
 final _trafficLogPattern = RegExp(r'\[(?:TCP|UDP)\]', caseSensitive: false);
 final _sensitiveValuePattern = RegExp(
@@ -59,7 +78,7 @@ final _routeSamplePattern = RegExp(
   r'policy=(private|httpdns|ipv6-block|probe|overseas-service|overseas-domain|mainland-domain|mainland-ip|fallback|local|other|unknown) '
   r'phase=(active|closed) duration=(active|lt1s|1-5s|5-30s|30-120s|2mplus) '
   r'end=(pending|eof|timeout|idle-timeout|reset|refused|unreachable|closed|no-response|idle|io-error|unknown) '
-  r'upload=(\d+) download=(\d+)$',
+  r'upload=(\d+) download=(\d+)(?: inbound=(tun|socks|http|mixed|other))?$',
 );
 
 const _diagnosticRoutes = {'direct', 'proxy', 'reject'};
@@ -127,6 +146,12 @@ String sanitizeDiagnosticLog(String value) {
 String? sanitizeVisitedDestination(String value) {
   final candidate = value.trim();
   if (candidate.isEmpty || candidate.length > 512) return null;
+  final endpointMatch = RegExp(
+    r'^\[server-endpoint\]:(\d{1,5})$',
+  ).firstMatch(candidate);
+  if (endpointMatch != null && _isSafePortText(endpointMatch.group(1))) {
+    return candidate;
+  }
   final uri = Uri.tryParse(candidate);
   if (uri != null &&
       (uri.scheme == 'http' || uri.scheme == 'https') &&
@@ -224,6 +249,11 @@ String? trackerVisitedDestination(TrackerInfo trackerInfo) {
   // Inner trackers describe the proxy/dialer hop itself, not a website the
   // user visited. Never let private server addresses cross the report boundary.
   if (metadata.type.toLowerCase() == 'inner') return null;
+  if (trackerInfo.diagnosticDestination == 'server-endpoint') {
+    return sanitizeVisitedDestination(
+      '[server-endpoint]:${metadata.destinationPort}',
+    );
+  }
   final host = metadata.host.trim();
   final address = host.isNotEmpty ? host : metadata.destinationIP.trim();
   if (address.isEmpty) return null;
@@ -266,7 +296,8 @@ String? sanitizeDiagnosticRouteSample(String value) {
       'route=${match.group(3)} rule=${match.group(4)} '
       'policy=${match.group(5)} phase=${match.group(6)} '
       'duration=${match.group(7)} end=${match.group(8)} '
-      'upload=$upload download=$download';
+      'upload=$upload download=$download'
+      '${match.group(11) == null ? '' : ' inbound=${match.group(11)}'}';
 }
 
 String? trackerDiagnosticRouteSample(TrackerInfo trackerInfo) {
@@ -296,11 +327,18 @@ String? trackerDiagnosticRouteSample(TrackerInfo trackerInfo) {
       : closed
       ? 'unknown'
       : 'pending';
+  final inbound = switch (trackerInfo.metadata.type.toLowerCase()) {
+    'tun' => 'tun',
+    'socks4' || 'socks5' => 'socks',
+    'http' || 'https' => 'http',
+    'mixed' => 'mixed',
+    _ => 'other',
+  };
   return sanitizeDiagnosticRouteSample(
     'destination=$destination network=$network route=$route rule=$rule '
     'policy=$policy phase=$phase duration=$duration end=$end '
     'upload=${trackerInfo.upload < 0 ? 0 : trackerInfo.upload} '
-    'download=${trackerInfo.download < 0 ? 0 : trackerInfo.download}',
+    'download=${trackerInfo.download < 0 ? 0 : trackerInfo.download} inbound=$inbound',
   );
 }
 
@@ -433,67 +471,262 @@ String buildDiagnosticReport({
   Iterable<String> routeSamples = const [],
   int logLineLimit = diagnosticLogLineLimit,
 }) {
-  final safeLimit = logLineLimit < 0 ? 0 : logLineLimit;
+  final safeLimit = logLineLimit.clamp(0, diagnosticLogLineLimit);
   final allLogs = logs.toList(growable: false);
-  final start = (allLogs.length - safeLimit).clamp(0, allLogs.length).toInt();
-  final recentLogs = allLogs.skip(start);
+  final noise = <String, int>{};
+  final groups = <String, _DiagnosticLogGroup>{};
+  for (var index = 0; index < allLogs.length; index++) {
+    final log = allLogs[index];
+    final failure = isDiagnosticFailure(log);
+    final important = failure || log.logLevel == LogLevel.warning;
+    final category = important ? null : _diagnosticNoiseCategory(log.payload);
+    if (category != null) {
+      noise.update(category, (count) => count + 1, ifAbsent: () => 1);
+      continue;
+    }
+    var payload = failure
+        ? sanitizeDiagnosticLog(log.payload)
+        : sanitizePrivateClientLog(log.payload);
+    if (failure) {
+      final signals = _diagnosticSignalPattern
+          .allMatches(log.payload)
+          .map((match) => match.group(0)!.toLowerCase().replaceAll(' ', '-'))
+          .toSet()
+          .join(',');
+      if (signals.isNotEmpty) payload = '$payload signals=$signals';
+    }
+    final key = '${log.logLevel.name}:$payload';
+    final group = groups.putIfAbsent(
+      key,
+      () => _DiagnosticLogGroup(log, payload, important),
+    );
+    group.count++;
+    group.last = log.dateTime;
+    group.ordinal = index;
+  }
+  final ordered = groups.values.toList()
+    ..sort((left, right) {
+      final priority = (left.important ? 0 : 1).compareTo(
+        right.important ? 0 : 1,
+      );
+      return priority != 0 ? priority : right.ordinal.compareTo(left.ordinal);
+    });
+  final selected = ordered.take(safeLimit).toList();
+  final errors = selected.where((group) => group.important).toList();
+  final context = selected.where((group) => !group.important).toList();
   final safePlatformLogs = platformLogs
       .map(sanitizeDiagnosticLog)
       .where((line) => line.isNotEmpty)
-      .toList(growable: false);
-  final safeDestinations = visitedDestinations
-      .map(sanitizeVisitedDestination)
-      .whereType<String>()
       .toSet()
-      .take(30)
-      .toList(growable: false);
+      .toList()
+      .reversed
+      .toList();
   final safeRouteSamples = routeSamples
       .map(sanitizeDiagnosticRouteSample)
       .whereType<String>()
       .toSet()
-      .take(30)
-      .toList(growable: false);
-  final buffer = StringBuffer(
-    '${sanitizeDiagnosticLog(applicationName)} diagnostic report\n',
+      .toList();
+  final routeMatches = safeRouteSamples
+      .map((sample) => _routeSamplePattern.firstMatch(sample)!)
+      .toList();
+  final failedRoutes = routeMatches.where(_isFailedDiagnosticRoute).toList();
+  final otherRoutes = routeMatches.where(
+    (match) => !_isFailedDiagnosticRoute(match),
   );
+  final routeDestinations = routeMatches.map((match) => match.group(1)).toSet();
+  final safeDestinations = visitedDestinations
+      .map(sanitizeVisitedDestination)
+      .whereType<String>()
+      .where((destination) => !routeDestinations.contains(destination))
+      .toSet()
+      .toList();
+  final primaryStatus = <String>[];
+  final extraStatus = <String>[];
   for (final entry in status.entries) {
-    buffer
-      ..write(entry.key)
-      ..write('=')
-      ..writeln(sanitizeDiagnosticLog('${entry.value ?? 'unknown'}'));
+    final line =
+        '${entry.key}=${_clipDiagnosticText(sanitizeDiagnosticLog('${entry.value ?? 'unknown'}'), 180)}';
+    (_isPrimaryDiagnosticStatus(entry.key) ? primaryStatus : extraStatus).add(
+      line,
+    );
   }
-  buffer
-    ..writeln('logs.total=${allLogs.length}')
-    ..writeln('logs.included=${recentLogs.length}')
-    ..writeln('platformLogs.included=${safePlatformLogs.length}')
-    ..writeln('destinations.included=${safeDestinations.length}')
-    ..writeln('routes.included=${safeRouteSamples.length}');
-  if (safeDestinations.isNotEmpty) {
-    buffer.writeln('--- recent destinations ---');
-    for (final destination in safeDestinations) {
-      buffer.writeln(destination);
+  final writer = _DiagnosticReportWriter(
+    '${_clipDiagnosticText(sanitizeDiagnosticLog(applicationName), 80)} diagnostic report\n'
+    'format=2 maxBytes=$diagnosticReportByteLimit\n',
+  );
+  var statusIncluded = writer.addSection(
+    'status',
+    primaryStatus,
+    byteLimit: 2400,
+  );
+  final errorsIncluded = writer.addSection(
+    'errors/warnings (redacted duplicates grouped)',
+    errors.map((group) => group.line),
+    byteLimit: 1800,
+  );
+  final routesIncluded = writer.addSection(
+    'routes: destination | net | route | rule/policy | phase/end | duration | up/down(B)',
+    [...failedRoutes, ...otherRoutes].map(_compactDiagnosticRoute),
+    byteLimit: 2200,
+  );
+  final platformIncluded = writer.addSection(
+    'platform',
+    [
+      ...safePlatformLogs.where(_diagnosticFailurePattern.hasMatch),
+      ...safePlatformLogs.where(
+        (line) => !_diagnosticFailurePattern.hasMatch(line),
+      ),
+    ].map((line) => _clipDiagnosticText(line, 300)),
+    byteLimit: 650,
+  );
+  statusIncluded += writer.addSection('details', extraStatus, byteLimit: 900);
+  final destinationsIncluded = writer.addSection(
+    'other destinations',
+    safeDestinations,
+    byteLimit: 450,
+  );
+  final contextIncluded = writer.addSection(
+    'recent context (redacted duplicates grouped)',
+    context.map((group) => group.line),
+  );
+  final logsIncluded = errorsIncluded + contextIncluded;
+  final noiseSummary = noise.entries
+      .map((entry) => '${entry.key}:${entry.value}')
+      .join(' ');
+  return writer.finish(
+    '--- coverage ---\n'
+    'logs.total=${allLogs.length} logs.included=$logsIncluded logs.omittedGroups=${groups.length - logsIncluded}\n'
+    'routes.included=$routesIncluded routes.omitted=${safeRouteSamples.length - routesIncluded}\n'
+    'platformLogs.included=$platformIncluded platformLogs.omitted=${safePlatformLogs.length - platformIncluded}\n'
+    'destinations.included=$destinationsIncluded destinations.omitted=${safeDestinations.length - destinationsIncluded}\n'
+    'status.omitted=${status.length - statusIncluded}\n'
+    'noise=${noiseSummary.isEmpty ? 'none' : noiseSummary}\n',
+  );
+}
+
+String? _diagnosticNoiseCategory(String payload) {
+  final value = payload.replaceFirst(RegExp(r'^\[APP\]\s*'), '').trim();
+  if (value == 'updateGroups') return 'group-refresh';
+  if (value == 'checkIp start') return 'ip-check-start';
+  if (value.startsWith('find ')) return 'http-lookup';
+  if (RegExp(r'^(?:destination=)?AppLifecycleState\.').hasMatch(value)) {
+    return 'app-lifecycle';
+  }
+  if (value.startsWith('Load GeoSite rule:')) return 'geosite-load';
+  return null;
+}
+
+bool _isPrimaryDiagnosticStatus(String key) =>
+    key == 'generatedAt' ||
+    key == 'core.status' ||
+    key == 'core.version' ||
+    key == 'platform.os' ||
+    key == 'platform.version' ||
+    [
+      'app.',
+      'config.',
+      'probe.',
+      'collection.',
+      'selection.',
+      'recent.',
+      'routes.',
+      'dns.',
+      'vpn.',
+    ].any(key.startsWith);
+
+bool _isFailedDiagnosticRoute(RegExpMatch match) =>
+    match.group(3) == 'reject' ||
+    {
+      'timeout',
+      'idle-timeout',
+      'reset',
+      'refused',
+      'unreachable',
+      'no-response',
+      'io-error',
+    }.contains(match.group(8));
+
+String _compactDiagnosticRoute(RegExpMatch match) =>
+    '${match.group(1)} | ${match.group(2)} | ${match.group(3)} | '
+    '${match.group(4)}/${match.group(5)} | ${match.group(6)}/${match.group(8)} | '
+    '${match.group(7)} | ${match.group(9)}/${match.group(10)}'
+    '${match.group(11) == null ? '' : ' | in=${match.group(11)}'}';
+
+class _DiagnosticLogGroup {
+  _DiagnosticLogGroup(Log log, this.payload, this.important)
+    : level = log.logLevel.name,
+      first = log.dateTime,
+      last = log.dateTime;
+
+  final String level;
+  final String payload;
+  final bool important;
+  final String first;
+  String last;
+  int count = 0;
+  int ordinal = 0;
+
+  String get line =>
+      '${_clipDiagnosticText(sanitizeDiagnosticLog(last), 32)} [$level] '
+      '${count > 1 ? 'x$count first=${_clipDiagnosticText(sanitizeDiagnosticLog(first), 32)} ' : ''}'
+      '${_clipDiagnosticText(payload, 360)}';
+}
+
+String _clipDiagnosticText(String value, int byteLimit) {
+  final encoded = utf8.encode(value);
+  final normalized = utf8.decode(encoded);
+  if (encoded.length <= byteLimit) return normalized;
+  final runes = normalized.runes.toList();
+  final prefix = <int>[];
+  final suffix = <int>[];
+  final sideLimit = (byteLimit - 3) ~/ 2;
+  var bytes = 0;
+  for (final rune in runes) {
+    bytes += utf8.encode(String.fromCharCode(rune)).length;
+    if (bytes > sideLimit) break;
+    prefix.add(rune);
+  }
+  bytes = 0;
+  for (final rune in runes.reversed) {
+    bytes += utf8.encode(String.fromCharCode(rune)).length;
+    if (bytes > sideLimit) break;
+    suffix.add(rune);
+  }
+  return String.fromCharCodes([...prefix, 0x2026, ...suffix.reversed]);
+}
+
+class _DiagnosticReportWriter {
+  _DiagnosticReportWriter(String header)
+    : _buffer = StringBuffer(header),
+      _bytes = utf8.encode(header).length;
+
+  final StringBuffer _buffer;
+  int _bytes;
+
+  int addSection(String title, Iterable<String> lines, {int? byteLimit}) {
+    final heading = '--- $title ---\n';
+    final headingBytes = utf8.encode(heading).length;
+    final remaining = diagnosticReportByteLimit - 512 - _bytes;
+    final limit = byteLimit == null || byteLimit > remaining
+        ? remaining
+        : byteLimit;
+    final section = StringBuffer();
+    var sectionBytes = headingBytes;
+    var included = 0;
+    for (final line in lines) {
+      final lineBytes = utf8.encode('$line\n').length;
+      if (sectionBytes + lineBytes > limit) continue;
+      section.writeln(line);
+      sectionBytes += lineBytes;
+      included++;
     }
-  }
-  if (safeRouteSamples.isNotEmpty) {
-    buffer.writeln('--- recent routes ---');
-    for (final sample in safeRouteSamples) {
-      buffer.writeln(sample);
+    if (included > 0) {
+      _buffer.write(heading);
+      _buffer.write(section);
+      _bytes += sectionBytes;
     }
+    return included;
   }
-  buffer.writeln('--- recent logs ---');
-  for (final log in recentLogs) {
-    buffer
-      ..write(sanitizeDiagnosticLog(log.dateTime))
-      ..write(' [')
-      ..write(log.logLevel.name)
-      ..write('] ')
-      ..writeln(sanitizePrivateClientLog(log.payload));
-  }
-  if (safePlatformLogs.isNotEmpty) {
-    buffer.writeln('--- platform logs ---');
-    for (final line in safePlatformLogs) {
-      buffer.writeln(line);
-    }
-  }
-  return buffer.toString();
+
+  String finish(String coverage) =>
+      '$_buffer${_clipDiagnosticText(coverage, 512)}';
 }

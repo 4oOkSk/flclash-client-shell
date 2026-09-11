@@ -24,21 +24,22 @@ type Tracker interface {
 }
 
 type TrackerInfo struct {
-	UUID             uuid.UUID    `json:"id"`
-	Metadata         *C.Metadata  `json:"metadata"`
-	UploadTotal      atomic.Int64 `json:"upload"`
-	DownloadTotal    atomic.Int64 `json:"download"`
-	Start            time.Time    `json:"start"`
-	Chain            C.Chain      `json:"chains"`
-	ProviderChain    C.Chain      `json:"providerChains"`
-	Rule             string       `json:"rule"`
-	RulePayload      string       `json:"rulePayload"`
-	Lifecycle        string       `json:"lifecycle,omitempty"`
-	DurationMs       int64        `json:"durationMs,omitempty"`
-	EndReason        string       `json:"endReason,omitempty"`
-	DiagnosticRoute  string       `json:"diagnosticRoute,omitempty"`
-	DiagnosticRule   string       `json:"diagnosticRule,omitempty"`
-	DiagnosticPolicy string       `json:"diagnosticPolicy,omitempty"`
+	UUID                  uuid.UUID    `json:"id"`
+	Metadata              *C.Metadata  `json:"metadata"`
+	UploadTotal           atomic.Int64 `json:"upload"`
+	DownloadTotal         atomic.Int64 `json:"download"`
+	Start                 time.Time    `json:"start"`
+	Chain                 C.Chain      `json:"chains"`
+	ProviderChain         C.Chain      `json:"providerChains"`
+	Rule                  string       `json:"rule"`
+	RulePayload           string       `json:"rulePayload"`
+	Lifecycle             string       `json:"lifecycle,omitempty"`
+	DurationMs            int64        `json:"durationMs,omitempty"`
+	EndReason             string       `json:"endReason,omitempty"`
+	DiagnosticRoute       string       `json:"diagnosticRoute,omitempty"`
+	DiagnosticRule        string       `json:"diagnosticRule,omitempty"`
+	DiagnosticPolicy      string       `json:"diagnosticPolicy,omitempty"`
+	DiagnosticDestination string       `json:"diagnosticDestination,omitempty"`
 }
 
 type tcpTracker struct {

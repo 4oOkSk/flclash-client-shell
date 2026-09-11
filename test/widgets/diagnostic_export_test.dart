@@ -123,6 +123,11 @@ void main() {
     expect(reports, hasLength(1));
     expect(reports.single, contains('diagnostic report'));
     expect(reports.single, contains('client.sessionPresent=true'));
+    expect(reports.single, contains('collection.connections=ok'));
+    expect(
+      reports.single,
+      contains('probe.scope=core-outbound only (not browser or VPN path)'),
+    );
     for (final secret in [
       'private.example.com',
       'do-not-copy-this',
@@ -158,6 +163,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(reports, hasLength(1));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('collection failures are explicit instead of appearing healthy', (
+    tester,
+  ) async {
+    when(
+      () => handler.clientDiagnostics(),
+    ).thenAnswer((_) async => 'invalid json');
+    when(
+      () => handler.getConnections(),
+    ).thenAnswer((_) async => throw StateError('secret-node'));
+    await tester.pumpWidget(
+      _TestApp(
+        container: container,
+        child: DiagnosticExportItem(controller: controller),
+      ),
+    );
+    await tester.tap(find.text(AppLocalizations.current.clientCopyDiagnostics));
+    await tester.pumpAndSettle();
+
+    expect(reports, hasLength(1));
+    expect(
+      reports.single,
+      contains('collection.runtime=unavailable:FormatException'),
+    );
+    expect(
+      reports.single,
+      contains('collection.connections=unavailable:StateError'),
+    );
+    expect(reports.single, isNot(contains('secret-node')));
   });
 
   testWidgets('leaving during collection does not write to the clipboard', (

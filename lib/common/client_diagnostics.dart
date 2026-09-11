@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fl_clash/common/diagnostic_log.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
@@ -17,6 +18,7 @@ Map<String, Object?> parseClientRuntimeDiagnostics(String raw) {
   final decoded = json.decode(raw);
   if (decoded is! Map) return const {};
   final data = Map<String, dynamic>.from(decoded);
+  final dns = data['dns'] is Map ? data['dns'] as Map : const {};
   final geoIP = data['geoip'] is Map
       ? Map<String, dynamic>.from(data['geoip'] as Map)
       : const <String, dynamic>{};
@@ -24,6 +26,12 @@ Map<String, Object?> parseClientRuntimeDiagnostics(String raw) {
       ? Map<String, dynamic>.from(data['geosite'] as Map)
       : const <String, dynamic>{};
   return {
+    'dns.scope': 'VPN/listener requests; core-process lifetime',
+    'dns.completed': dns['completed'] ?? 'unavailable',
+    'dns.failed': dns['failed'] ?? 'unavailable',
+    'dns.timeouts': dns['timeouts'] ?? 'unavailable',
+    'dns.lastFailureAt': dns['last_failure_at'] ?? 'unavailable',
+    'vpn.protectFailures': data['protect_failures'] ?? 'unavailable',
     'client.sessionPresent': data['session_present'] ?? false,
     'client.cachePresent': data['cache_present'] ?? false,
     'client.cacheAgeSeconds': data['cache_age_seconds'] ?? -1,
@@ -56,11 +64,14 @@ Map<String, Object?> buildDiagnosticLogSummary(Iterable<Log> logs) {
   var apiErrors = 0;
   for (final log in logs) {
     final lower = log.payload.toLowerCase();
-    final isError = log.logLevel == LogLevel.error || lower.contains('error');
+    final isError = isDiagnosticFailure(log);
     if (log.logLevel == LogLevel.error) errors++;
     if (log.logLevel == LogLevel.warning) warnings++;
     if (lower.contains('[tcp]') || lower.contains('[udp]')) trafficEvents++;
-    if (isError && (lower.contains('dns') || lower.contains('resolver'))) {
+    if (isError &&
+        (lower.contains('dns') ||
+            lower.contains('resolve') ||
+            lower.contains('lookup'))) {
       dnsErrors++;
     }
     if (isError && (lower.contains('tun') || lower.contains('vpnservice'))) {
@@ -86,7 +97,12 @@ Map<String, Object?> buildConnectionSummary(Iterable<TrackerInfo> trackers) {
   var proxy = 0;
   var tcp = 0;
   var udp = 0;
+  var serverEndpoints = 0;
   for (final tracker in trackers) {
+    if (tracker.diagnosticDestination == 'server-endpoint' &&
+        tracker.metadata.type.toLowerCase() != 'inner') {
+      serverEndpoints++;
+    }
     final directChain = tracker.chains.any(
       (chain) => chain.toUpperCase() == 'DIRECT',
     );
@@ -108,6 +124,7 @@ Map<String, Object?> buildConnectionSummary(Iterable<TrackerInfo> trackers) {
     'routes.activeProxy': proxy,
     'routes.activeTcp': tcp,
     'routes.activeUdp': udp,
+    'routes.activeServerEndpointMatches': serverEndpoints,
   };
 }
 

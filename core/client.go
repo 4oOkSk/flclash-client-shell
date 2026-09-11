@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/metacubex/mihomo/constant"
+	"github.com/metacubex/mihomo/dns"
 	"golang.org/x/crypto/nacl/box"
 )
 
@@ -91,6 +92,8 @@ type clientDataFileDiagnostic struct {
 }
 
 type clientRuntimeDiagnostics struct {
+	DNS                   dns.ServiceDiagnostics   `json:"dns"`
+	ProtectFailures       uint64                   `json:"protect_failures"`
 	SessionPresent        bool                     `json:"session_present"`
 	CachePresent          bool                     `json:"cache_present"`
 	CacheAgeSeconds       int64                    `json:"cache_age_seconds"`
@@ -638,6 +641,8 @@ func clientRuntimeDiagnosticsJSON() string {
 		cacheAge = int64(age)
 	}
 	diagnostics := clientRuntimeDiagnostics{
+		DNS:                   dns.GetServiceDiagnostics(),
+		ProtectFailures:       clientProtectFailures.Load(),
 		SessionPresent:        clientHasSession(),
 		CachePresent:          cachePresent,
 		CacheAgeSeconds:       cacheAge,

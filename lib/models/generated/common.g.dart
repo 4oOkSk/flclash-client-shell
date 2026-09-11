@@ -96,6 +96,7 @@ _TrackerInfo _$TrackerInfoFromJson(Map<String, dynamic> json) => _TrackerInfo(
   diagnosticRoute: json['diagnosticRoute'] as String? ?? 'unknown',
   diagnosticRule: json['diagnosticRule'] as String? ?? 'unknown',
   diagnosticPolicy: json['diagnosticPolicy'] as String? ?? 'unknown',
+  diagnosticDestination: json['diagnosticDestination'] as String? ?? 'unknown',
 );
 
 Map<String, dynamic> _$TrackerInfoToJson(_TrackerInfo instance) =>
@@ -116,6 +117,7 @@ Map<String, dynamic> _$TrackerInfoToJson(_TrackerInfo instance) =>
       'diagnosticRoute': instance.diagnosticRoute,
       'diagnosticRule': instance.diagnosticRule,
       'diagnosticPolicy': instance.diagnosticPolicy,
+      'diagnosticDestination': instance.diagnosticDestination,
     };
 
 _Log _$LogFromJson(Map<String, dynamic> json) => _Log(

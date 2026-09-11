@@ -1,10 +1,36 @@
 package main
 
 import (
+	"net/netip"
 	"testing"
 
+	"github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/tunnel/statistic"
 )
+
+func TestClientDiagnosticServerEndpointMatchesArePortScoped(t *testing.T) {
+	setClientDiagnosticEndpoints(`proxies:
+  - server: 192.0.2.10
+    port: 8443
+    servername: node.example.com
+  - server: ignored.example.com
+    port: invalid
+`)
+	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	for _, test := range []struct {
+		metadata constant.Metadata
+		want     string
+	}{
+		{constant.Metadata{Host: "NODE.example.com.", DstPort: 8443}, "server-endpoint"},
+		{constant.Metadata{Host: "node.example.com", DstPort: 443}, "destination"},
+		{constant.Metadata{DstIP: netip.MustParseAddr("192.0.2.10"), DstPort: 8443}, "server-endpoint"},
+		{constant.Metadata{Host: "example.com", DstPort: 8443}, "destination"},
+	} {
+		if got := clientDiagnosticDestination(&test.metadata); got != test.want {
+			t.Fatalf("endpoint role = %q, want %q", got, test.want)
+		}
+	}
+}
 
 func TestClientTrackerDiagnosticsExposeOnlyFixedCategories(t *testing.T) {
 	tests := []struct {

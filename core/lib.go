@@ -69,15 +69,15 @@ func (th *TunHandler) clear() {
 	th.listener = nil
 }
 
-func (th *TunHandler) handleProtect(fd int) {
+func (th *TunHandler) handleProtect(fd int) bool {
 	_ = th.limit.Acquire(context.Background(), 1)
 	defer th.limit.Release(1)
 
-	if th.listener == nil {
-		return
+	if th.listener == nil || th.callback == nil {
+		return false
 	}
 
-	protect(th.callback, fd)
+	return protect(th.callback, fd)
 }
 
 func (th *TunHandler) handleResolveProcess(source, target net.Addr) string {
@@ -106,9 +106,7 @@ func (th *TunHandler) initHook() {
 		if platform.ShouldBlockConnection() {
 			return errBlocked
 		}
-		return conn.Control(func(fd uintptr) {
-			tunHandler.handleProtect(int(fd))
-		})
+		return protectClientSocket(conn, th.handleProtect)
 	}
 	process.DefaultPackageNameResolver = func(metadata *constant.Metadata) (string, error) {
 		src, dst := metadata.RawSrcAddr, metadata.RawDstAddr

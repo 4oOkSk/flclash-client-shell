@@ -22,8 +22,8 @@ const (
 	maxClientRouteRuleLength      = 4096
 	clientGeoIPURL                = "https://example.invalid/harborproxy/geoip.dat"
 	clientGeoSiteURL              = "https://example.invalid/harborproxy/geosite.dat"
-	clientMainlandDNS             = "tcp://223.5.5.5:53"
-	clientOtherDNS                = "tcp://1.1.1.1:53"
+	clientMainlandDNS             = "https://223.5.5.5/dns-query"
+	clientOtherDNS                = "https://1.1.1.1/dns-query"
 	clientMainlandDNSPolicy       = "geosite:cn"
 )
 

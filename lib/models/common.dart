@@ -115,6 +115,7 @@ abstract class TrackerInfo with _$TrackerInfo {
     @Default('unknown') String diagnosticRoute,
     @Default('unknown') String diagnosticRule,
     @Default('unknown') String diagnosticPolicy,
+    @Default('unknown') String diagnosticDestination,
   }) = _TrackerInfo;
 
   factory TrackerInfo.fromJson(Map<String, Object?> json) =>
