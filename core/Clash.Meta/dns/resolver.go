@@ -404,6 +404,9 @@ func (r *Resolver) ResetConnection() {
 		for _, c := range r.fallback {
 			c.ResetConnection()
 		}
+		for _, policy := range r.policy {
+			policy.ResetConnection()
+		}
 		if dr := r.defaultResolver; dr != nil {
 			dr.ResetConnection()
 		}

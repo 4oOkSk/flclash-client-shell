@@ -252,6 +252,9 @@ func closeConnections() {
 		}
 		return true
 	})
+	if currentResolver := resolver.DefaultResolver; currentResolver != nil {
+		currentResolver.ResetConnection()
+	}
 }
 
 func handleResetConnections() bool {

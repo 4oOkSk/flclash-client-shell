@@ -45,6 +45,9 @@ IPs, avoiding both a hard TCP/53 dependency on the selected server and recursive
 bootstrap. Mainland and overseas DNS continue to follow the selected split policy through
 `respect-rules`; no forced-DIRECT destination fallback is introduced. The separate direct
 proxy-server bootstrap resolvers remain unchanged and do not resolve ordinary visited sites.
+Changing managed servers closes DNS transport pools before the connection-teardown response,
+including both default and policy-specific resolvers. Applying a different routing mode creates
+fresh resolvers, so reusable DoH connections cannot keep the previous mode's outbound path.
 
 ## Shared application layout
 
