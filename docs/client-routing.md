@@ -69,6 +69,11 @@ width of 1040 logical pixels and a consistent alignment. Secondary routes retain
 and back navigation, and action/search toolbars are not hidden. Native macOS title-bar behavior
 is unchanged. Mobile content retains system safe-area padding.
 
+Account diagnostics, account advanced settings, and advanced routing use separate, stable
+page-storage keys from their containing lists. Expansion state must never share the scroll
+offset slot. Returning to or recreating these pages preserves expansion and scroll position
+independently; keys do not depend on translated titles.
+
 Wide windows use an expanded navigation rail with visible text. Medium windows keep labels
 below the icons, and compact layouts use labeled bottom navigation. The managed layout does
 not hide destination names through the generic client's label preference. The title bar, rail,

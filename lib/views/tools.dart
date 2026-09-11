@@ -95,6 +95,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
   }
 
   Widget _buildManagedMenu({
+    required PageStorageKey<String> storageKey,
     required String title,
     required IconData icon,
     required List<Widget> children,
@@ -103,6 +104,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Card(
         child: ExpansionTile(
+          key: storageKey,
           leading: Icon(icon, size: 20),
           title: Text(title, style: context.textTheme.titleMedium),
           children: [
@@ -142,6 +144,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
             children: [
               if (kPrivateClientMode)
                 _buildManagedMenu(
+                  storageKey: const PageStorageKey('tools-diagnostics'),
                   title: context.appLocalizations.clientDiagnostics,
                   icon: Icons.bug_report_outlined,
                   children: [
@@ -163,6 +166,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ..._getSettingList(),
       if (kPrivateClientMode)
         _buildManagedMenu(
+          storageKey: const PageStorageKey('tools-advanced'),
           title: context.appLocalizations.advancedConfig,
           icon: Icons.tune,
           children: [

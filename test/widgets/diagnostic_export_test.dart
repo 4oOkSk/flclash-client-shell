@@ -11,6 +11,7 @@ import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/diagnostic_export.dart';
 import 'package:fl_clash/views/tools.dart';
+import 'package:fl_clash/views/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -99,6 +100,105 @@ void main() {
     },
     skip: !kPrivateClientMode,
   );
+
+  testWidgets(
+    'account expansion state does not overwrite the saved scroll offset',
+    (tester) async {
+      final visible = ValueNotifier(true);
+      addTearDown(visible.dispose);
+      final bucket = PageStorageBucket();
+      await tester.pumpWidget(
+        _TestApp(
+          container: container,
+          child: PageStorage(
+            bucket: bucket,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: visible,
+              builder: (_, showAccount, _) =>
+                  showAccount ? const ToolsView() : const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final diagnostics = find.text(AppLocalizations.current.clientDiagnostics);
+      await tester.ensureVisible(diagnostics);
+      await tester.tap(diagnostics);
+      await tester.pumpAndSettle();
+      expect(find.byType(DiagnosticExportItem), findsOneWidget);
+
+      visible.value = false;
+      await tester.pumpAndSettle();
+      visible.value = true;
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DiagnosticExportItem), findsOneWidget);
+      final advanced = find.text(AppLocalizations.current.advancedConfig);
+      await tester.scrollUntilVisible(
+        advanced,
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(tester.takeException(), isNull);
+      final advancedTile = find.ancestor(
+        of: advanced,
+        matching: find.byType(ExpansionTile),
+      );
+      expect(
+        ExpansibleController.of(tester.element(advanced)).isExpanded,
+        isFalse,
+      );
+      await tester.tap(advancedTile);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+    skip: !kPrivateClientMode,
+  );
+
+  for (final size in [const Size(640, 700), const Size(390, 800)]) {
+    testWidgets(
+      'expanded diagnostics survives a settings round trip at $size',
+      (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        container.read(viewSizeProvider.notifier).value = size;
+        await tester.pumpWidget(
+          _TestApp(container: container, child: const ToolsView()),
+        );
+        await tester.pumpAndSettle();
+        final diagnostics = find.text(
+          AppLocalizations.current.clientDiagnostics,
+        );
+        await tester.ensureVisible(diagnostics);
+        await tester.tap(diagnostics);
+        await tester.pumpAndSettle();
+        final theme = find.text(AppLocalizations.current.theme);
+        await tester.scrollUntilVisible(
+          theme,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(theme);
+        await tester.pumpAndSettle();
+        expect(find.byType(ThemeView), findsOneWidget);
+        globalState.navigatorKey.currentState!.pop();
+        await tester.pumpAndSettle();
+        expect(find.byType(ThemeView), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.scrollUntilVisible(
+          diagnostics,
+          -200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.byType(DiagnosticExportItem), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+      skip: !kPrivateClientMode,
+    );
+  }
 
   testWidgets('copies redacted diagnostics and ignores duplicate taps', (
     tester,

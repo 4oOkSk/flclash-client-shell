@@ -34,6 +34,64 @@ ProviderContainer _container(Size size) {
 }
 
 void main() {
+  testWidgets('advanced routing restores expansion and scroll independently', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(640, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = _container(tester.view.physicalSize);
+    addTearDown(container.dispose);
+    final visible = ValueNotifier(true);
+    addTearDown(visible.dispose);
+    final bucket = PageStorageBucket();
+    await tester.pumpWidget(
+      _RoutingTestApp(
+        container: container,
+        home: PageStorage(
+          bucket: bucket,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: visible,
+            builder: (_, showRouting, _) => showRouting
+                ? const PrivateRoutingView()
+                : const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final advanced = find.text(AppLocalizations.current.routeAdvanced);
+    await tester.scrollUntilVisible(
+      advanced,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(advanced);
+    await tester.pumpAndSettle();
+    final offset = tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .pixels;
+    expect(offset, greaterThan(0));
+    visible.value = false;
+    await tester.pumpAndSettle();
+    visible.value = true;
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position
+          .pixels,
+      closeTo(offset, 0.1),
+    );
+    expect(
+      ExpansibleController.of(tester.element(advanced)).isExpanded,
+      isTrue,
+    );
+  });
+
   testWidgets(
     'late checker response is discarded after editing or applying rules',
     (tester) async {

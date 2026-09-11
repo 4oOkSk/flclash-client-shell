@@ -441,6 +441,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
                       MediaQuery.textScalerOf(context).scale(1) >=
                   860;
               return ListView(
+                key: const PageStorageKey('private-routing'),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 children: [
                   Text(
@@ -470,6 +471,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
                   Card(
                     margin: EdgeInsets.zero,
                     child: ExpansionTile(
+                      key: const PageStorageKey('private-routing-advanced'),
                       title: Text(text.routeAdvanced),
                       subtitle: Text(text.routeAdvancedHint),
                       children: [
