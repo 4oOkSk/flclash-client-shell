@@ -101,8 +101,10 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun stop(result: MethodChannel.Result) {
-        ServiceState.requestStop()
-        result.success(true)
+        val operation = ServiceState.requestStop()
+        scope.launch {
+            result.success(operation.await())
+        }
     }
 
     private fun sendEvent(value: String?) {

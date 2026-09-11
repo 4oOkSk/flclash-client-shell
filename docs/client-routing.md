@@ -36,6 +36,10 @@ including silent SERVFAIL and timeout results; an absent counter is unavailable,
 Log-derived counts still describe retained logs only. Android socket protection propagates its
 Boolean result across Kotlin/JNI/C/Go: a failure blocks the socket, increments a lifetime counter
 and emits one bounded warning. It must never silently continue with an unprotected socket.
+Android disconnect acknowledges native teardown rather than merely queued intent. TUN shutdown
+drains existing JNI callbacks, detaches their state under the callback gate, then releases the
+gate before closing the listener. Teardown callbacks cannot deadlock behind their own close;
+the socket hook keeps rejecting new sockets until listener closure completes.
 Configured server/IP/SNI plus port matches use `[server-endpoint]` without the real port in
 lists, connection/request details and clipboard samples. The inbound category and routing result
 remain visible. Such a match is a possible reentry signal, not proof of a loop, and ordinary

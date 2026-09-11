@@ -4,6 +4,21 @@ import 'package:fl_clash/common/constant.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Android stop acknowledges completed native teardown', () {
+    final plugin = File(
+      'android/app/src/main/kotlin/com/follow/clash/plugins/ServicePlugin.kt',
+    ).readAsStringSync();
+    final stopMethod = plugin
+        .split('private fun stop(')
+        .last
+        .split('private fun sendEvent')
+        .first;
+
+    expect(stopMethod, contains('val operation = ServiceState.requestStop()'));
+    expect(stopMethod, contains('result.success(operation.await())'));
+    expect(stopMethod, isNot(contains('result.success(true)')));
+  });
+
   test('Dart and Android use the same MethodChannel namespace', () {
     final components = File(
       'android/common/src/main/java/com/follow/clash/common/Components.kt',

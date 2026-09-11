@@ -20,6 +20,7 @@ import (
 	"github.com/metacubex/mihomo/listener/sing_tun"
 	"github.com/metacubex/mihomo/log"
 	"golang.org/x/sync/semaphore"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -39,8 +40,8 @@ type TunHandler struct {
 func (th *TunHandler) start(fd int, stack, address, dns string) {
 	runLock.Lock()
 	defer runLock.Unlock()
-	_ = th.limit.Acquire(context.TODO(), 4)
-	defer th.limit.Release(4)
+	_ = th.limit.Acquire(context.TODO(), tunCallbackConcurrency)
+	defer th.limit.Release(tunCallbackConcurrency)
 	th.initHook()
 	tunListener := t.Start(fd, stack, address, dns)
 	if tunListener != nil {
@@ -48,25 +49,29 @@ func (th *TunHandler) start(fd int, stack, address, dns string) {
 		th.listener = tunListener
 		return
 	}
+	th.removeHook()
 	th.clear()
 }
 
 func (th *TunHandler) close() {
-	_ = th.limit.Acquire(context.TODO(), 4)
-	defer th.limit.Release(4)
-	th.clear()
+	_ = closeTunAfterCallbacks(th.limit, func() io.Closer {
+		listener := th.clear()
+		if listener == nil {
+			return nil
+		}
+		return listener
+	})
+	th.removeHook()
 }
 
-func (th *TunHandler) clear() {
-	th.removeHook()
-	if th.listener != nil {
-		_ = th.listener.Close()
-	}
+func (th *TunHandler) clear() *sing_tun.Listener {
+	listener := th.listener
 	if th.callback != nil {
 		releaseObject(th.callback)
 	}
 	th.callback = nil
 	th.listener = nil
+	return listener
 }
 
 func (th *TunHandler) handleProtect(fd int) bool {
@@ -143,7 +148,7 @@ func handleStartTun(callback unsafe.Pointer, fd int, stack, address, dns string)
 	if fd != 0 {
 		tunHandler = &TunHandler{
 			callback: callback,
-			limit:    semaphore.NewWeighted(4),
+			limit:    semaphore.NewWeighted(tunCallbackConcurrency),
 		}
 		tunHandler.start(fd, stack, address, dns)
 	}
