@@ -5,6 +5,7 @@ import 'package:fl_clash/models/common.dart';
 
 const diagnosticLogLineLimit = 40;
 const diagnosticReportByteLimit = 8192;
+const diagnosticHealthScope = 'core outbound HTTPS; not browser or VPN';
 
 final _diagnosticFailurePattern = RegExp(
   r'\b(error|failed|failure|timeout|refused|unreachable|rejected)\b|'

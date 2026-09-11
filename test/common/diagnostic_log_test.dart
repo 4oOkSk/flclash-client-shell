@@ -6,6 +6,22 @@ import 'package:fl_clash/models/common.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('health scope remains readable without weakening secret redaction', () {
+    final report = buildDiagnosticReport(
+      applicationName: 'Example Client',
+      status: const {
+        'health.scope': diagnosticHealthScope,
+        'health.phase': 'reachable',
+        'client.token': 'abcdefghijklmnopqrstuvwxyz0123456789',
+      },
+      logs: const [],
+    );
+
+    expect(report, contains('health.scope=$diagnosticHealthScope'));
+    expect(report, contains('health.phase=reachable'));
+    expect(report, isNot(contains('abcdefghijklmnopqrstuvwxyz0123456789')));
+  });
+
   test('node markers and unclassified endpoints never retain server ports', () {
     expect(
       sanitizeVisitedDestination('[server-endpoint]:8443'),

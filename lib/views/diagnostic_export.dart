@@ -127,7 +127,7 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
           'platform.runtime': Platform.version,
           'core.status': ref.read(coreStatusProvider).name,
           'health.phase': ref.read(clientHealthProvider).phase.name,
-          'health.scope': 'core-selected-outbound-https-not-browser-tun',
+          'health.scope': diagnosticHealthScope,
           'health.checkedAt':
               ref.read(clientHealthProvider).checkedAt?.toIso8601String() ??
               'none',
