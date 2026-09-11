@@ -278,7 +278,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "No network connection",
     ),
     "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
-      "Connect to Wi-Fi or mobile data. The VPN remains on.",
+      "Connect to Wi-Fi or mobile data. The proxy remains enabled.",
     ),
     "clientNotTested": MessageLookupByLibrary.simpleMessage("Not checked"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage(
@@ -320,7 +320,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientTestedAt": MessageLookupByLibrary.simpleMessage("Checked at"),
     "clientTesting": MessageLookupByLibrary.simpleMessage("Checking…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("Traffic mode"),
-    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN is on"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage(
+      "Proxy is running",
+    ),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "2FA code (if enabled)",
     ),

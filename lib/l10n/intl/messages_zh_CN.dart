@@ -197,7 +197,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientMe": MessageLookupByLibrary.simpleMessage("我的"),
     "clientNetworkOffline": MessageLookupByLibrary.simpleMessage("网络已断开"),
     "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
-      "请连接 Wi-Fi 或移动网络。VPN 仍保持开启。",
+      "请连接 Wi-Fi 或移动网络。代理仍保持开启。",
     ),
     "clientNotTested": MessageLookupByLibrary.simpleMessage("未检测"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage("官方网站"),
@@ -231,7 +231,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientTestedAt": MessageLookupByLibrary.simpleMessage("检测于"),
     "clientTesting": MessageLookupByLibrary.simpleMessage("检测中…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("分流模式"),
-    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN 已开启"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("代理已启动"),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "两步验证码（已启用时填写）",
     ),

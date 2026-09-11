@@ -1,9 +1,9 @@
 {
 "retry": "Повторить",
 "routeNeedsIp": "Для предыдущего IP-правила нужен IP назначения. Введите IP-адрес; DNS-запросы не отправляются.",
-"clientTunnelActive": "VPN включён",
+"clientTunnelActive": "Прокси запущен",
 "clientNetworkOffline": "Нет подключения к сети",
-"clientNetworkOfflineHint": "Подключитесь к Wi-Fi или мобильной сети. VPN остаётся включённым.",
+"clientNetworkOfflineHint": "Подключитесь к Wi-Fi или мобильной сети. Прокси остаётся включённым.",
 "clientServerReachable": "Проверка сервера пройдена. Это не проверка всех приложений и сайтов.",
 "clientServerUnreachable": "Проверка сервера не пройдена. Повторите её или выберите другой сервер. Ваш выбор не изменён.",
 "clientHealthPaused": "Проверка сервера приостановлена в фоне.",

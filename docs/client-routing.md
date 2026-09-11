@@ -136,7 +136,8 @@ manual reapplication remains in the overflow menu and unsuccessful application o
 
 ## Connection feedback and servers
 
-Home distinguishes the VPN's lifecycle state from an observational server check. A disconnected
+Home distinguishes the proxy's lifecycle state from an observational server check, without
+claiming that TUN/VPN is active on a system-proxy-only desktop. A disconnected
 underlying network is shown explicitly; otherwise a bounded HTTPS check through the selected
 core outbound reports checking, reachable or unavailable. This is not a browser/TUN end-to-end
 test and never claims every site is reachable. Network changes and successful server switches

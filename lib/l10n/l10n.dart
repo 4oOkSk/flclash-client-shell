@@ -69,10 +69,10 @@ class AppLocalizations {
     );
   }
 
-  /// `VPN is on`
+  /// `Proxy is running`
   String get clientTunnelActive {
     return Intl.message(
-      'VPN is on',
+      'Proxy is running',
       name: 'clientTunnelActive',
       desc: '',
       args: [],
@@ -89,10 +89,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Connect to Wi-Fi or mobile data. The VPN remains on.`
+  /// `Connect to Wi-Fi or mobile data. The proxy remains enabled.`
   String get clientNetworkOfflineHint {
     return Intl.message(
-      'Connect to Wi-Fi or mobile data. The VPN remains on.',
+      'Connect to Wi-Fi or mobile data. The proxy remains enabled.',
       name: 'clientNetworkOfflineHint',
       desc: '',
       args: [],

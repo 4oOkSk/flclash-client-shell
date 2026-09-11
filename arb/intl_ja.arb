@@ -1,9 +1,9 @@
 {
 "retry": "再試行",
 "routeNeedsIp": "先行する IP ルールの確認には宛先 IP が必要です。IP アドレスを入力してください。DNS 問い合わせは行いません。",
-"clientTunnelActive": "VPN は有効です",
+"clientTunnelActive": "プロキシは起動中です",
 "clientNetworkOffline": "ネットワーク未接続",
-"clientNetworkOfflineHint": "Wi-Fi またはモバイル通信に接続してください。VPN は有効のままです。",
+"clientNetworkOfflineHint": "Wi-Fi またはモバイル通信に接続してください。プロキシは有効のままです。",
 "clientServerReachable": "サーバー確認に成功しました。すべてのアプリやサイトの接続を保証するものではありません。",
 "clientServerUnreachable": "サーバー確認に失敗しました。再試行するか別のサーバーを選んでください。選択は変更していません。",
 "clientHealthPaused": "バックグラウンドでは確認を一時停止します。",

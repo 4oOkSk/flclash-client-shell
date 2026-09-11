@@ -1,9 +1,9 @@
 {
 "retry": "重试",
 "routeNeedsIp": "前面的 IP 规则需要目标 IP。请输入 IP 地址检查；这里不会发送 DNS 查询。",
-"clientTunnelActive": "VPN 已开启",
+"clientTunnelActive": "代理已启动",
 "clientNetworkOffline": "网络已断开",
-"clientNetworkOfflineHint": "请连接 Wi-Fi 或移动网络。VPN 仍保持开启。",
+"clientNetworkOfflineHint": "请连接 Wi-Fi 或移动网络。代理仍保持开启。",
 "clientServerReachable": "线路检查通过，不代表所有应用或网站都能访问。",
 "clientServerUnreachable": "线路检查未通过。可以重试或更换线路；未自动更改你的选择。",
 "clientHealthPaused": "后台已暂停线路检查。",

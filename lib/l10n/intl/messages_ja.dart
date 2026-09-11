@@ -211,7 +211,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientMe": MessageLookupByLibrary.simpleMessage("アカウント"),
     "clientNetworkOffline": MessageLookupByLibrary.simpleMessage("ネットワーク未接続"),
     "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
-      "Wi-Fi またはモバイル通信に接続してください。VPN は有効のままです。",
+      "Wi-Fi またはモバイル通信に接続してください。プロキシは有効のままです。",
     ),
     "clientNotTested": MessageLookupByLibrary.simpleMessage("未確認"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage("公式サイト"),
@@ -245,7 +245,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientTestedAt": MessageLookupByLibrary.simpleMessage("確認時刻"),
     "clientTesting": MessageLookupByLibrary.simpleMessage("確認中…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("接続モード"),
-    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN は有効です"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("プロキシは起動中です"),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "2段階認証コード（有効な場合）",
     ),

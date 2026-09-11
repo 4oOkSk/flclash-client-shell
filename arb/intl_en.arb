@@ -1,9 +1,9 @@
 {
 "retry": "Retry",
 "routeNeedsIp": "An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent.",
-"clientTunnelActive": "VPN is on",
+"clientTunnelActive": "Proxy is running",
 "clientNetworkOffline": "No network connection",
-"clientNetworkOfflineHint": "Connect to Wi-Fi or mobile data. The VPN remains on.",
+"clientNetworkOfflineHint": "Connect to Wi-Fi or mobile data. The proxy remains enabled.",
 "clientServerReachable": "Server check passed. This does not test every app or website.",
 "clientServerUnreachable": "Server check failed. Retry or choose another server; your selection has not been changed.",
 "clientHealthPaused": "Server check paused in the background.",

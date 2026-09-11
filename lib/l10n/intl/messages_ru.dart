@@ -283,7 +283,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Нет подключения к сети",
     ),
     "clientNetworkOfflineHint": MessageLookupByLibrary.simpleMessage(
-      "Подключитесь к Wi-Fi или мобильной сети. VPN остаётся включённым.",
+      "Подключитесь к Wi-Fi или мобильной сети. Прокси остаётся включённым.",
     ),
     "clientNotTested": MessageLookupByLibrary.simpleMessage("Не проверено"),
     "clientOfficialWebsite": MessageLookupByLibrary.simpleMessage(
@@ -327,7 +327,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "clientTestedAt": MessageLookupByLibrary.simpleMessage("Проверено в"),
     "clientTesting": MessageLookupByLibrary.simpleMessage("Проверка…"),
     "clientTrafficMode": MessageLookupByLibrary.simpleMessage("Режим трафика"),
-    "clientTunnelActive": MessageLookupByLibrary.simpleMessage("VPN включён"),
+    "clientTunnelActive": MessageLookupByLibrary.simpleMessage(
+      "Прокси запущен",
+    ),
     "clientVerificationCode": MessageLookupByLibrary.simpleMessage(
       "Код 2FA (если включена)",
     ),
