@@ -4,12 +4,17 @@ go 1.25.0
 
 replace github.com/metacubex/mihomo => ./Clash.Meta
 
+replace github.com/metacubex/sing-tun => ./third_party/sing-tun
+
 require (
 	github.com/Microsoft/go-winio v0.6.2
+	github.com/metacubex/gvisor v0.0.0-20260810011720-3cc44cf9ac22
 	github.com/metacubex/mihomo v0.0.0-00010101000000-000000000000
+	github.com/metacubex/sing-tun v0.4.22
 	golang.org/x/crypto v0.54.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	golang.org/x/sync v0.22.0
+	golang.org/x/sys v0.47.0
 )
 
 require (
@@ -65,7 +70,6 @@ require (
 	github.com/metacubex/edwards25519 v1.2.0 // indirect
 	github.com/metacubex/fswatch v0.1.1 // indirect
 	github.com/metacubex/gopacket v1.1.20-0.20230608035415-7e2f98a3e759 // indirect
-	github.com/metacubex/gvisor v0.0.0-20260810011720-3cc44cf9ac22 // indirect
 	github.com/metacubex/hkdf v0.1.0 // indirect
 	github.com/metacubex/hpke v0.1.0 // indirect
 	github.com/metacubex/http v0.1.7 // indirect
@@ -87,7 +91,6 @@ require (
 	github.com/metacubex/sing-quic v0.0.0-20260904234848-1c242664697a // indirect
 	github.com/metacubex/sing-shadowsocks v0.2.12 // indirect
 	github.com/metacubex/sing-shadowsocks2 v0.2.7 // indirect
-	github.com/metacubex/sing-tun v0.4.22 // indirect
 	github.com/metacubex/sing-vmess v0.2.5 // indirect
 	github.com/metacubex/sing-wireguard v0.0.0-20260810013230-110eac03c3f0 // indirect
 	github.com/metacubex/smux v0.0.0-20260105030934-d0c8756d3141 // indirect
@@ -134,7 +137,6 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
