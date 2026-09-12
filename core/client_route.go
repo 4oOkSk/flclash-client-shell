@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/metacubex/mihomo/common/orderedmap"
 	commonYaml "github.com/metacubex/mihomo/common/yaml"
 	ruleCommon "github.com/metacubex/mihomo/rules/common"
 )
@@ -22,17 +23,8 @@ const (
 	maxClientRouteRuleLength      = 4096
 	clientGeoIPURL                = "https://example.invalid/harborproxy/geoip.dat"
 	clientGeoSiteURL              = "https://example.invalid/harborproxy/geosite.dat"
-	clientMainlandDNS             = "https://223.5.5.5/dns-query"
-	clientOtherDNS                = "https://1.1.1.1/dns-query"
 	clientMainlandDNSPolicy       = "geosite:cn"
 )
-
-var clientReturnGeoSites = [...]string{
-	"google-cn",
-	"apple-cn",
-	"microsoft@cn",
-	"category-games@cn",
-}
 
 type ClientRouteOverlay struct {
 	Rules         []string                            `json:"rules"`
@@ -364,87 +356,44 @@ func (routing ClientManagedRouting) targets(primaryGroup string) clientManagedRu
 
 func buildClientManagedRules(primaryGroup string, routing *ClientManagedRouting) []string {
 	targets := routing.targets(primaryGroup)
+	rules := []string{
+		"GEOIP,private,DIRECT,no-resolve",
+		"GEOIP,LAN,DIRECT,no-resolve",
+		"GEOSITE,private,DIRECT",
+	}
 	if routing.effectiveMode().splitPolicy() {
-		rules := []string{
-			"AND,((NETWORK,UDP),(DST-PORT,443)),REJECT",
+		rules = append(rules, "AND,((NETWORK,UDP),(DST-PORT,443)),REJECT")
+		for _, geosite := range clientRoutingPolicy.GoogleSites {
+			rules = append(rules, "GEOSITE,"+geosite+","+targets.Overseas)
 		}
 		if routing.effectiveMode() == clientManagedRouteBypassOverseas {
 			for _, geosite := range clientReturnGeoSites {
 				rules = append(rules, "GEOSITE,"+geosite+","+targets.Mainland)
 			}
 		}
-		rules = append(rules,
-			"GEOSITE,google,"+targets.Overseas,
-			"GEOSITE,youtube,"+targets.Overseas,
-			"GEOSITE,google-play,"+targets.Overseas,
-			"GEOIP,private,DIRECT,no-resolve",
-			"GEOIP,LAN,DIRECT,no-resolve",
-			"GEOSITE,private,DIRECT",
-		)
 		if routing.RejectIPv6 {
 			rules = append(rules, "IP-CIDR6,::/0,REJECT,no-resolve")
 		}
+		for _, prefix := range clientRoutingPolicy.MainlandDNSIP {
+			kind := "IP-CIDR"
+			if strings.Contains(prefix, ":") {
+				kind = "IP-CIDR6"
+			}
+			rules = append(rules, kind+","+prefix+","+targets.Mainland+",no-resolve")
+		}
+		for _, domain := range clientRoutingPolicy.MainlandDNSSites {
+			rules = append(rules, "DOMAIN-SUFFIX,"+domain+","+targets.Mainland)
+		}
 		return append(rules,
-			"IP-CIDR,223.5.5.5/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,223.6.6.6/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2400:3200::1/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2400:3200:baba::1/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,119.29.29.29/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,1.12.12.12/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,120.53.53.53/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2402:4e00::/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2402:4e00:1::/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,180.76.76.76/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2400:da00::6666/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,114.114.114.114/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,114.114.115.115/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,114.114.114.119/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,114.114.115.119/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,114.114.114.110/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,114.114.115.110/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,180.184.1.1/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,180.184.2.2/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,101.226.4.6/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,218.30.118.6/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,123.125.81.6/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,140.207.198.6/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,1.2.4.8/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,210.2.4.8/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,52.80.66.66/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,117.50.22.22/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2400:7fc0:849e:200::4/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2404:c2c0:85d8:901::4/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,117.50.10.10/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,52.80.52.52/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2400:7fc0:849e:200::8/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR6,2404:c2c0:85d8:901::8/128,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,117.50.60.30/32,"+targets.Mainland+",no-resolve",
-			"IP-CIDR,52.80.60.30/32,"+targets.Mainland+",no-resolve",
-			"DOMAIN-SUFFIX,alidns.com,"+targets.Mainland,
-			"DOMAIN-SUFFIX,doh.pub,"+targets.Mainland,
-			"DOMAIN-SUFFIX,dot.pub,"+targets.Mainland,
-			"DOMAIN-SUFFIX,360.cn,"+targets.Mainland,
-			"DOMAIN-SUFFIX,onedns.net,"+targets.Mainland,
 			"GEOIP,CN,"+targets.Mainland+",no-resolve",
 			"GEOSITE,cn,"+targets.Mainland,
 			"MATCH,"+targets.Overseas,
 		)
 	}
-	rules := []string{
-		"GEOIP,private,DIRECT,no-resolve",
-		"GEOIP,LAN,DIRECT,no-resolve",
-	}
 	if routing.RejectIPv6 {
 		rules = append(rules, "IP-CIDR6,::/0,REJECT,no-resolve")
 	}
-	return append(rules,
-		"GEOSITE,google,"+targets.Overseas,
-		"GEOSITE,youtube,"+targets.Overseas,
-		"GEOSITE,google-play,"+targets.Overseas,
-		"GEOSITE,cn,"+targets.Mainland,
-		"GEOIP,CN,"+targets.Mainland,
-		"MATCH,"+targets.Overseas,
-	)
+	return append(rules, "MATCH,"+targets.Overseas)
 }
 
 func applyClientManagedDocument(document map[string]any, routing *ClientManagedRouting) {
@@ -473,14 +422,16 @@ func applyClientManagedDocument(document map[string]any, routing *ClientManagedR
 	dns["default-nameserver"] = []any{"223.5.5.5", "119.29.29.29"}
 	dns["proxy-server-nameserver"] = []any{"223.5.5.5", "119.29.29.29"}
 	dns["nameserver"] = []any{clientOtherDNS}
-	nameServerPolicy := map[string]any{
-		clientMainlandDNSPolicy: []any{clientMainlandDNS},
+	nameServerPolicy := orderedmap.New[string, any]()
+	for _, geosite := range clientRoutingPolicy.GoogleSites {
+		nameServerPolicy.Set("geosite:"+geosite, []any{clientOtherDNS})
 	}
 	if routing.effectiveMode() == clientManagedRouteBypassOverseas {
 		for _, geosite := range clientReturnGeoSites {
-			nameServerPolicy["geosite:"+geosite] = []any{clientMainlandDNS}
+			nameServerPolicy.Set("geosite:"+geosite, []any{clientMainlandDNS})
 		}
 	}
+	nameServerPolicy.Set(clientMainlandDNSPolicy, []any{clientMainlandDNS})
 	dns["nameserver-policy"] = nameServerPolicy
 	for _, key := range []string{
 		"proxy-server-nameserver-policy",

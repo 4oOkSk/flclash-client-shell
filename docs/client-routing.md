@@ -60,6 +60,53 @@ Changing managed servers closes DNS transport pools before the connection-teardo
 including both default and policy-specific resolvers. Applying a different routing mode creates
 fresh resolvers, so reusable DoH connections cannot keep the previous mode's outbound path.
 
+## Shared routing policy
+
+`core/routing_policy.json` is the shared category/resolver source. The website consumes its
+byte-identical `resources/conf/routing_policy.json` mirror through `HappRouting.php`.
+After changing the source, run `python3 tool/sync_routing_policy.py --website-root <website>`;
+use `--check` before releasing either consumer. Schema and priority changes must be supported
+explicitly by both adapters; this is not a general rule language.
+
+For ordinary public destinations, the common policy is:
+
+| Category | Bypass mainland China | Proxy mainland China | Proxy all traffic |
+| --- | --- | --- | --- |
+| Google, YouTube, Google Play, including overlaps with China lists | Proxy | Direct | Proxy |
+| Complete `geosite:cn` and known mainland destination IPs | Direct | Proxy | Proxy |
+| Additional Apple/Microsoft/games China categories | Default unless also CN | Proxy | Proxy |
+| Other public destinations | Proxy | Direct | Proxy |
+| Private names and private destination IPs | Direct | Direct | Direct |
+
+Google's priority also applies to destination DNS: its queries use Cloudflare DoH before
+the China and return-category AliDNS policies. Both resolver endpoints follow the traffic
+mode. The return mode deliberately supersedes the September 1 Google-China-first overlap
+policy; it does not remove Apple/Microsoft/games return coverage or narrow `geosite:cn`.
+The checked-in historical tests cover Play API/CDN hosts, reCAPTCHA, WeChat, Xiaohongshu,
+Windows Update and China game CDN names using the bundled geodata and actual Core parser.
+These deterministic routing tests do not assert account-level app-store downloads.
+
+HarborProxy keeps local user rules ahead of defaults. Private traffic bypasses its split-mode
+public UDP/443 compatibility guard; this does not enable unsupported node UDP or alter
+Android socket protection. Global mode needs no public category rules with identical targets,
+so it no longer performs a redundant China-IP resolution before the final proxy match.
+Legacy serialized modes, advanced providers/scripts, split-only sniffing, IPv6 ownership,
+and last-successful-overlay recovery are unchanged.
+
+Happ's regular routing-link format groups entire direct/proxy lists rather than arbitrary
+ordered rules. Return mode uses direct-before-proxy for Google overlap priority; outbound
+uses proxy-before-direct. `AsIs` avoids a new lookup solely to select an IP rule. Do not
+silently replace regular subscriptions with full Xray JSON to hide representational limits.
+The native clients still differ for QUIC guards, IPv6 and simultaneous domain/private-IP
+metadata. Happ exposes only one proxy-side resolver in global mode; HarborProxy retains its
+historical China/overseas DNS split with both paths proxied. Shared category intent does
+not imply byte-identical DNS engines or identical results with different cached geodata.
+Happ does not expose an independent DNS fallback policy for unclassified names. Do not
+promise that a final direct route also makes an unclassified DNS query direct; HarborProxy
+uses its default Cloudflare policy for those names. Happ's native behavior needs separate
+path evidence. The optional HarborProxy IPv6 rejection still precedes mainland DNS IPv6
+prefixes; private IPv6 remains excepted, and the built-in DoH endpoints use IPv4.
+
 ## Shared application layout
 
 The managed Windows and Linux window controls share one quiet, full-width 48-pixel title bar.

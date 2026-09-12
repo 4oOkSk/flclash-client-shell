@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/metacubex/mihomo/common/orderedmap"
 	commonYaml "github.com/metacubex/mihomo/common/yaml"
 )
 
@@ -345,7 +346,7 @@ func TestManagedDNSUsesSplitHTTPSResolversAndFollowsIPRules(t *testing.T) {
 			t.Fatalf("routing %#v: managed DNS routing mode = %#v", routing, dns)
 		}
 		policy, ok := dns["nameserver-policy"].(map[string]any)
-		wantPolicySize := 1
+		wantPolicySize := 1 + len(clientRoutingPolicy.GoogleSites)
 		if mode == clientManagedRouteBypassOverseas {
 			wantPolicySize += len(clientReturnGeoSites)
 		}
@@ -367,6 +368,32 @@ func TestManagedDNSUsesSplitHTTPSResolversAndFollowsIPRules(t *testing.T) {
 			if !exists || strings.Join(anyStrings(value.([]any)), "\x00") != clientMainlandDNS {
 				t.Fatalf("routing %#v: return nameserver %q = %#v", routing, key, value)
 			}
+		}
+		var ordered struct {
+			DNS struct {
+				Policy *orderedmap.OrderedMap[string, []string] `yaml:"nameserver-policy"`
+			} `yaml:"dns"`
+		}
+		if err := commonYaml.Unmarshal([]byte(merged), &ordered); err != nil {
+			t.Fatal(err)
+		}
+		pair := ordered.DNS.Policy.Oldest()
+		for _, geosite := range []string{"google", "youtube", "google-play"} {
+			if pair == nil || pair.Key != "geosite:"+geosite || strings.Join(pair.Value, ",") != clientOtherDNS {
+				t.Fatalf("Google DNS precedence lost in final YAML for %s", mode)
+			}
+			pair = pair.Next()
+		}
+		if mode == clientManagedRouteBypassOverseas {
+			for _, geosite := range []string{"google-cn", "apple-cn", "microsoft@cn", "category-games@cn"} {
+				if pair == nil || pair.Key != "geosite:"+geosite || strings.Join(pair.Value, ",") != clientMainlandDNS {
+					t.Fatal("return DNS precedence lost in final YAML")
+				}
+				pair = pair.Next()
+			}
+		}
+		if pair == nil || pair.Key != clientMainlandDNSPolicy || pair.Next() != nil {
+			t.Fatalf("China DNS must follow specific categories for %s", mode)
 		}
 	}
 }
@@ -638,18 +665,12 @@ func TestBuildClientManagedRulesKeepsGlobalModes(t *testing.T) {
 				want := []string{
 					"GEOIP,private,DIRECT,no-resolve",
 					"GEOIP,LAN,DIRECT,no-resolve",
+					"GEOSITE,private,DIRECT",
 				}
 				if rejectIPv6 {
 					want = append(want, "IP-CIDR6,::/0,REJECT,no-resolve")
 				}
-				want = append(want,
-					"GEOSITE,google,"+test.wantOverseas,
-					"GEOSITE,youtube,"+test.wantOverseas,
-					"GEOSITE,google-play,"+test.wantOverseas,
-					"GEOSITE,cn,"+test.wantMainland,
-					"GEOIP,CN,"+test.wantMainland,
-					"MATCH,"+test.wantOverseas,
-				)
+				want = append(want, "MATCH,"+test.wantOverseas)
 				if strings.Join(got, "\n") != strings.Join(want, "\n") {
 					t.Fatalf("managed rules = %#v, want %#v", got, want)
 				}
@@ -658,7 +679,7 @@ func TestBuildClientManagedRulesKeepsGlobalModes(t *testing.T) {
 	}
 }
 
-func TestBuildClientManagedRulesMatchesV2rayNGSplitPolicy(t *testing.T) {
+func TestBuildClientManagedRulesUsesSharedGoogleFirstSplitPolicy(t *testing.T) {
 	dnsAddressRules := []string{
 		"IP-CIDR,223.5.5.5/32", "IP-CIDR,223.6.6.6/32",
 		"IP-CIDR6,2400:3200::1/128", "IP-CIDR6,2400:3200:baba::1/128",
@@ -693,21 +714,19 @@ func TestBuildClientManagedRulesMatchesV2rayNGSplitPolicy(t *testing.T) {
 			&ClientManagedRouting{Mode: test.mode},
 		)
 		want := []string{
+			"GEOIP,private,DIRECT,no-resolve",
+			"GEOIP,LAN,DIRECT,no-resolve",
+			"GEOSITE,private,DIRECT",
 			"AND,((NETWORK,UDP),(DST-PORT,443)),REJECT",
+			"GEOSITE,google," + test.overseasTarget,
+			"GEOSITE,youtube," + test.overseasTarget,
+			"GEOSITE,google-play," + test.overseasTarget,
 		}
 		if test.mode == clientManagedRouteBypassOverseas {
 			for _, geosite := range clientReturnGeoSites {
 				want = append(want, "GEOSITE,"+geosite+","+test.mainlandTarget)
 			}
 		}
-		want = append(want,
-			"GEOSITE,google,"+test.overseasTarget,
-			"GEOSITE,youtube,"+test.overseasTarget,
-			"GEOSITE,google-play,"+test.overseasTarget,
-			"GEOIP,private,DIRECT,no-resolve",
-			"GEOIP,LAN,DIRECT,no-resolve",
-			"GEOSITE,private,DIRECT",
-		)
 		for _, rule := range dnsAddressRules {
 			want = append(want, rule+","+test.mainlandTarget+",no-resolve")
 		}
