@@ -86,18 +86,22 @@ The checked-in historical tests cover Play API/CDN hosts, reCAPTCHA, WeChat, Xia
 Windows Update and China game CDN names using the bundled geodata and actual Core parser.
 These deterministic routing tests do not assert account-level app-store downloads.
 
-HarborProxy keeps local user rules ahead of defaults. Private traffic bypasses its split-mode
-public UDP/443 compatibility guard; this does not enable unsupported node UDP or alter
+HarborProxy keeps local user rules ahead of defaults. Public UDP/443 follows the same destination
+categories as TCP rather than a blanket rejection. All managed modes remove QUIC sniffing,
+including inherited modern and legacy protocol lists; HTTP/TLS sniffing and destination
+override behavior otherwise stay unchanged. This does not enable unsupported node UDP or alter
 Android socket protection. Global mode needs no public category rules with identical targets,
 so it no longer performs a redundant China-IP resolution before the final proxy match.
-Legacy serialized modes, advanced providers/scripts, split-only sniffing, IPv6 ownership,
+Legacy serialized modes, advanced providers/scripts, split-mode HTTP/TLS sniffing, IPv6 ownership,
 and last-successful-overlay recovery are unchanged.
 
 Happ's regular routing-link format groups entire direct/proxy lists rather than arbitrary
 ordered rules. Return mode uses direct-before-proxy for Google overlap priority; outbound
 uses proxy-before-direct. `AsIs` avoids a new lookup solely to select an IP rule. Do not
 silently replace regular subscriptions with full Xray JSON to hide representational limits.
-The native clients still differ for QUIC guards, IPv6 and simultaneous domain/private-IP
+Happ's routing links contain no blanket UDP/443 rejection and expose no QUIC sniffing switch;
+do not add unsupported fields or claim that reimport changes Happ's native sniffing settings.
+The native clients still differ for sniffing, IPv6 and simultaneous domain/private-IP
 metadata. Happ exposes only one proxy-side resolver in global mode; HarborProxy retains its
 historical China/overseas DNS split with both paths proxied. Shared category intent does
 not imply byte-identical DNS engines or identical results with different cached geodata.
@@ -186,7 +190,7 @@ unsupported context, the result is indeterminate rather than a guessed match.
 
 Logical AND/OR/NOT rules use bounded three-valued evaluation: a known false AND branch or
 true OR branch can resolve a rule even when another branch needs context. In particular, the
-managed UDP/443 guard cannot match the checker's TCP input. Unknown branches are never guessed;
+UDP-only user rule cannot match the checker's TCP input. Unknown branches are never guessed;
 no DNS lookup is added. Editing the destination or changing rules/application state invalidates
 both displayed results and in-flight replies. Applied rules do not show a redundant save button;
 manual reapplication remains in the overflow menu and unsuccessful application offers Retry.

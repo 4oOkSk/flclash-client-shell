@@ -9,6 +9,7 @@ import (
 	"github.com/metacubex/mihomo/component/geodata"
 	"github.com/metacubex/mihomo/config"
 	C "github.com/metacubex/mihomo/constant"
+	CS "github.com/metacubex/mihomo/constant/sniffer"
 )
 
 func TestSharedRoutingPolicyData(t *testing.T) {
@@ -47,13 +48,20 @@ func TestManagedRoutingHistoricalDestinations(t *testing.T) {
 		geodata.SetGeodataMode(geoMode)
 	})
 	for _, mode := range []ClientManagedRouteMode{clientManagedRouteGlobal, clientManagedRouteBypassMainland, clientManagedRouteBypassOverseas} {
-		merged, err := applyClientRouteOverlay(clientRouteTestConfig, &ClientRouteOverlay{Managed: &ClientManagedRouting{Mode: mode}})
+		base := clientRouteTestConfig + "\nsniffer:\n  enable: true\n  sniff:\n    TLS:\n      ports: [443, 8443]\n    QUIC:\n      ports: [443, 8443]\n  sniffing: [TLS, QUIC]\n"
+		merged, err := applyClientRouteOverlay(base, &ClientRouteOverlay{Managed: &ClientManagedRouting{Mode: mode}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		parsed, err := config.Parse([]byte(merged))
 		if err != nil {
 			t.Fatal(err)
+		}
+		if _, exists := parsed.Sniffer.Sniffers[CS.QUIC]; exists {
+			t.Fatalf("mode %s enabled QUIC sniffing after parsing", mode)
+		}
+		if _, exists := parsed.Sniffer.Sniffers[CS.TLS]; !exists {
+			t.Fatalf("mode %s lost TLS sniffing", mode)
 		}
 		for _, sample := range []struct {
 			host     string
@@ -87,7 +95,9 @@ func TestManagedRoutingHistoricalDestinations(t *testing.T) {
 				if mode == clientManagedRouteBypassMainland && sample.mainland || mode == clientManagedRouteBypassOverseas && !sample.returnCN {
 					want = "DIRECT"
 				}
-				assertManagedRuleTarget(t, parsed, &C.Metadata{Host: sample.host, DstPort: 443, NetWork: C.TCP}, want)
+				for _, network := range []C.NetWork{C.TCP, C.UDP} {
+					assertManagedRuleTarget(t, parsed, &C.Metadata{Host: sample.host, DstPort: 443, NetWork: network}, want)
+				}
 				wantDNS := clientOtherDNS
 				if sample.mainland || mode == clientManagedRouteBypassOverseas && sample.returnCN {
 					wantDNS = clientMainlandDNS
@@ -111,8 +121,8 @@ func TestManagedRoutingHistoricalDestinations(t *testing.T) {
 			assertManagedRuleTarget(t, parsed, &C.Metadata{Host: "nas.lan", DstPort: 443, NetWork: network}, "DIRECT")
 		}
 		publicUDP := clientManagedServerGroup
-		if mode.splitPolicy() {
-			publicUDP = "REJECT"
+		if mode == clientManagedRouteBypassOverseas {
+			publicUDP = "DIRECT"
 		}
 		assertManagedRuleTarget(t, parsed, &C.Metadata{DstIP: netip.MustParseAddr("1.1.1.1"), DstPort: 443, NetWork: C.UDP}, publicUDP)
 		for _, endpoint := range []string{clientMainlandDNS, clientOtherDNS} {

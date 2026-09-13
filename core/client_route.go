@@ -362,7 +362,6 @@ func buildClientManagedRules(primaryGroup string, routing *ClientManagedRouting)
 		"GEOSITE,private,DIRECT",
 	}
 	if routing.effectiveMode().splitPolicy() {
-		rules = append(rules, "AND,((NETWORK,UDP),(DST-PORT,443)),REJECT")
 		for _, geosite := range clientRoutingPolicy.GoogleSites {
 			rules = append(rules, "GEOSITE,"+geosite+","+targets.Overseas)
 		}
@@ -472,11 +471,26 @@ func applyClientManagedDocument(document map[string]any, routing *ClientManagedR
 			"TLS": map[string]any{
 				"ports": []any{"1-65535"},
 			},
-			"QUIC": map[string]any{
-				"ports": []any{"1-65535"},
-			},
 		}
 		document["sniffer"] = sniffer
+	}
+	if sniffer, ok := document["sniffer"].(map[string]any); ok {
+		if sniff, ok := sniffer["sniff"].(map[string]any); ok {
+			for protocol := range sniff {
+				if strings.EqualFold(protocol, "QUIC") {
+					delete(sniff, protocol)
+				}
+			}
+		}
+		if protocols, ok := sniffer["sniffing"].([]any); ok {
+			filtered := make([]any, 0, len(protocols))
+			for _, protocol := range protocols {
+				if name, ok := protocol.(string); !ok || !strings.EqualFold(name, "QUIC") {
+					filtered = append(filtered, protocol)
+				}
+			}
+			sniffer["sniffing"] = filtered
+		}
 	}
 }
 

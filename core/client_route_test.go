@@ -277,11 +277,14 @@ func TestApplyClientRouteOverlayBuildsManagedRouting(t *testing.T) {
 	if !ok {
 		t.Fatalf("managed split protocols = %#v", sniffer["sniff"])
 	}
-	for _, protocol := range []string{"HTTP", "TLS", "QUIC"} {
+	for _, protocol := range []string{"HTTP", "TLS"} {
 		config, ok := sniff[protocol].(map[string]any)
 		if !ok || strings.Join(anyStrings(config["ports"].([]any)), "\x00") != "1-65535" {
 			t.Fatalf("managed split %s sniffer = %#v", protocol, sniff[protocol])
 		}
+	}
+	if _, exists := sniff["QUIC"]; exists {
+		t.Fatal("managed split mode retained QUIC sniffing")
 	}
 	if !strings.Contains(merged, "192.0.2.10") {
 		t.Fatal("base proxy was lost")
@@ -398,13 +401,15 @@ func TestManagedDNSUsesSplitHTTPSResolversAndFollowsIPRules(t *testing.T) {
 	}
 }
 
-func TestManagedGlobalModesPreserveBaseSniffer(t *testing.T) {
+func TestManagedGlobalModesPreserveBaseSnifferExceptQUIC(t *testing.T) {
 	configYAML := clientRouteTestConfig + `
 sniffer:
   enable: true
   sniff:
     TLS:
       ports: [8443]
+    QUIC:
+      ports: [443, 8443]
   skip-domain:
     - +.push.apple.com
 `
@@ -434,6 +439,46 @@ sniffer:
 		}
 		if got := anyStrings(sniffer["skip-domain"].([]any)); strings.Join(got, "\x00") != "+.push.apple.com" {
 			t.Fatalf("mode %s changed skip-domain: %#v", mode, got)
+		}
+	}
+}
+
+func TestManagedModesRemoveInheritedQUICSniffing(test *testing.T) {
+	for _, fixture := range []string{
+		"sniff: {quic: {ports: [443]}}",
+		"sniffing: [quic, TLS]",
+		"sniff: {QUIC: {ports: [443]}}\n  sniffing: [QUIC]",
+	} {
+		for _, mode := range []ClientManagedRouteMode{
+			clientManagedRouteGlobal,
+			clientManagedRouteBypassMainland,
+			clientManagedRouteBypassOverseas,
+			clientManagedRouteDirectAllLegacy,
+		} {
+			merged, err := applyClientRouteOverlay(
+				clientRouteTestConfig+"\nsniffer:\n  enable: true\n  "+fixture+"\n",
+				&ClientRouteOverlay{Managed: &ClientManagedRouting{Mode: mode}},
+			)
+			if err != nil {
+				test.Fatal(err)
+			}
+			var document map[string]any
+			if err := commonYaml.Unmarshal([]byte(merged), &document); err != nil {
+				test.Fatal(err)
+			}
+			sniffer := document["sniffer"].(map[string]any)
+			protocols, _ := sniffer["sniff"].(map[string]any)
+			for protocol := range protocols {
+				if strings.EqualFold(protocol, "QUIC") {
+					test.Fatalf("mode %s retained QUIC: %s", mode, fixture)
+				}
+			}
+			legacy, _ := sniffer["sniffing"].([]any)
+			for _, protocol := range legacy {
+				if strings.EqualFold(fmt.Sprint(protocol), "QUIC") {
+					test.Fatalf("mode %s retained legacy QUIC: %s", mode, fixture)
+				}
+			}
 		}
 	}
 }
@@ -717,7 +762,6 @@ func TestBuildClientManagedRulesUsesSharedGoogleFirstSplitPolicy(t *testing.T) {
 			"GEOIP,private,DIRECT,no-resolve",
 			"GEOIP,LAN,DIRECT,no-resolve",
 			"GEOSITE,private,DIRECT",
-			"AND,((NETWORK,UDP),(DST-PORT,443)),REJECT",
 			"GEOSITE,google," + test.overseasTarget,
 			"GEOSITE,youtube," + test.overseasTarget,
 			"GEOSITE,google-play," + test.overseasTarget,
