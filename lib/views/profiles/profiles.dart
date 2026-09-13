@@ -11,7 +11,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'add.dart';
 import 'edit.dart';
-import 'preview.dart';
 
 class ProfilesView extends StatefulWidget {
   const ProfilesView({super.key});
@@ -34,9 +33,7 @@ class _ProfilesViewState extends State<ProfilesView> {
       globalState.navigatorKey.currentState!.context,
       builder: (_) {
         return AdaptiveSheetScaffold(
-          body: AddProfileView(
-            context: globalState.navigatorKey.currentState!.context,
-          ),
+          body: const AddProfileView(),
           title: context.appLocalizations.addProfile,
         );
       },
@@ -193,10 +190,6 @@ class ProfileItem extends StatelessWidget {
     await globalState.container
         .read(profilesActionProvider.notifier)
         .deleteProfile(profile.id);
-  }
-
-  Future<void> _handlePreview(BuildContext context) async {
-    BaseNavigator.push<String>(context, PreviewProfileView(profile: profile));
   }
 
   Future updateProfile() async {
