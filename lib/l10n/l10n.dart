@@ -54,95 +54,15 @@ class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  /// `Logs uploaded`
-  String get clientDiagnosticUploaded {
-    return Intl.message(
-      'Logs uploaded',
-      name: 'clientDiagnosticUploaded',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Link copied — send it to a maintainer`
-  String get clientDiagnosticLinkCopied {
-    return Intl.message(
-      'Link copied — send it to a maintainer',
-      name: 'clientDiagnosticLinkCopied',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Could not copy the link; select and copy it below`
-  String get clientDiagnosticCopyLinkFailed {
-    return Intl.message(
-      'Could not copy the link; select and copy it below',
-      name: 'clientDiagnosticCopyLinkFailed',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Save log file`
-  String get clientDiagnosticSave {
-    return Intl.message(
-      'Save log file',
-      name: 'clientDiagnosticSave',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Keeps up to 20 MB on this device, replacing the oldest entries`
-  String get clientDiagnosticSaveHint {
-    return Intl.message(
-      'Keeps up to 20 MB on this device, replacing the oldest entries',
-      name: 'clientDiagnosticSaveHint',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Could not save the file; try again`
-  String get clientDiagnosticSaveFailed {
-    return Intl.message(
-      'Could not save the file; try again',
-      name: 'clientDiagnosticSaveFailed',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Uploading {percent}%`
-  String clientDiagnosticUploading(int percent) {
-    return Intl.message(
-      'Uploading $percent%',
-      name: 'clientDiagnosticUploading',
-      desc: '',
-      args: [percent],
-    );
-  }
-
-  /// `Creating share link…`
-  String get clientDiagnosticProcessing {
-    return Intl.message(
-      'Creating share link…',
-      name: 'clientDiagnosticProcessing',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Retry`
   String get retry {
     return Intl.message('Retry', name: 'retry', desc: '', args: []);
   }
 
-  /// `An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent`
+  /// `An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent.`
   String get routeNeedsIp {
     return Intl.message(
-      'An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent',
+      'An earlier IP rule needs the destination IP. Enter an IP address to check it; no DNS query is sent.',
       name: 'routeNeedsIp',
       desc: '',
       args: [],
@@ -169,40 +89,40 @@ class AppLocalizations {
     );
   }
 
-  /// `Connect to Wi-Fi or mobile data; the proxy is still running`
+  /// `Connect to Wi-Fi or mobile data. The proxy remains enabled.`
   String get clientNetworkOfflineHint {
     return Intl.message(
-      'Connect to Wi-Fi or mobile data; the proxy is still running',
+      'Connect to Wi-Fi or mobile data. The proxy remains enabled.',
       name: 'clientNetworkOfflineHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Server reachable; some apps or sites may still be unavailable`
+  /// `Server check passed. This does not test every app or website.`
   String get clientServerReachable {
     return Intl.message(
-      'Server reachable; some apps or sites may still be unavailable',
+      'Server check passed. This does not test every app or website.',
       name: 'clientServerReachable',
       desc: '',
       args: [],
     );
   }
 
-  /// `Server check failed; retry or select another server`
+  /// `Server check failed. Retry or choose another server; your selection has not been changed.`
   String get clientServerUnreachable {
     return Intl.message(
-      'Server check failed; retry or select another server',
+      'Server check failed. Retry or choose another server; your selection has not been changed.',
       name: 'clientServerUnreachable',
       desc: '',
       args: [],
     );
   }
 
-  /// `Check paused while in the background`
+  /// `Server check paused in the background.`
   String get clientHealthPaused {
     return Intl.message(
-      'Check paused while in the background',
+      'Server check paused in the background.',
       name: 'clientHealthPaused',
       desc: '',
       args: [],
@@ -229,10 +149,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Change incomplete; check your selected server and retry`
+  /// `Could not confirm or save the change. Check the current selection and try again.`
   String get clientSelectionFailed {
     return Intl.message(
-      'Change incomplete; check your selected server and retry',
+      'Could not confirm or save the change. Check the current selection and try again.',
       name: 'clientSelectionFailed',
       desc: '',
       args: [],
@@ -264,10 +184,10 @@ class AppLocalizations {
     );
   }
 
-  /// `HTTPS response time to the test site, not download speed`
+  /// `HTTPS response time, not download speed. Results apply only to the test site; automatic selection is managed by the core.`
   String get clientTestHint {
     return Intl.message(
-      'HTTPS response time to the test site, not download speed',
+      'HTTPS response time, not download speed. Results apply only to the test site; automatic selection is managed by the core.',
       name: 'clientTestHint',
       desc: '',
       args: [],
@@ -304,30 +224,30 @@ class AppLocalizations {
     );
   }
 
-  /// `Upload diagnostic logs`
+  /// `Copy diagnostic report`
   String get clientCopyDiagnostics {
     return Intl.message(
-      'Upload diagnostic logs',
+      'Copy diagnostic report',
       name: 'clientCopyDiagnostics',
       desc: '',
       args: [],
     );
   }
 
-  /// `Share privately on GitLab with maintainers`
+  /// `Copy a redacted report to the clipboard.`
   String get clientCopyDiagnosticsHint {
     return Intl.message(
-      'Share privately on GitLab with maintainers',
+      'Copy a redacted report to the clipboard.',
       name: 'clientCopyDiagnosticsHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Upload failed. Logs are still on this device; retry or save a file`
+  /// `Could not copy diagnostics. Try again.`
   String get clientCopyDiagnosticsFailed {
     return Intl.message(
-      'Upload failed. Logs are still on this device; retry or save a file',
+      'Could not copy diagnostics. Try again.',
       name: 'clientCopyDiagnosticsFailed',
       desc: '',
       args: [],
@@ -364,10 +284,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Could not load account details. Try again later`
+  /// `Could not load account details. Try again later.`
   String get clientAccountUnavailable {
     return Intl.message(
-      'Could not load account details. Try again later',
+      'Could not load account details. Try again later.',
       name: 'clientAccountUnavailable',
       desc: '',
       args: [],
@@ -409,10 +329,10 @@ class AppLocalizations {
     return Intl.message('Sign in', name: 'clientSignIn', desc: '', args: []);
   }
 
-  /// `Enter your email address and password`
+  /// `Enter your email address and password.`
   String get clientCredentialsRequired {
     return Intl.message(
-      'Enter your email address and password',
+      'Enter your email address and password.',
       name: 'clientCredentialsRequired',
       desc: '',
       args: [],
@@ -534,10 +454,10 @@ class AppLocalizations {
     return Intl.message('Rules', name: 'routing', desc: '', args: []);
   }
 
-  /// `Changes traffic rules, not server configuration`
+  /// `These settings only control where traffic goes. They do not display or modify server configuration.`
   String get routingPrivacyDesc {
     return Intl.message(
-      'Changes traffic rules, not server configuration',
+      'These settings only control where traffic goes. They do not display or modify server configuration.',
       name: 'routingPrivacyDesc',
       desc: '',
       args: [],
@@ -2309,10 +2229,10 @@ class AppLocalizations {
     return Intl.message('Disclaimer', name: 'disclaimer', desc: '', args: []);
   }
 
-  /// `This software is only used for non-commercial purposes such as learning exchanges and scientific research. It is strictly prohibited to use this software for commercial purposes. Any commercial activity, if any, has nothing to do with this software`
+  /// `This software is only used for non-commercial purposes such as learning exchanges and scientific research. It is strictly prohibited to use this software for commercial purposes. Any commercial activity, if any, has nothing to do with this software.`
   String get disclaimerDesc {
     return Intl.message(
-      'This software is only used for non-commercial purposes such as learning exchanges and scientific research. It is strictly prohibited to use this software for commercial purposes. Any commercial activity, if any, has nothing to do with this software',
+      'This software is only used for non-commercial purposes such as learning exchanges and scientific research. It is strictly prohibited to use this software for commercial purposes. Any commercial activity, if any, has nothing to do with this software.',
       name: 'disclaimerDesc',
       desc: '',
       args: [],
@@ -3494,20 +3414,20 @@ class AppLocalizations {
     return Intl.message('Local rules', name: 'localRules', desc: '', args: []);
   }
 
-  /// `Route domains, IP addresses, and apps through Proxy, Direct, or Reject`
+  /// `Route domains, IP addresses, and apps through Proxy, Direct, or Reject.`
   String get localRulesDesc {
     return Intl.message(
-      'Route domains, IP addresses, and apps through Proxy, Direct, or Reject',
+      'Route domains, IP addresses, and apps through Proxy, Direct, or Reject.',
       name: 'localRulesDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Update YAML, TEXT, or MRS rule sets from HTTPS URLs`
+  /// `Update YAML, TEXT, or MRS rule sets from HTTPS URLs.`
   String get localRuleProvidersDesc {
     return Intl.message(
-      'Update YAML, TEXT, or MRS rule sets from HTTPS URLs',
+      'Update YAML, TEXT, or MRS rule sets from HTTPS URLs.',
       name: 'localRuleProvidersDesc',
       desc: '',
       args: [],
@@ -3574,10 +3494,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Use JavaScript for advanced local routing logic`
+  /// `Use JavaScript for advanced local routing logic.`
   String get routeScriptDesc {
     return Intl.message(
-      'Use JavaScript for advanced local routing logic',
+      'Use JavaScript for advanced local routing logic.',
       name: 'routeScriptDesc',
       desc: '',
       args: [],
@@ -3604,10 +3524,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Rules that reference this rule set will also be deleted`
+  /// `Rules that reference this rule set will also be deleted.`
   String get privateRuleProviderDeleteDesc {
     return Intl.message(
-      'Rules that reference this rule set will also be deleted',
+      'Rules that reference this rule set will also be deleted.',
       name: 'privateRuleProviderDeleteDesc',
       desc: '',
       args: [],
@@ -4899,10 +4819,10 @@ class AppLocalizations {
     );
   }
 
-  /// `To ensure background operation, please disable battery optimization for this app. Tap to go to settings`
+  /// `To ensure background operation, please disable battery optimization for this app. Tap to go to settings.`
   String get batteryOptimizationDesc {
     return Intl.message(
-      'To ensure background operation, please disable battery optimization for this app. Tap to go to settings',
+      'To ensure background operation, please disable battery optimization for this app. Tap to go to settings.',
       name: 'batteryOptimizationDesc',
       desc: '',
       args: [],
@@ -4929,10 +4849,10 @@ class AppLocalizations {
     );
   }
 
-  /// `According to system requirements, obtaining the Wi-Fi name requires you to grant location permission`
+  /// `According to system requirements, obtaining the Wi-Fi name requires you to grant location permission.`
   String get locationPermissionDesc {
     return Intl.message(
-      'According to system requirements, obtaining the Wi-Fi name requires you to grant location permission',
+      'According to system requirements, obtaining the Wi-Fi name requires you to grant location permission.',
       name: 'locationPermissionDesc',
       desc: '',
       args: [],
@@ -4949,10 +4869,10 @@ class AppLocalizations {
     );
   }
 
-  /// `When connected to an excluded SSID Wi-Fi, the app running state will be automatically switched`
+  /// `When connected to an excluded SSID Wi-Fi, the app running state will be automatically switched.`
   String get excludeSsidsDesc {
     return Intl.message(
-      'When connected to an excluded SSID Wi-Fi, the app running state will be automatically switched',
+      'When connected to an excluded SSID Wi-Fi, the app running state will be automatically switched.',
       name: 'excludeSsidsDesc',
       desc: '',
       args: [],
@@ -5179,30 +5099,30 @@ class AppLocalizations {
     );
   }
 
-  /// `Mainland China sites connect directly; other sites use your server`
+  /// `Mainland China sites connect directly. Other sites use your selected server.`
   String get clientOutboundHint {
     return Intl.message(
-      'Mainland China sites connect directly; other sites use your server',
+      'Mainland China sites connect directly. Other sites use your selected server.',
       name: 'clientOutboundHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Mainland China sites use your server; other sites connect directly`
+  /// `Mainland China sites use a return-to-China server. Other sites connect directly.`
   String get clientReturnHint {
     return Intl.message(
-      'Mainland China sites use your server; other sites connect directly',
+      'Mainland China sites use a return-to-China server. Other sites connect directly.',
       name: 'clientReturnHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `All traffic uses your server, except essential system connections`
+  /// `Use your selected server for all traffic, except required system connections.`
   String get clientAllProxyHint {
     return Intl.message(
-      'All traffic uses your server, except essential system connections',
+      'Use your selected server for all traffic, except required system connections.',
       name: 'clientAllProxyHint',
       desc: '',
       args: [],
@@ -5219,10 +5139,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Checked from top to bottom, before the selected traffic mode`
+  /// `Rules override the traffic mode and are checked from top to bottom. The first match wins.`
   String get routeExceptionsHint {
     return Intl.message(
-      'Checked from top to bottom, before the selected traffic mode',
+      'Rules override the traffic mode and are checked from top to bottom. The first match wins.',
       name: 'routeExceptionsHint',
       desc: '',
       args: [],
@@ -5239,10 +5159,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Manage rule order, rule sets and scripts; existing advanced rules are preserved`
+  /// `Rule order, rule sets and scripts. Existing advanced rules remain unchanged.`
   String get routeAdvancedHint {
     return Intl.message(
-      'Manage rule order, rule sets and scripts; existing advanced rules are preserved',
+      'Rule order, rule sets and scripts. Existing advanced rules remain unchanged.',
       name: 'routeAdvancedHint',
       desc: '',
       args: [],
@@ -5279,10 +5199,10 @@ class AppLocalizations {
     );
   }
 
-  /// `URLs match domains, not individual pages; use advanced rules for IP ranges`
+  /// `URLs match the website's hostname, not a specific page. Use advanced rules for IP ranges.`
   String get routeDomainHint {
     return Intl.message(
-      'URLs match domains, not individual pages; use advanced rules for IP ranges',
+      'URLs match the website\'s hostname, not a specific page. Use advanced rules for IP ranges.',
       name: 'routeDomainHint',
       desc: '',
       args: [],
@@ -5319,10 +5239,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Enter a domain, URL or IP address without credentials`
+  /// `Enter a valid domain, HTTP(S) URL or IP address without credentials.`
   String get routeInvalidDestination {
     return Intl.message(
-      'Enter a domain, URL or IP address without credentials',
+      'Enter a valid domain, HTTP(S) URL or IP address without credentials.',
       name: 'routeInvalidDestination',
       desc: '',
       args: [],
@@ -5349,30 +5269,30 @@ class AppLocalizations {
     );
   }
 
-  /// `Preview active HTTPS/TCP rules, not actual connectivity`
+  /// `Preview how the active rules handle an HTTPS/TCP connection. No traffic is sent; this does not test connectivity.`
   String get routeCheckHint {
     return Intl.message(
-      'Preview active HTTPS/TCP rules, not actual connectivity',
+      'Preview how the active rules handle an HTTPS/TCP connection. No traffic is sent; this does not test connectivity.',
       name: 'routeCheckHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Destination IP or app details are needed to check this rule`
+  /// `An earlier rule needs the destination's resolved IP address or app details. This input is not enough to predict the result.`
   String get routeNeedsContext {
     return Intl.message(
-      'Destination IP or app details are needed to check this rule',
+      'An earlier rule needs the destination\'s resolved IP address or app details. This input is not enough to predict the result.',
       name: 'routeNeedsContext',
       desc: '',
       args: [],
     );
   }
 
-  /// `Connect or apply your rules first`
+  /// `No active rules are available. Connect or apply your rules first.`
   String get routeUnavailable {
     return Intl.message(
-      'Connect or apply your rules first',
+      'No active rules are available. Connect or apply your rules first.',
       name: 'routeUnavailable',
       desc: '',
       args: [],
@@ -5409,60 +5329,60 @@ class AppLocalizations {
     );
   }
 
-  /// `Could not apply changes. Your previous rules have been restored`
+  /// `Could not apply changes. Your previous rules have been restored.`
   String get routeRestored {
     return Intl.message(
-      'Could not apply changes. Your previous rules have been restored',
+      'Could not apply changes. Your previous rules have been restored.',
       name: 'routeRestored',
       desc: '',
       args: [],
     );
   }
 
-  /// `Could not apply changes; check your rules. Default rules were not substituted`
+  /// `Could not apply changes. Check your rules. The app has not switched to default rules.`
   String get routeApplyFailed {
     return Intl.message(
-      'Could not apply changes; check your rules. Default rules were not substituted',
+      'Could not apply changes. Check your rules. The app has not switched to default rules.',
       name: 'routeApplyFailed',
       desc: '',
       args: [],
     );
   }
 
-  /// `Rules are active, but the recovery copy could not be saved`
+  /// `Rules are active, but the recovery copy could not be saved.`
   String get routeRecoveryNotSaved {
     return Intl.message(
-      'Rules are active, but the recovery copy could not be saved',
+      'Rules are active, but the recovery copy could not be saved.',
       name: 'routeRecoveryNotSaved',
       desc: '',
       args: [],
     );
   }
 
-  /// `New rules affect new connections only`
+  /// `Changes affect new connections. Existing connections are not interrupted.`
   String get routeNewConnections {
     return Intl.message(
-      'New rules affect new connections only',
+      'Changes affect new connections. Existing connections are not interrupted.',
       name: 'routeNewConnections',
       desc: '',
       args: [],
     );
   }
 
-  /// `Reconnect with new rules`
+  /// `Reconnect active connections`
   String get routeReconnect {
     return Intl.message(
-      'Reconnect with new rules',
+      'Reconnect active connections',
       name: 'routeReconnect',
       desc: '',
       args: [],
     );
   }
 
-  /// `Reconnect with the new rules? Downloads and calls may be interrupted`
+  /// `Close current proxy connections so applications reconnect using the new rules? Downloads and calls may be interrupted.`
   String get routeReconnectConfirm {
     return Intl.message(
-      'Reconnect with the new rules? Downloads and calls may be interrupted',
+      'Close current proxy connections so applications reconnect using the new rules? Downloads and calls may be interrupted.',
       name: 'routeReconnectConfirm',
       desc: '',
       args: [],
@@ -5479,10 +5399,10 @@ class AppLocalizations {
     );
   }
 
-  /// `No custom rules; using the selected traffic mode`
+  /// `No custom rules. Traffic follows the selected mode.`
   String get routeNoExceptions {
     return Intl.message(
-      'No custom rules; using the selected traffic mode',
+      'No custom rules. Traffic follows the selected mode.',
       name: 'routeNoExceptions',
       desc: '',
       args: [],

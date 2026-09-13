@@ -9,33 +9,15 @@ import 'package:rust_api/rust_api.dart';
 
 import 'application.dart';
 import 'common/common.dart';
-import 'common/diagnostic_journal.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (kPrivateClientMode) {
-    diagnosticJournal.record('startup', {'source': 'app', 'result': 'begin'});
-    try {
-      await diagnosticJournal.open(
-        Directory('${await appPath.homeDirPath}/diagnostics'),
-      );
-    } catch (_) {
-      diagnosticJournal.storageFailed = true;
-    }
-  }
   try {
     if (system.isDesktop) {
       await RustLib.init();
     }
     final version = await system.init();
     final container = await globalState.init(version);
-    if (kPrivateClientMode) {
-      diagnosticJournal.record('ready', {
-        'result': 'success',
-        'platform': Platform.operatingSystem,
-        'build': int.tryParse(globalState.packageInfo.buildNumber),
-      });
-    }
     HttpOverrides.global = FlClashHttpOverrides();
     runApp(
       UncontrolledProviderScope(
@@ -44,10 +26,6 @@ Future<void> main() async {
       ),
     );
   } catch (e, s) {
-    if (kPrivateClientMode) {
-      diagnosticJournal.record('startup', {'result': 'failed'});
-      await diagnosticJournal.flush();
-    }
     runApp(
       MaterialApp(
         home: InitErrorScreen(error: e, stack: s),

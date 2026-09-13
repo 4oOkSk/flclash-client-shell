@@ -62,11 +62,6 @@ mixin CoreInterface {
 
   Future<String> clientDiagnostics();
 
-  Future<String> clientDiagnosticUpload(
-    String endpoint,
-    Map<String, Object?> request,
-  );
-
   Future<String> clientRoutePreview(String destination);
 
   Future<String> configureClientSecureStorage({
@@ -319,16 +314,6 @@ abstract class CoreHandlerInterface with CoreInterface {
   Future<String> clientDiagnostics() => _invokeEnroll({
     'mode': 'client-diagnostics',
   }, timeout: _clientLocalMethodTimeout);
-
-  @override
-  Future<String> clientDiagnosticUpload(
-    String endpoint,
-    Map<String, Object?> request,
-  ) => _invokeEnroll({
-    'mode': 'client-diagnostic-upload',
-    'endpoint': endpoint,
-    'diagnostic-upload': request,
-  }, timeout: _clientNetworkMethodTimeout);
 
   @override
   Future<String> clientRoutePreview(String destination) => _invokeEnroll({

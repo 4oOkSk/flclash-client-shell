@@ -499,8 +499,6 @@ func handleSetupFromEnroll(data []byte) string {
 		defer clientConfigMu.Unlock()
 	}
 	switch params.Mode {
-	case "client-diagnostic-upload":
-		return clientDiagnosticUpload(params.Endpoint, params.DiagnosticUpload)
 	case enrollModeClientLogin:
 		if err := clientLogin(params.Endpoint, params.Email, params.Password, params.Code); err != nil {
 			return clientLoginErrorMessage(err)

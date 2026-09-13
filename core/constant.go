@@ -31,7 +31,6 @@ type EnrollParams struct {
 	Email                  string              `json:"email"`
 	Password               string              `json:"password"`
 	Code                   string              `json:"code"`
-	DiagnosticUpload       json.RawMessage     `json:"diagnostic-upload"`
 	SelectedMap            map[string]string   `json:"selected-map"`
 	TestURL                string              `json:"test-url"`
 	RouteOverlay           *ClientRouteOverlay `json:"route-overlay"`

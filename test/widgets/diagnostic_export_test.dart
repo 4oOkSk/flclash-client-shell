@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:fl_clash/common/common.dart';
-import 'package:fl_clash/common/diagnostic_journal.dart';
 import 'package:fl_clash/common/private_client_theme.dart';
 import 'package:fl_clash/common/theme.dart';
 import 'package:fl_clash/core/controller.dart';
@@ -24,24 +22,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 class _CoreHandler extends Mock implements CoreHandlerInterface {}
 
-class _MemoryJournal extends DiagnosticJournal {
-  @override
-  Future<List<int>> snapshot() async => utf8.encode(
-    '{"time":"2026-09-14T00:00:00.000Z","elapsedMs":0,"event":"startup"}\n',
-  );
-}
-
 void main() {
   late ProviderContainer container;
   late _CoreHandler handler;
   late CoreController controller;
   final reports = <String>[];
   var failClipboard = false;
-  var failUpload = false;
-  final uploadCalls = <Map<String, Object?>>[];
 
   setUpAll(() {
-    registerFallbackValue(<String, Object?>{});
     globalState.appEnv = 'stable';
     globalState.coreSHA256 = '';
     globalState.packageInfo = PackageInfo(
@@ -75,21 +63,6 @@ void main() {
     ).thenAnswer((_) async => <TrackerInfo>[]);
     reports.clear();
     failClipboard = false;
-    failUpload = false;
-    uploadCalls.clear();
-    when(() => handler.clientDiagnosticUpload(any(), any())).thenAnswer((
-      call,
-    ) async {
-      final body = call.positionalArguments[1] as Map<String, Object?>;
-      uploadCalls.add(body);
-      if (failUpload) return '{"ret":0,"error":"invalid"}';
-      return switch (body['action']) {
-        'begin' => jsonEncode({'ret': 1, 'id': 'a' * 32}),
-        'status' =>
-          '{"ret":1,"state":"ready","url":"https://gitlab.com/example/private/-/snippets/42"}',
-        _ => '{"ret":1}',
-      };
-    });
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
           if (call.method == 'Clipboard.setData') {
@@ -227,7 +200,7 @@ void main() {
     );
   }
 
-  testWidgets('uploads once, copies only the link and ignores duplicate taps', (
+  testWidgets('copies redacted diagnostics and ignores duplicate taps', (
     tester,
   ) async {
     final pending = Completer<List<String>>();
@@ -237,101 +210,92 @@ void main() {
     await tester.pumpWidget(
       _TestApp(
         container: container,
-        child: DiagnosticExportItem(
-          controller: controller,
-          journal: _MemoryJournal(),
-        ),
+        child: DiagnosticExportItem(controller: controller),
       ),
     );
-    final upload = find.text(AppLocalizations.current.clientCopyDiagnostics);
-    await tester.tap(upload);
+    final copy = find.text(AppLocalizations.current.clientCopyDiagnostics);
+    await tester.tap(copy);
     await tester.pump();
-    await tester.tap(upload);
+    await tester.tap(copy);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
     pending.complete(['host=private.example.com token=do-not-copy-this']);
     await tester.pumpAndSettle();
-    expect(reports, ['https://gitlab.com/example/private/-/snippets/42']);
+    expect(reports, hasLength(1));
+    expect(reports.single, contains('diagnostic report'));
+    expect(reports.single, contains('client.sessionPresent=true'));
+    expect(reports.single, contains('collection.connections=ok'));
     expect(
-      uploadCalls.where((body) => body['action'] == 'begin'),
-      hasLength(1),
+      reports.single,
+      contains('probe.scope=core-outbound only (not browser or VPN path)'),
     );
+    for (final secret in [
+      'private.example.com',
+      'do-not-copy-this',
+      'secret-node',
+    ]) {
+      expect(reports.single, isNot(contains(secret)));
+    }
+    expect(find.text(AppLocalizations.current.copySuccess), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    verify(() => handler.getPlatformDiagnosticLogs()).called(1);
+  });
+
+  testWidgets('clipboard failure clears busy state and allows retry', (
+    tester,
+  ) async {
+    failClipboard = true;
+    await tester.pumpWidget(
+      _TestApp(
+        container: container,
+        child: DiagnosticExportItem(controller: controller),
+      ),
+    );
+    final copy = find.text(AppLocalizations.current.clientCopyDiagnostics);
+    await tester.tap(copy);
+    await tester.pumpAndSettle();
     expect(
-      find.text(AppLocalizations.current.clientDiagnosticUploaded),
+      find.text(AppLocalizations.current.clientCopyDiagnosticsFailed),
       findsOneWidget,
     );
-    await tester.tap(find.text(AppLocalizations.current.confirm));
-    await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
+    failClipboard = false;
+    await tester.tap(copy);
+    await tester.pumpAndSettle();
+    expect(reports, hasLength(1));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'clipboard failure leaves a selectable link and retry does not reupload',
-    (tester) async {
-      failClipboard = true;
-      await tester.pumpWidget(
-        _TestApp(
-          container: container,
-          child: DiagnosticExportItem(
-            controller: controller,
-            journal: _MemoryJournal(),
-          ),
-        ),
-      );
-      final upload = find.text(AppLocalizations.current.clientCopyDiagnostics);
-      await tester.tap(upload);
-      await tester.pumpAndSettle();
-      expect(
-        find.text(AppLocalizations.current.clientDiagnosticCopyLinkFailed),
-        findsOneWidget,
-      );
-      expect(find.byType(SelectableText), findsOneWidget);
-      await tester.tap(find.text(AppLocalizations.current.confirm));
-      await tester.pumpAndSettle();
-      failClipboard = false;
-      await tester.tap(upload);
-      await tester.pumpAndSettle();
-      expect(reports, hasLength(1));
-      expect(
-        uploadCalls.where((body) => body['action'] == 'begin'),
-        hasLength(1),
-      );
-      await tester.tap(find.text(AppLocalizations.current.confirm));
-      await tester.pumpAndSettle();
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-    },
-  );
+  testWidgets('collection failures are explicit instead of appearing healthy', (
+    tester,
+  ) async {
+    when(
+      () => handler.clientDiagnostics(),
+    ).thenAnswer((_) async => 'invalid json');
+    when(
+      () => handler.getConnections(),
+    ).thenAnswer((_) async => throw StateError('secret-node'));
+    await tester.pumpWidget(
+      _TestApp(
+        container: container,
+        child: DiagnosticExportItem(controller: controller),
+      ),
+    );
+    await tester.tap(find.text(AppLocalizations.current.clientCopyDiagnostics));
+    await tester.pumpAndSettle();
 
-  testWidgets(
-    'upload failure keeps file export available without a false link',
-    (tester) async {
-      failUpload = true;
-      await tester.pumpWidget(
-        _TestApp(
-          container: container,
-          child: DiagnosticExportItem(
-            controller: controller,
-            journal: _MemoryJournal(),
-          ),
-        ),
-      );
-      await tester.tap(
-        find.text(AppLocalizations.current.clientCopyDiagnostics),
-      );
-      await tester.pumpAndSettle();
-      expect(reports, isEmpty);
-      expect(
-        find.text(AppLocalizations.current.clientCopyDiagnosticsFailed),
-        findsOneWidget,
-      );
-      expect(
-        find.text(AppLocalizations.current.clientDiagnosticSave),
-        findsOneWidget,
-      );
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-    },
-  );
+    expect(reports, hasLength(1));
+    expect(
+      reports.single,
+      contains('collection.runtime=unavailable:FormatException'),
+    );
+    expect(
+      reports.single,
+      contains('collection.connections=unavailable:StateError'),
+    );
+    expect(reports.single, isNot(contains('secret-node')));
+  });
 
-  testWidgets('leaving during collection does not upload or copy', (
+  testWidgets('leaving during collection does not write to the clipboard', (
     tester,
   ) async {
     final pending = Completer<List<String>>();
@@ -341,10 +305,7 @@ void main() {
     await tester.pumpWidget(
       _TestApp(
         container: container,
-        child: DiagnosticExportItem(
-          controller: controller,
-          journal: _MemoryJournal(),
-        ),
+        child: DiagnosticExportItem(controller: controller),
       ),
     );
     await tester.tap(find.text(AppLocalizations.current.clientCopyDiagnostics));
@@ -352,7 +313,6 @@ void main() {
     pending.complete([]);
     await tester.pumpAndSettle();
     expect(reports, isEmpty);
-    expect(uploadCalls, isEmpty);
     expect(tester.takeException(), isNull);
   });
 }
