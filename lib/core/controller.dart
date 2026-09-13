@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/diagnostic_journal.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -150,12 +151,15 @@ class CoreController {
     Map<String, String> selectedMap = const {},
     String testUrl = defaultTestUrl,
     PrivateRouteOverlay routeOverlay = const PrivateRouteOverlay(),
-  }) => _interface.setupFromClient(
-    endpoint: endpoint,
-    refreshInterval: refreshInterval,
-    selectedMap: selectedMap,
-    testUrl: testUrl,
-    routeOverlay: routeOverlay,
+  }) => _recordClientOperation(
+    'refresh',
+    () => _interface.setupFromClient(
+      endpoint: endpoint,
+      refreshInterval: refreshInterval,
+      selectedMap: selectedMap,
+      testUrl: testUrl,
+      routeOverlay: routeOverlay,
+    ),
   );
 
   Future<String> clientLogin({
@@ -163,12 +167,43 @@ class CoreController {
     required String email,
     required String password,
     required String code,
-  }) => _interface.clientLogin(
-    endpoint: endpoint,
-    email: email,
-    password: password,
-    code: code,
+  }) => _recordClientOperation(
+    'login',
+    () => _interface.clientLogin(
+      endpoint: endpoint,
+      email: email,
+      password: password,
+      code: code,
+    ),
   );
+
+  Future<String> _recordClientOperation(
+    String event,
+    Future<String> Function() operation,
+  ) async {
+    final clock = Stopwatch()..start();
+    if (kPrivateClientMode) {
+      diagnosticJournal.record(event, {'result': 'begin'});
+    }
+    try {
+      final result = await operation();
+      if (kPrivateClientMode) {
+        diagnosticJournal.record(event, {
+          'result': result.isEmpty ? 'success' : 'failed',
+          'durationMs': clock.elapsedMilliseconds,
+        });
+      }
+      return result;
+    } catch (_) {
+      if (kPrivateClientMode) {
+        diagnosticJournal.record(event, {
+          'result': 'failed',
+          'durationMs': clock.elapsedMilliseconds,
+        });
+      }
+      rethrow;
+    }
+  }
 
   Future<bool> clientHasSession() => _interface.clientHasSession();
 
@@ -176,11 +211,19 @@ class CoreController {
 
   Future<String> clientDiagnostics() => _interface.clientDiagnostics();
 
+  Future<String> clientDiagnosticUpload(
+    String endpoint,
+    Map<String, Object?> request,
+  ) => _interface.clientDiagnosticUpload(endpoint, request);
+
   Future<String> clientRoutePreview(String destination) =>
       _interface.clientRoutePreview(destination);
 
   Future<String> clientClear({required String endpoint}) =>
-      _interface.clientClear(endpoint: endpoint);
+      _recordClientOperation(
+        'login',
+        () => _interface.clientClear(endpoint: endpoint),
+      );
 
   Future<List<Group>> getProxiesGroups({
     required ProxiesSortType sortType,
@@ -201,7 +244,10 @@ class CoreController {
   }
 
   FutureOr<String> changeProxy(ChangeProxyParams changeProxyParams) async {
-    return await _interface.changeProxy(changeProxyParams);
+    return _recordClientOperation(
+      'selection',
+      () => _interface.changeProxy(changeProxyParams),
+    );
   }
 
   Future<String?> currentProxySelection(String groupName) async {
