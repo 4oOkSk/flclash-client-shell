@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/diagnostic_journal.dart';
 import 'package:fl_clash/common/private_client_theme.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
@@ -162,6 +163,23 @@ class ApplicationState extends ConsumerState<Application> {
 
   @override
   Widget build(context) {
+    if (kPrivateClientMode) {
+      ref.listen(coreStatusProvider, (previous, next) {
+        diagnosticJournal.record('connect', {'phase': next.name});
+      });
+      ref.listen(privateRouteStatusProvider, (previous, next) {
+        diagnosticJournal.record('routing', {
+          'phase': next.phase.name,
+          'mode': next.applied?.managedRouting?.mode.wireValue,
+        });
+      });
+      ref.listen(selectedMapProvider, (previous, next) {
+        diagnosticJournal.record('selection', {
+          'result': 'success',
+          'count': next.length,
+        });
+      });
+    }
     return Consumer(
       builder: (_, ref, child) {
         final locale = ref.watch(

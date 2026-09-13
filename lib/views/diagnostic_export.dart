@@ -1,12 +1,8 @@
-import 'dart:io';
-
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/diagnostic_journal.dart';
+import 'package:fl_clash/common/diagnostic_upload.dart';
 import 'package:fl_clash/core/core.dart';
-import 'package:fl_clash/enum/enum.dart';
-import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
-import 'package:fl_clash/providers/client_health.dart';
-import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,8 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DiagnosticExportItem extends ConsumerStatefulWidget {
   final CoreController? controller;
+  final DiagnosticJournal? journal;
 
-  const DiagnosticExportItem({super.key, this.controller});
+  const DiagnosticExportItem({super.key, this.controller, this.journal});
 
   @override
   ConsumerState<DiagnosticExportItem> createState() =>
@@ -24,224 +21,133 @@ class DiagnosticExportItem extends ConsumerStatefulWidget {
 
 class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
   bool _busy = false;
+  double _progress = 0;
+  String? _uploadedUrl;
+  DiagnosticUpload? _upload;
 
-  Future<void> _copyDiagnosticLogs() async {
+  DiagnosticJournal get _journal => widget.journal ?? diagnosticJournal;
+
+  Future<List<int>> _snapshot() async {
+    final controller = widget.controller ?? coreController;
+    _journal.record('status', {
+      'phase': ref.read(coreStatusProvider).name,
+      'tunRequested': system.isAndroid
+          ? true
+          : ref.read(patchClashConfigProvider).tun.enable,
+      'mode': ref
+          .read(privateRouteStatusProvider)
+          .applied
+          ?.managedRouting
+          ?.mode
+          .wireValue,
+      'ipv6': ref.read(patchClashConfigProvider).ipv6,
+    });
+    try {
+      final status = parseClientRuntimeDiagnostics(
+        await controller.clientDiagnostics(),
+      );
+      _journal.record('status', {
+        'source': 'core',
+        'session': status['client.sessionPresent'],
+        'dnsCompleted': status['dns.completed'],
+        'dnsFailed': status['dns.failed'],
+        'protectFailures': status['vpn.protectFailures'],
+      });
+      for (final message in await controller.getPlatformDiagnosticLogs()) {
+        _journal.observe(message, source: 'platform');
+      }
+    } catch (_) {
+      _journal.record('status', {'source': 'core', 'result': 'failed'});
+    }
+    return _journal.snapshot();
+  }
+
+  Future<void> _share() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _progress = 0;
+    });
+    try {
+      if (_uploadedUrl == null) {
+        _journal.record('upload', {'result': 'begin'});
+        final bytes = await _snapshot();
+        if (!mounted) return;
+        final controller = widget.controller ?? coreController;
+        final upload = DiagnosticUpload(
+          (body) => controller.clientDiagnosticUpload(kClientApiBase, body),
+        );
+        _upload = upload;
+        _uploadedUrl = await upload.upload(
+          bytes,
+          progress: (value) {
+            if (mounted) setState(() => _progress = value);
+          },
+        );
+        _journal.record('upload', {'result': 'success'});
+      }
+      if (!mounted) return;
+      var copied = false;
+      try {
+        await Clipboard.setData(ClipboardData(text: _uploadedUrl!));
+        copied = true;
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() => _upload = null);
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(context.appLocalizations.clientDiagnosticUploaded),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                copied
+                    ? context.appLocalizations.clientDiagnosticLinkCopied
+                    : context.appLocalizations.clientDiagnosticCopyLinkFailed,
+              ),
+              const SizedBox(height: 12),
+              SelectableText(_uploadedUrl!),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.appLocalizations.confirm),
+            ),
+          ],
+        ),
+      );
+      if (copied) _uploadedUrl = null;
+    } catch (error) {
+      final cancelled =
+          error is DiagnosticUploadException && error.code == 'cancelled';
+      _journal.record('upload', {'result': cancelled ? 'cancelled' : 'failed'});
+      if (mounted && !cancelled) {
+        context.showSnackBar(
+          context.appLocalizations.clientCopyDiagnosticsFailed,
+        );
+      }
+    } finally {
+      _upload = null;
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save() async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final controller = widget.controller ?? coreController;
-      final patchConfig = ref.read(patchClashConfigProvider);
-      final network = ref.read(networkSettingProvider);
-      final vpn = ref.read(vpnSettingProvider);
-      final platformVersion = Platform.operatingSystemVersion;
-      final collection = <String, Object?>{};
-      List<String> platformLogs;
-      try {
-        platformLogs = await controller.getPlatformDiagnosticLogs();
-        collection['collection.platform'] = platformLogs.isEmpty
-            ? 'empty'
-            : 'ok';
-      } catch (error) {
-        collection['collection.platform'] = 'unavailable:${error.runtimeType}';
-        platformLogs = [
-          'platform diagnostics unavailable: ${error.runtimeType}',
-        ];
-      }
-      Map<String, Object?> clientDiagnostics = const {};
-      try {
-        clientDiagnostics = parseClientRuntimeDiagnostics(
-          await controller.clientDiagnostics(),
-        );
-        collection['collection.runtime'] = clientDiagnostics.isEmpty
-            ? 'empty'
-            : 'ok';
-      } catch (error) {
-        collection['collection.runtime'] = 'unavailable:${error.runtimeType}';
-      }
-      List<TrackerInfo> trackers = const [];
-      try {
-        trackers = await controller.getConnections();
-        collection['collection.connections'] = 'ok';
-      } catch (error) {
-        collection['collection.connections'] =
-            'unavailable:${error.runtimeType}';
-      }
-      if (!mounted) return;
-      final groups = ref.read(groupsProvider);
-      final tunInterfaceEstablished =
-          platformLogs.any(
-            (line) => RegExp(r'^desktop\.tunUp=[1-9][0-9]*$').hasMatch(line),
-          ) ||
-          platformLogs.any((line) => line.contains('interface established'));
-      final selectedMap = ref.read(selectedMapProvider);
-      final managedGroup = groups.getGroup('HARBORPROXY-SERVER');
-      final selectedServer =
-          selectedMap['HARBORPROXY-SERVER'] ?? managedGroup?.now ?? '';
-      final selectedGroup = groups.getGroup(selectedServer);
-      final selectionMode = selectedServer.isEmpty
-          ? 'unset'
-          : switch (selectedGroup?.type) {
-              GroupType.URLTest ||
-              GroupType.Fallback ||
-              GroupType.LoadBalance => 'automatic',
-              _ => 'manual',
-            };
-      final probes = <String, Object?>{};
-      if (ref.read(coreStatusProvider) == CoreStatus.connected) {
-        final results = await Future.wait<Delay?>([
-          controller
-              .getDelay('https://www.baidu.com/favicon.ico', 'DIRECT')
-              .catchError((_) => const Delay(name: '', url: '', value: -1)),
-          controller
-              .getDelay('https://www.gstatic.com/generate_204', 'DIRECT')
-              .catchError((_) => const Delay(name: '', url: '', value: -1)),
-          controller
-              .getDelay(
-                'https://www.gstatic.com/generate_204',
-                'HARBORPROXY-SERVER',
-              )
-              .catchError((_) => const Delay(name: '', url: '', value: -1)),
-        ]);
-        probes
-          ..addAll(diagnosticProbeResult('mainlandDirect', results[0]))
-          ..addAll(diagnosticProbeResult('overseasDirect', results[1]))
-          ..addAll(diagnosticProbeResult('selectedProxy', results[2]));
-      } else {
-        probes
-          ..addAll(diagnosticProbeResult('mainlandDirect', null))
-          ..addAll(diagnosticProbeResult('overseasDirect', null))
-          ..addAll(diagnosticProbeResult('selectedProxy', null));
-      }
-      if (!mounted) return;
-      final currentLogs = ref.read(logsProvider).list;
-      final recentRequests = ref.read(requestsProvider).list;
-      final packageInfo = globalState.packageInfo;
-      final report = buildDiagnosticReport(
-        applicationName: appName,
-        status: {
-          'generatedAt': DateTime.now().toIso8601String(),
-          'app.version': packageInfo.version,
-          'app.build': packageInfo.buildNumber,
-          'platform.os': SupportPlatform.currentPlatform.name,
-          'platform.version': platformVersion,
-          'platform.runtime': Platform.version,
-          'core.status': ref.read(coreStatusProvider).name,
-          'health.phase': ref.read(clientHealthProvider).phase.name,
-          'health.scope': diagnosticHealthScope,
-          'health.checkedAt':
-              ref.read(clientHealthProvider).checkedAt?.toIso8601String() ??
-              'none',
-          'health.latencyMs': ref.read(clientHealthProvider).latencyMs,
-          'selection.lastOutcome': ref
-              .read(proxiesActionProvider.notifier)
-              .lastSelectionOutcome,
-          'selection.lastAt':
-              ref
-                  .read(proxiesActionProvider.notifier)
-                  .lastSelectionAt
-                  ?.toIso8601String() ??
-              'none',
-          'routing.applyPhase': ref.read(privateRouteStatusProvider).phase.name,
-          'routing.appliedMode':
-              ref
-                  .read(privateRouteStatusProvider)
-                  .applied
-                  ?.managedRouting
-                  ?.mode
-                  .wireValue ??
-              'unknown',
-          'routing.recoverySaved': ref
-              .read(privateRouteStatusProvider)
-              .recoverySaved,
-          'core.runtimeSeconds': ref.read(runTimeProvider),
-          'core.binarySha256': globalState.coreSHA256.isEmpty
-              ? 'unknown'
-              : globalState.coreSHA256.safeSubstring(0, 12),
-          'config.mode': patchConfig.mode.name,
-          'config.routeMode': network.routeMode.name,
-          'config.managedRouteMode': network.managedRouteMode.wireValue,
-          'config.stack': effectiveClientVpnStackName(
-            configured: patchConfig.tun.stack,
-            privateClientMode: kPrivateClientMode,
-            isWindows: system.isWindows,
-            isAndroid: system.isAndroid,
-            isMacOS: system.isMacOS,
-          ),
-          if (system.isAndroid) ...{
-            'config.dnsHijacking': vpn.dnsHijacking,
-            'config.allowBypass': vpn.allowBypass,
-            'config.accessControlEnabled': vpn.accessControlProps.enable,
-            'config.accessControlMode': vpn.accessControlProps.mode.name,
-            'config.accessControlCount':
-                vpn.accessControlProps.currentList.length,
-          },
-          'config.systemProxyConfigured': system.isAndroid
-              ? vpn.systemProxy
-              : network.systemProxy,
-          'config.systemProxyEffective': system.isAndroid
-              ? effectiveClientVpnSystemProxy(
-                  configured: vpn.systemProxy,
-                  privateClientMode: true,
-                  isAndroid: true,
-                )
-              : false,
-          'config.tunRequested': system.isAndroid
-              ? kPrivateClientMode || vpn.enable
-              : patchConfig.tun.enable,
-          'config.tunActive': diagnosticTunActive(
-            isAndroid: system.isAndroid,
-            runtimeTunEnabled:
-                patchConfig.tun.enable &&
-                ref.read(authorizedTunEnableProvider) ==
-                    TunAuthorizationState.authorized,
-            platformTunEstablished: tunInterfaceEstablished,
-          ),
-          'config.ipv6Configured': system.isAndroid
-              ? vpn.ipv6
-              : patchConfig.ipv6,
-          'config.ipv6Effective': effectiveClientIpv6(
-            configured: system.isAndroid ? vpn.ipv6 : patchConfig.ipv6,
-            privateClientMode: true,
-            isAndroid: system.isAndroid,
-          ),
-          'config.coreIpv6Effective': effectiveClientCoreIpv6(
-            configured: patchConfig.ipv6,
-            privateClientMode: true,
-            isAndroid: system.isAndroid,
-            managedRouteMode: network.managedRouteMode,
-          ),
-          'config.groups': groups.length,
-          'selection.mode': selectionMode,
-          'platform.tunInterfaceEstablished': tunInterfaceEstablished,
-          'platform.tunCoreStarted':
-              tunInterfaceEstablished ||
-              platformLogs.any((line) => line.contains('TUN core started')),
-          ...clientDiagnostics,
-          ...buildConnectionSummary(trackers),
-          ...buildDiagnosticLogSummary(currentLogs),
-          ...collection,
-          'probe.scope': 'core-outbound only (not browser or VPN path)',
-          ...probes,
-        },
-        logs: currentLogs,
-        platformLogs: platformLogs,
-        visitedDestinations: collectVisitedDestinations([
-          ...recentRequests,
-          ...trackers,
-        ]),
-        routeSamples: collectDiagnosticRouteSamples([
-          ...recentRequests,
-          ...trackers,
-        ]),
+      final bytes = await _snapshot();
+      await picker.saveFile(
+        'HarborProxy-diagnostics.jsonl',
+        Uint8List.fromList(bytes),
       );
-      await Clipboard.setData(ClipboardData(text: report));
-      if (mounted) {
-        context.showSnackBar(context.appLocalizations.copySuccess);
-      }
     } catch (_) {
       if (mounted) {
         context.showSnackBar(
-          context.appLocalizations.clientCopyDiagnosticsFailed,
+          context.appLocalizations.clientDiagnosticSaveFailed,
         );
       }
     } finally {
@@ -250,20 +156,62 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
   }
 
   @override
+  void dispose() {
+    _upload?.cancelled = true;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final text = context.appLocalizations;
-    return ListItem(
-      leading: const Icon(Icons.copy_outlined),
-      title: Text(text.clientCopyDiagnostics),
-      subtitle: Text(text.clientCopyDiagnosticsHint),
-      trailing: _busy
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : null,
-      onTap: _busy ? null : _copyDiagnosticLogs,
+    return Column(
+      children: [
+        ListItem(
+          leading: const Icon(Icons.cloud_upload_outlined),
+          title: Text(text.clientCopyDiagnostics),
+          subtitle: Text(
+            _busy && _upload != null
+                ? (_progress < 1
+                      ? text.clientDiagnosticUploading(
+                          (_progress * 100).round(),
+                        )
+                      : text.clientDiagnosticProcessing)
+                : text.clientCopyDiagnosticsHint,
+          ),
+          trailing: _busy && _uploadedUrl == null
+              ? SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      if (_upload != null)
+                        IconButton(
+                          tooltip: text.cancel,
+                          iconSize: 16,
+                          onPressed: () {
+                            _upload?.cancelled = true;
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
+                    ],
+                  ),
+                )
+              : null,
+          onTap: _busy ? null : _share,
+        ),
+        ListItem(
+          leading: const Icon(Icons.save_alt_outlined),
+          title: Text(text.clientDiagnosticSave),
+          subtitle: Text(text.clientDiagnosticSaveHint),
+          onTap: _busy ? null : _save,
+        ),
+      ],
     );
   }
 }

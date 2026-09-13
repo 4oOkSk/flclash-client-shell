@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'constant.dart';
 import 'diagnostic_log.dart';
+import 'diagnostic_journal.dart';
 
 class CommonPrint {
   static CommonPrint? _instance;
@@ -18,6 +19,7 @@ class CommonPrint {
   }
 
   void log(String? text, {LogLevel logLevel = LogLevel.info}) {
+    if (kPrivateClientMode) diagnosticJournal.observe(text ?? '', level: logLevel.name);
     final rawPayload = '[APP] $text';
     final payload = kPrivateClientMode
         ? sanitizeDiagnosticLog(rawPayload)

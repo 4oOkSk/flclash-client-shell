@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/common/diagnostic_journal.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -37,6 +38,13 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
   }
 
   void add(Log value) {
+    if (kPrivateClientMode && !value.payload.startsWith('[APP]')) {
+      diagnosticJournal.observe(
+        value.payload,
+        source: 'core',
+        level: value.logLevel.name,
+      );
+    }
     if (!ref.mounted) {
       return;
     }
@@ -62,6 +70,18 @@ class Requests extends _$Requests with AutoDisposeNotifierMixin {
   }
 
   void addRequest(TrackerInfo value) {
+    if (kPrivateClientMode) {
+      diagnosticJournal.record('request', {
+        'source': 'core',
+        'phase': value.lifecycle,
+        'network': value.metadata.network.toLowerCase(),
+        'route': value.diagnosticRoute,
+        'result': value.endReason,
+        'durationMs': value.durationMs,
+        'uploadBytes': value.upload,
+        'downloadBytes': value.download,
+      });
+    }
     final next = state.copyWith();
     if (value.id.isEmpty) {
       next.add(value);
