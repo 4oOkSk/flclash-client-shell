@@ -239,7 +239,7 @@ class _PrivateClientProxiesViewState
                       child: Column(
                         children: [
                           for (final (index, proxy) in proxies.indexed) ...[
-                            if (index != 0) const Divider(height: 1),
+                            if (index != 0) const ClientListDivider(),
                             ListTile(
                               selected: selected == proxy.name,
                               leading: Icon(

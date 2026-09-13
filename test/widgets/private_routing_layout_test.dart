@@ -11,6 +11,7 @@ import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/config/private_routing.dart';
 import 'package:fl_clash/views/proxies/private_client.dart';
+import 'package:fl_clash/widgets/list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,6 +63,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     final advanced = find.text(AppLocalizations.current.routeAdvanced);
+    final advancedTile = find.byKey(
+      const PageStorageKey('private-routing-advanced'),
+    );
     await tester.scrollUntilVisible(
       advanced,
       250,
@@ -69,6 +73,10 @@ void main() {
     );
     await tester.tap(advanced);
     await tester.pumpAndSettle();
+    final tile = tester.widget<ExpansionTile>(advancedTile);
+    expect(tile.children.whereType<ClientListDivider>(), hasLength(3));
+    expect(tile.children.first, isA<ClientListDivider>());
+    expect(tile.children.last, isA<ListTile>());
     final offset = tester
         .state<ScrollableState>(find.byType(Scrollable).first)
         .position

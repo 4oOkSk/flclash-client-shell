@@ -535,6 +535,14 @@ class ListHeader extends StatelessWidget {
   }
 }
 
+class ClientListDivider extends StatelessWidget {
+  const ClientListDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16);
+}
+
 List<Widget> generateSection({
   String? title,
   required Iterable<Widget> items,
@@ -556,11 +564,7 @@ List<Widget> generateSection({
                   actions: actions,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 ),
-              ...separated
-                  ? items.separated(
-                      const Divider(height: 1, indent: 16, endIndent: 16),
-                    )
-                  : items,
+              ...separated ? items.separated(const ClientListDivider()) : items,
             ],
           ),
         ),

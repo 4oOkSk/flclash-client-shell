@@ -51,11 +51,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         for (final navigationItem in navigationItems) ...[
           _buildNavigationMenuItem(navigationItem),
           navigationItems.last != navigationItem
-              ? Divider(
-                  height: kPrivateClientMode ? 1 : 0,
-                  indent: kPrivateClientMode ? 16 : 0,
-                  endIndent: kPrivateClientMode ? 16 : 0,
-                )
+              ? kPrivateClientMode
+                    ? const ClientListDivider()
+                    : const Divider(height: 0)
               : Container(),
         ],
       ],
@@ -108,8 +106,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           leading: Icon(icon, size: 20),
           title: Text(title, style: context.textTheme.titleMedium),
           children: [
-            const Divider(height: 1, indent: 16, endIndent: 16),
-            ...children,
+            const ClientListDivider(),
+            ...children.separated(const ClientListDivider()),
           ],
         ),
       ),
@@ -149,10 +147,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
                   icon: Icons.bug_report_outlined,
                   children: [
                     const DiagnosticExportItem(),
-                    if (state.navigationItems.isNotEmpty) ...[
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                    if (state.navigationItems.isNotEmpty)
                       _buildNavigationMenu(state.navigationItems),
-                    ],
                   ],
                 )
               else ...[

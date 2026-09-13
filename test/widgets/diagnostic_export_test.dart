@@ -14,6 +14,7 @@ import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/diagnostic_export.dart';
 import 'package:fl_clash/views/tools.dart';
 import 'package:fl_clash/views/theme.dart';
+import 'package:fl_clash/widgets/list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -29,6 +30,15 @@ class _MemoryJournal extends DiagnosticJournal {
   Future<List<int>> snapshot() async => utf8.encode(
     '{"time":"2026-09-14T00:00:00.000Z","elapsedMs":0,"event":"startup"}\n',
   );
+}
+
+class _PendingJournal extends DiagnosticJournal {
+  final Completer<List<int>> pending;
+
+  _PendingJournal(this.pending);
+
+  @override
+  Future<List<int>> snapshot() => pending.future;
 }
 
 void main() {
@@ -120,6 +130,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(DiagnosticExportItem), findsOneWidget);
       expect(
+        find.descendant(
+          of: find.byType(DiagnosticExportItem),
+          matching: find.byType(ClientListDivider),
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.text(AppLocalizations.current.clientCopyDiagnostics),
         findsOneWidget,
       );
@@ -178,6 +195,14 @@ void main() {
       );
       await tester.tap(advancedTile);
       await tester.pumpAndSettle();
+      final tile = tester.widget<ExpansionTile>(
+        find.byKey(const PageStorageKey('tools-advanced')),
+      );
+      expect(tile.children.first, isA<ClientListDivider>());
+      expect(tile.children.last, isNot(isA<ClientListDivider>()));
+      for (var index = 0; index < tile.children.length; index++) {
+        expect(tile.children[index] is ClientListDivider, index.isEven);
+      }
       expect(tester.takeException(), isNull);
     },
     skip: !kPrivateClientMode,
@@ -249,7 +274,9 @@ void main() {
     await tester.tap(upload);
     pending.complete(['host=private.example.com token=do-not-copy-this']);
     await tester.pumpAndSettle();
-    expect(reports, ['https://logs.example/files/harborproxylogs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jsonl']);
+    expect(reports, [
+      'https://logs.example/files/harborproxylogs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jsonl',
+    ]);
     expect(
       uploadCalls.where((body) => body['action'] == 'begin'),
       hasLength(1),
@@ -328,6 +355,52 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(CircularProgressIndicator), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'saving shows progress only on the save row and clears on error',
+    (tester) async {
+      final pending = Completer<List<int>>();
+      await tester.pumpWidget(
+        _TestApp(
+          container: container,
+          child: DiagnosticExportItem(
+            controller: controller,
+            journal: _PendingJournal(pending),
+          ),
+        ),
+      );
+      final save = find.widgetWithText(
+        ListItem,
+        AppLocalizations.current.clientDiagnosticSave,
+      );
+      final upload = find.widgetWithText(
+        ListItem,
+        AppLocalizations.current.clientCopyDiagnostics,
+      );
+      await tester.tap(save);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 30));
+      expect(
+        find.descendant(
+          of: save,
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: upload,
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
+      pending.completeError(StateError('test storage failure'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(uploadCalls, isEmpty);
+      expect(tester.takeException(), isNull);
     },
   );
 

@@ -21,6 +21,7 @@ class DiagnosticExportItem extends ConsumerStatefulWidget {
 
 class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
   bool _busy = false;
+  bool _saving = false;
   double _progress = 0;
   String? _uploadedUrl;
   DiagnosticUpload? _upload;
@@ -131,13 +132,21 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
       }
     } finally {
       _upload = null;
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _saving = false;
+        });
+      }
     }
   }
 
   Future<void> _save() async {
     if (_busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _saving = true;
+    });
     try {
       final bytes = await _snapshot();
       await picker.saveFile(
@@ -151,7 +160,12 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _saving = false;
+        });
+      }
     }
   }
 
@@ -178,7 +192,7 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
                       : text.clientDiagnosticProcessing)
                 : text.clientCopyDiagnosticsHint,
           ),
-          trailing: _busy && _uploadedUrl == null
+          trailing: _busy && !_saving && _uploadedUrl == null
               ? SizedBox(
                   width: 40,
                   height: 40,
@@ -205,10 +219,24 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
               : null,
           onTap: _busy ? null : _share,
         ),
+        const ClientListDivider(),
         ListItem(
           leading: const Icon(Icons.save_alt_outlined),
           title: Text(text.clientDiagnosticSave),
           subtitle: Text(text.clientDiagnosticSaveHint),
+          trailing: _saving
+              ? const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Center(
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : null,
           onTap: _busy ? null : _save,
         ),
       ],

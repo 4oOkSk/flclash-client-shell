@@ -11,25 +11,17 @@ Managed cards share one surface, four-pixel corners, a neutral outline and no dr
 Information-only cards are not buttons and do not acquire a selection border on hover.
 Blue card outlines identify an actual selected option, not a passive account summary.
 Settings, diagnostics and advanced options use the same inset card groups and row typography;
-dividers stay inside their groups rather than spanning the page canvas.
+dividers stay inside their groups rather than spanning the page canvas. Independent rows use one
+16-pixel-inset, one-pixel divider between them, never an extra trailing divider. Expanded menus
+also separate their header from the first row. Separate cards use spacing and their outline,
+not another divider. Loading feedback belongs to the action that is running.
 
-Account → Diagnostics always includes **Copy diagnostic report**, including when no other
-diagnostic destinations are available. It uses the existing redacted report and clipboard path,
-blocks duplicate requests while collecting, and reports copy success or failure. Navigating away
-during collection must not update disposed widget state. The managed Home has no diagnostic
-export toolbar; generic dashboard behavior is unchanged.
-
-Clipboard reports use format 2 and are bounded to 8192 UTF-8 bytes, independently of a device's
-clipboard limit. Status, errors/warnings, compact route samples and platform evidence precede
-secondary metadata and routine context. Repeated redacted messages keep a count and first/last
-timestamps; group refreshes, HTTP lookups, lifecycle events and GeoSite loads become counters.
-Failures are selected before recent routine messages, with redacted reason text and fixed signal
-labels (such as DNS/TLS/timeout) rather than only a destination. Failed/rejected samples precede other connections;
-the report remains a sample of retained events, not a complete packet trace. Coverage records
-included/omitted groups and rows; an ellipsis marks shortened fields. Destination validation and
-credential/server redaction remain in place. Collection failures are explicit, Android reports
-include access-control counts (not app lists), and probes identify their core-outbound scope;
-probe success does not establish browser, certificate or VPN/TUN-path correctness.
+Account → Diagnostics always includes **Upload diagnostic logs** and **Save log file**, including
+when no other diagnostic destinations are available. The rolling local journal and private upload
+contract are defined in [client-diagnostics.md](client-diagnostics.md). The clipboard receives the
+private link, not an 8192-byte report. Duplicate actions are blocked during collection or transfer;
+leaving the page must not update disposed widget state. Generic dashboard behavior is unchanged.
+Internal runtime diagnostics remain available; a core-outbound probe is not a browser or VPN test.
 
 DNS service counters cover completed VPN/listener queries across the core-process lifetime,
 including silent SERVFAIL and timeout results; an absent counter is unavailable, not zero.
@@ -41,7 +33,7 @@ drains existing JNI callbacks, detaches their state under the callback gate, the
 gate before closing the listener. Teardown callbacks cannot deadlock behind their own close;
 the socket hook keeps rejecting new sockets until listener closure completes.
 Configured server/IP/SNI plus port matches use `[server-endpoint]` without the real port in
-lists, connection/request details and clipboard samples. The inbound category and routing result
+lists and connection/request details. The inbound category and routing result
 remain visible. Such a match is a possible reentry signal, not proof of a loop, and ordinary
 visits to another port are not classified as node traffic. A passive observer of existing proxy
 DNS lookups adds resolved addresses to the diagnostic index without issuing DNS requests or

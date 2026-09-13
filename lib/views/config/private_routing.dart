@@ -223,7 +223,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
               ],
             ),
           ),
-          const Divider(height: 1),
+          const ClientListDivider(),
           rules.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(24),
@@ -241,7 +241,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
                 : Column(
                     children: [
                       for (final (index, rule) in items.indexed) ...[
-                        if (index != 0) const Divider(height: 1),
+                        if (index != 0) const ClientListDivider(),
                         ListTile(
                           leading: Text('${index + 1}'),
                           title: Text(
@@ -476,6 +476,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
                       title: Text(text.routeAdvanced),
                       subtitle: Text(text.routeAdvancedHint),
                       children: [
+                        const ClientListDivider(),
                         ListTile(
                           title: Text(text.localRules),
                           trailing: const Icon(Icons.chevron_right),
@@ -484,6 +485,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
                             const AddedRulesView(),
                           ),
                         ),
+                        const ClientListDivider(),
                         ListTile(
                           title: Text(text.privateRuleProviders),
                           trailing: const Icon(Icons.chevron_right),
@@ -492,6 +494,7 @@ class _PrivateRoutingViewState extends ConsumerState<PrivateRoutingView> {
                             const PrivateRuleProvidersView(),
                           ),
                         ),
+                        const ClientListDivider(),
                         ListTile(
                           title: Text(text.routeScript),
                           trailing: const Icon(Icons.chevron_right),
