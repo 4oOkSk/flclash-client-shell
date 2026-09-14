@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart';
+import 'package:fl_clash/common/diagnostic_log.dart';
+import 'package:fl_clash/models/common.dart';
 
 const diagnosticJournalBytes = 20 * 1024 * 1024;
 
@@ -89,6 +94,23 @@ const diagnosticJournalValues = {
   'applying',
   'restored',
   'idle',
+  'idle-timeout',
+  'domain',
+  'ip',
+  'rule-set',
+  'match',
+  'transport',
+  'process',
+  'none',
+  'private',
+  'ipv6-block',
+  'probe',
+  'overseas-service',
+  'overseas-domain',
+  'mainland-domain',
+  'mainland-ip',
+  'fallback',
+  'local',
 };
 const diagnosticJournalFields = {
   'source',
@@ -113,12 +135,38 @@ const diagnosticJournalFields = {
   'dnsCompleted',
   'dnsFailed',
   'protectFailures',
+  'runId',
+  'connectionId',
+  'destination',
+  'rule',
+  'policy',
+  'message',
+  'historical',
 };
+
+final _journalUnsafeText = RegExp(
+  r'[\x00-\x1f\x7f]|[a-zA-Z][a-zA-Z0-9+.-]*://|'
+  r'\b(?:password|passwd|token|authorization|cookie|uuid|server|port|sni|private-key|public-key|short-id)\s*["\x27]?\s*[:=]\s*(?!\[)',
+  caseSensitive: false,
+);
+
+String _journalMessage(String value, bool coreSanitized) {
+  var message = coreSanitized ? value : sanitizeDiagnosticLog(value);
+  message = message.replaceAll(RegExp(r'[\x00-\x1f\x7f]'), ' ');
+  if (_journalUnsafeText.hasMatch(message)) {
+    message = sanitizeDiagnosticLog(message);
+  }
+  return String.fromCharCodes(message.runes.take(320));
+}
 
 class DiagnosticJournal {
   final int byteLimit;
   final Stopwatch _clock = Stopwatch()..start();
   final List<String> _pending = [];
+  final String _runId = List.generate(
+    8,
+    (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
+  ).join();
   Directory? _directory;
   Timer? _timer;
   Future<void> _work = Future.value();
@@ -134,12 +182,26 @@ class DiagnosticJournal {
 
   static bool accepts(String key, Object? value) {
     if (!diagnosticJournalFields.contains(key)) return false;
+    if (key == 'runId' || key == 'connectionId') {
+      return value is String && RegExp(r'^[0-9a-f]{16}$').hasMatch(value);
+    }
+    if (key == 'destination') {
+      return value is String &&
+          !value.contains('://') &&
+          sanitizeVisitedDestination(value) == value;
+    }
+    if (key == 'message') {
+      return value is String &&
+          utf8.encode(value).length <= 1280 &&
+          !_journalUnsafeText.hasMatch(value);
+    }
     if (const {
       'active',
       'tun',
       'tunRequested',
       'session',
       'ipv6',
+      'historical',
     }.contains(key)) {
       return value is bool;
     }
@@ -159,7 +221,7 @@ class DiagnosticJournal {
   }
 
   static bool validLine(String line) {
-    if (line.length > 2048) return false;
+    if (utf8.encode(line).length > 4096) return false;
     try {
       final data = jsonDecode(line);
       if (jsonEncode(data) != line) return false;
@@ -204,13 +266,20 @@ class DiagnosticJournal {
       jsonEncode({
         'time': DateTime.now().toUtc().toIso8601String(),
         'elapsedMs': _clock.elapsedMilliseconds,
+        'runId': _runId,
         'event': event,
         ...safe,
       }),
     );
   }
 
-  void observe(String message, {String source = 'app', String level = 'info'}) {
+  void observe(
+    String message, {
+    String source = 'app',
+    String level = 'info',
+    bool coreSanitized = false,
+    bool historical = false,
+  }) {
     final text = message.toLowerCase();
     final event = switch (text) {
       _ when text.contains('updategroups') || text.contains('find http') =>
@@ -263,6 +332,30 @@ class DiagnosticJournal {
       'level': level,
       'result': result,
       'phase': ?phase,
+      'message': _journalMessage(message, coreSanitized),
+      if (historical) 'historical': true,
+    });
+  }
+
+  void request(TrackerInfo tracker) {
+    if (tracker.metadata.type.toLowerCase() == 'inner') return;
+    record('request', {
+      'source': 'core',
+      if (tracker.id.isNotEmpty)
+        'connectionId': sha256
+            .convert(utf8.encode('$_runId:${tracker.id}'))
+            .toString()
+            .substring(0, 16),
+      'destination': trackerVisitedDestination(tracker),
+      'phase': tracker.lifecycle,
+      'network': tracker.metadata.network.toLowerCase(),
+      'route': tracker.diagnosticRoute,
+      'rule': tracker.diagnosticRule,
+      'policy': tracker.diagnosticPolicy,
+      'result': tracker.endReason,
+      'durationMs': tracker.durationMs,
+      'uploadBytes': tracker.upload,
+      'downloadBytes': tracker.download,
     });
   }
 

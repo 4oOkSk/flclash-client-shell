@@ -361,6 +361,7 @@ func applyConfig(params *SetupParams) error {
 	defer runLock.Unlock()
 	var err error
 	constant.DefaultTestURL = params.TestURL
+	setClientDiagnosticEndpoints(params.Config)
 	// PATCH(ops): 有内存配置内容则用它(不落盘/不读盘), 否则回退磁盘 config.yaml
 	if params.Config != "" {
 		nextConfig, parseErr := executor.ParseWithBytes([]byte(params.Config))
@@ -377,7 +378,6 @@ func applyConfig(params *SetupParams) error {
 		}
 		privateConfig = false
 	}
-	setClientDiagnosticEndpoints(params.Config)
 	hub.ApplyConfig(currentConfig)
 	observeClientDiagnosticResolver()
 	patchSelectGroup(params.SelectedMap)

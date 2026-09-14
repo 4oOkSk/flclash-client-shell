@@ -43,6 +43,7 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
         value.payload,
         source: 'core',
         level: value.logLevel.name,
+        coreSanitized: true,
       );
     }
     if (!ref.mounted) {
@@ -71,16 +72,7 @@ class Requests extends _$Requests with AutoDisposeNotifierMixin {
 
   void addRequest(TrackerInfo value) {
     if (kPrivateClientMode) {
-      diagnosticJournal.record('request', {
-        'source': 'core',
-        'phase': value.lifecycle,
-        'network': value.metadata.network.toLowerCase(),
-        'route': value.diagnosticRoute,
-        'result': value.endReason,
-        'durationMs': value.durationMs,
-        'uploadBytes': value.upload,
-        'downloadBytes': value.download,
-      });
+      diagnosticJournal.request(value);
     }
     final next = state.copyWith();
     if (value.id.isEmpty) {

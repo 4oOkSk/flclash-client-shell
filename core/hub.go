@@ -27,6 +27,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -381,7 +382,7 @@ func handleStartLog() {
 	runLock.Unlock()
 	go func() {
 		for logData := range subscriber {
-			if logData.LogLevel < log.Level() {
+			if logData.LogLevel < log.Level() && !strings.HasPrefix(logData.Payload, "[DNS]") {
 				continue
 			}
 			message := &Message{

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fl_clash/common/diagnostic_journal.dart';
 import 'package:fl_clash/common/diagnostic_upload.dart';
+import 'package:fl_clash/models/common.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -16,6 +17,75 @@ void main() {
   tearDown(() async {
     await journal.close();
     await directory.delete(recursive: true);
+  });
+
+  test('retains safe messages and correlates visited connections', () async {
+    journal.observe(
+      '[DNS] c2c.cdn.weixin.qq.com --> 203.0.113.9',
+      source: 'core',
+      coreSanitized: true,
+    );
+    final tracker = TrackerInfo(
+      id: 'a-core-connection-id',
+      start: DateTime.now(),
+      metadata: const Metadata(
+        network: 'udp',
+        host: 'c2c.cdn.weixin.qq.com',
+        destinationPort: '443',
+      ),
+      chains: const ['private-node'],
+      rule: 'MATCH',
+      rulePayload: '',
+      lifecycle: 'active',
+      diagnosticRoute: 'proxy',
+      diagnosticRule: 'match',
+      diagnosticPolicy: 'fallback',
+    );
+    journal.request(tracker);
+    journal.request(
+      tracker.copyWith(
+        lifecycle: 'closed',
+        endReason: 'no-response',
+        durationMs: 30000,
+        upload: 162,
+      ),
+    );
+    journal.request(tracker.copyWith(diagnosticDestination: 'server-endpoint'));
+    journal.request(
+      tracker.copyWith(metadata: tracker.metadata.copyWith(type: 'Inner')),
+    );
+    journal.observe(
+      'VpnService TUN core started',
+      source: 'platform',
+      historical: true,
+    );
+    final text = utf8.decode(await journal.snapshot());
+    final records = const LineSplitter()
+        .convert(text)
+        .map((line) => jsonDecode(line) as Map<String, dynamic>)
+        .toList();
+    final requests = records
+        .where((record) => record['event'] == 'request')
+        .toList();
+    expect(requests, hasLength(3));
+    expect(requests[0]['connectionId'], requests[1]['connectionId']);
+    expect(requests[0]['destination'], 'c2c.cdn.weixin.qq.com:443');
+    expect(requests[1]['result'], 'no-response');
+    expect(requests[2]['destination'], '[server-endpoint]');
+    expect(records.first['message'], contains('203.0.113.9'));
+    expect(records.last['historical'], isTrue);
+    expect(text, isNot(contains('private-node')));
+    expect(text, isNot(contains('a-core-connection-id')));
+    expect(DiagnosticJournal.validBytes(utf8.encode(text)), isTrue);
+    expect(
+      DiagnosticJournal.accepts(
+        'destination',
+        'https://subscription.example/token',
+      ),
+      isFalse,
+    );
+    expect(DiagnosticJournal.accepts('message', 'password=secret'), isFalse);
+    expect(DiagnosticJournal.accepts('connectionId', 'node.example'), isFalse);
   });
 
   test('secrets never reach disk and rotated storage stays bounded', () async {

@@ -55,7 +55,7 @@ class _DiagnosticExportItemState extends ConsumerState<DiagnosticExportItem> {
         'protectFailures': status['vpn.protectFailures'],
       });
       for (final message in await controller.getPlatformDiagnosticLogs()) {
-        _journal.observe(message, source: 'platform');
+        _journal.observe(message, source: 'platform', historical: true);
       }
     } catch (_) {
       _journal.record('status', {'source': 'core', 'result': 'failed'});

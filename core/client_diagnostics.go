@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,17 +22,31 @@ var clientDiagnosticEndpoints atomic.Value
 var clientDiagnosticAddressPattern = regexp.MustCompile(`(?i)(?:\[[0-9a-f:.]+\]|[0-9a-f]*:[0-9a-f:]*:[0-9a-f:]+|[a-z0-9][a-z0-9._-]*)(?::[0-9]+)?`)
 
 type clientDiagnosticEndpointSet struct {
-	mu    sync.RWMutex
-	hosts map[string]map[uint16]struct{}
+	mu      sync.RWMutex
+	hosts   map[string]map[uint16]struct{}
+	secrets []string
 }
 
 func setClientDiagnosticEndpoints(configText string) {
 	endpoints := &clientDiagnosticEndpointSet{hosts: map[string]map[uint16]struct{}{}}
+	if configText != "" {
+		if previous, _ := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet); previous != nil {
+			previous.mu.RLock()
+			for host, ports := range previous.hosts {
+				for port := range ports {
+					endpoints.add(host, port)
+				}
+			}
+			endpoints.secrets = append(endpoints.secrets, previous.secrets...)
+			previous.mu.RUnlock()
+		}
+	}
 	var document map[string]any
 	if commonYaml.Unmarshal([]byte(configText), &document) == nil {
 		proxies, _ := document["proxies"].([]any)
 		for _, raw := range proxies {
 			proxy, _ := raw.(map[string]any)
+			endpoints.collectSecrets(proxy)
 			port, err := strconv.Atoi(fmt.Sprint(proxy["port"]))
 			if err != nil || port < 1 || port > 65535 {
 				continue
@@ -43,7 +59,56 @@ func setClientDiagnosticEndpoints(configText string) {
 			}
 		}
 	}
+	sort.Slice(endpoints.secrets, func(first, second int) bool { return len(endpoints.secrets[first]) > len(endpoints.secrets[second]) })
+	endpoints.secrets = compactDiagnosticSecrets(endpoints.secrets)
 	clientDiagnosticEndpoints.Store(endpoints)
+}
+
+func compactDiagnosticSecrets(values []string) []string {
+	seen := map[string]bool{}
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if value != "" && !seen[value] {
+			seen[value] = true
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+func (endpoints *clientDiagnosticEndpointSet) collectSecrets(document map[string]any) {
+	for key, raw := range document {
+		if nested, ok := raw.(map[string]any); ok {
+			endpoints.collectSecrets(nested)
+		}
+		if items, ok := raw.([]any); ok {
+			for _, item := range items {
+				if nested, ok := item.(map[string]any); ok {
+					endpoints.collectSecrets(nested)
+				}
+			}
+		}
+		switch strings.ToLower(key) {
+		case "server", "servername", "sni", "host":
+			if value, ok := raw.(string); ok && value != "" {
+				endpoints.add(value, 0)
+			}
+		}
+		switch strings.ToLower(key) {
+		case "name", "password", "passwd", "uuid", "username", "token", "private-key", "public-key", "pre-shared-key", "short-id", "path", "host", "authorization", "cookie", "auth", "auth-str", "obfs-password":
+			if value, ok := raw.(string); ok && value != "" {
+				endpoints.secrets = append(endpoints.secrets, value, url.QueryEscape(value), url.PathEscape(value))
+			}
+		}
+	}
+}
+
+var clientDiagnosticURLPattern = regexp.MustCompile(`(?i)\b(?:https?|socks5?|vless|vmess|trojan|hysteria2?|hy2|ss)://[^\s<>]+`)
+var clientDiagnosticCredentialPattern = regexp.MustCompile(`(?i)\b(?:password|passwd|token|authorization|cookie|uuid|server|port|sni|private-key|public-key|short-id)\s*["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;}]+)`)
+
+func sanitizeClientDiagnosticMessage(payload string) string {
+	payload = clientDiagnosticURLPattern.ReplaceAllString(payload, "[url]")
+	return clientDiagnosticCredentialPattern.ReplaceAllString(payload, "[credential]")
 }
 
 func clientDiagnosticHost(host string) string {
@@ -75,23 +140,29 @@ func (endpoints *clientDiagnosticEndpointSet) recordAddresses(host string, addre
 func sanitizeClientLogPayload(payload string) string {
 	endpoints, _ := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet)
 	if endpoints == nil {
-		return payload
+		return sanitizeClientDiagnosticMessage(payload)
 	}
 	endpoints.mu.RLock()
 	defer endpoints.mu.RUnlock()
-	if len(endpoints.hosts) == 0 {
-		return payload
-	}
-	return clientDiagnosticAddressPattern.ReplaceAllStringFunc(payload, func(value string) string {
+	protected := false
+	payload = clientDiagnosticAddressPattern.ReplaceAllStringFunc(payload, func(value string) string {
 		host := value
 		if address, _, err := net.SplitHostPort(value); err == nil {
 			host = address
 		}
 		if len(endpoints.hosts[clientDiagnosticHost(host)]) != 0 {
+			protected = true
 			return "[server-endpoint]"
 		}
 		return value
 	})
+	if protected && strings.Contains(strings.ToLower(payload), "dns") {
+		return "[DNS] [server-endpoint] lookup details withheld"
+	}
+	for _, secret := range endpoints.secrets {
+		payload = strings.ReplaceAll(payload, secret, "[private]")
+	}
+	return sanitizeClientDiagnosticMessage(payload)
 }
 
 func clientDiagnosticDestination(metadata *constant.Metadata) string {
@@ -105,7 +176,7 @@ func clientDiagnosticDestination(metadata *constant.Metadata) string {
 	endpoints.mu.RLock()
 	defer endpoints.mu.RUnlock()
 	for _, host := range []string{metadata.Host, metadata.DstIP.String()} {
-		if _, exists := endpoints.hosts[clientDiagnosticHost(host)][metadata.DstPort]; exists {
+		if len(endpoints.hosts[clientDiagnosticHost(host)]) != 0 {
 			return "server-endpoint"
 		}
 	}

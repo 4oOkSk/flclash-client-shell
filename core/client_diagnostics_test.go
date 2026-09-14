@@ -48,6 +48,43 @@ func TestClientLogRedactsServerHostsAndPorts(t *testing.T) {
 	}
 }
 
+func TestClientDetailedLogPrivacyAcrossConfigurationAndDNS(t *testing.T) {
+	setClientDiagnosticEndpoints("")
+	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	setClientDiagnosticEndpoints(`proxies:
+  - name: private-node-name
+    server: secret-node.example
+    port: 8443
+    password: 'long-pass/with-secret'
+    ws-opts:
+      path: /private-transport
+      headers:
+        Host: secret-host.example
+`)
+	for _, payload := range []string{
+		"dial secret-node.example:8443 using private-node-name failed: timeout",
+		"password=long-pass/with-secret server=secret-node.example port=8443",
+		"subscription https://subscription.example/private?token=secret failed",
+		"TLS transport /private-transport Host secret-host.example long-pass%2Fwith-secret",
+		"[DNS] secret-node.example --> CNAME secret-alias.example A 192.0.2.77 from 1.1.1.1",
+	} {
+		got := sanitizeClientLogPayload(payload)
+		for _, secret := range []string{"secret-node.example", "8443", "private-node-name", "long-pass", "subscription.example", "secret-host.example", "/private-transport", "secret-alias.example", "192.0.2.77"} {
+			if strings.Contains(got, secret) {
+				t.Fatalf("private data retained in diagnostic output: %q", got)
+			}
+		}
+	}
+	ordinary := "[DNS] c2c.cdn.weixin.qq.com --> 203.0.113.9"
+	if got := sanitizeClientLogPayload(ordinary); got != ordinary {
+		t.Fatalf("ordinary DNS changed: %q", got)
+	}
+	setClientDiagnosticEndpoints("proxies: [{server: replacement.example, port: 443}]")
+	if strings.Contains(sanitizeClientLogPayload("old connection secret-node.example:8443 timeout"), "8443") {
+		t.Fatal("old connection endpoint leaked after refresh")
+	}
+}
+
 type diagnosticTestResolver struct {
 	resolver.Resolver
 	addresses []netip.Addr
@@ -114,7 +151,7 @@ func TestClientDiagnosticResolverObservesWithoutChangingLookupResults(t *testing
 	}
 }
 
-func TestClientDiagnosticServerEndpointMatchesArePortScoped(t *testing.T) {
+func TestClientDiagnosticServerEndpointsHideAllPorts(t *testing.T) {
 	setClientDiagnosticEndpoints(`proxies:
   - server: 192.0.2.10
     port: 8443
@@ -128,7 +165,7 @@ func TestClientDiagnosticServerEndpointMatchesArePortScoped(t *testing.T) {
 		want     string
 	}{
 		{constant.Metadata{Host: "NODE.example.com.", DstPort: 8443}, "server-endpoint"},
-		{constant.Metadata{Host: "node.example.com", DstPort: 443}, "destination"},
+		{constant.Metadata{Host: "node.example.com", DstPort: 443}, "server-endpoint"},
 		{constant.Metadata{DstIP: netip.MustParseAddr("192.0.2.10"), DstPort: 8443}, "server-endpoint"},
 		{constant.Metadata{Host: "example.com", DstPort: 8443}, "destination"},
 	} {
