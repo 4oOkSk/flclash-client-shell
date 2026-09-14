@@ -85,6 +85,18 @@ func TestClientDetailedLogPrivacyAcrossConfigurationAndDNS(t *testing.T) {
 	}
 }
 
+func TestClientDiagnosticLateDNSRemainsProtectedAfterRefresh(t *testing.T) {
+	setClientDiagnosticEndpoints("")
+	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	setClientDiagnosticEndpoints("proxies: [{server: old.example, port: 8443}]")
+	previous := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet)
+	setClientDiagnosticEndpoints("proxies: [{server: new.example, port: 443}]")
+	previous.recordAddresses("old.example", []netip.Addr{netip.MustParseAddr("192.0.2.91")})
+	if strings.Contains(sanitizeClientLogPayload("dial 192.0.2.91:8443 timeout"), "192.0.2.91") {
+		t.Fatal("late answer from previous configuration is unprotected")
+	}
+}
+
 type diagnosticTestResolver struct {
 	resolver.Resolver
 	addresses []netip.Addr

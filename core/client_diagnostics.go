@@ -129,11 +129,14 @@ func (endpoints *clientDiagnosticEndpointSet) add(host string, port uint16) {
 
 func (endpoints *clientDiagnosticEndpointSet) recordAddresses(host string, addresses []netip.Addr) {
 	endpoints.mu.Lock()
-	defer endpoints.mu.Unlock()
 	for port := range endpoints.hosts[clientDiagnosticHost(host)] {
 		for _, address := range addresses {
 			endpoints.add(address.String(), port)
 		}
+	}
+	endpoints.mu.Unlock()
+	if current, _ := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet); current != nil && current != endpoints {
+		current.recordAddresses(host, addresses)
 	}
 }
 
