@@ -12,6 +12,10 @@ import (
 	"github.com/metacubex/mihomo/tunnel/statistic"
 )
 
+func clearClientDiagnosticEndpoints() {
+	clientDiagnosticEndpoints.Store(&clientDiagnosticEndpointSet{hosts: map[string]map[uint16]struct{}{}})
+}
+
 func TestClientLogRedactsServerHostsAndPorts(t *testing.T) {
 	setClientDiagnosticEndpoints(`proxies:
   - server: node.example.com
@@ -22,7 +26,7 @@ func TestClientLogRedactsServerHostsAndPorts(t *testing.T) {
   - server: '2001:db8::10'
     port: 8443
 `)
-	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	t.Cleanup(clearClientDiagnosticEndpoints)
 	for _, address := range []string{
 		"NODE.example.com.:8443", "node.example.com:443", "sni.example.com",
 		"192.0.2.10:8443", "[2001:db8::10]:8443", "2001:db8::10",
@@ -43,14 +47,14 @@ func TestClientLogRedactsServerHostsAndPorts(t *testing.T) {
 		}
 	}
 	setClientDiagnosticEndpoints("")
-	if got := sanitizeClientLogPayload("node.example.com:8443"); got != "node.example.com:8443" {
-		t.Fatal("endpoint index survived configuration replacement")
+	if got := sanitizeClientLogPayload("node.example.com:8443"); got != "[server-endpoint]" {
+		t.Fatal("empty configuration removed protection for old connections")
 	}
 }
 
 func TestClientDetailedLogPrivacyAcrossConfigurationAndDNS(t *testing.T) {
-	setClientDiagnosticEndpoints("")
-	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	clearClientDiagnosticEndpoints()
+	t.Cleanup(clearClientDiagnosticEndpoints)
 	setClientDiagnosticEndpoints(`proxies:
   - name: private-node-name
     server: secret-node.example
@@ -86,14 +90,26 @@ func TestClientDetailedLogPrivacyAcrossConfigurationAndDNS(t *testing.T) {
 }
 
 func TestClientDiagnosticLateDNSRemainsProtectedAfterRefresh(t *testing.T) {
-	setClientDiagnosticEndpoints("")
-	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	clearClientDiagnosticEndpoints()
+	t.Cleanup(clearClientDiagnosticEndpoints)
 	setClientDiagnosticEndpoints("proxies: [{server: old.example, port: 8443}]")
 	previous := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet)
 	setClientDiagnosticEndpoints("proxies: [{server: new.example, port: 443}]")
 	previous.recordAddresses("old.example", []netip.Addr{netip.MustParseAddr("192.0.2.91")})
 	if strings.Contains(sanitizeClientLogPayload("dial 192.0.2.91:8443 timeout"), "192.0.2.91") {
 		t.Fatal("late answer from previous configuration is unprotected")
+	}
+}
+
+func TestClientDiagnosticURLHiddenBeforeTransportPathReplacement(t *testing.T) {
+	clearClientDiagnosticEndpoints()
+	t.Cleanup(clearClientDiagnosticEndpoints)
+	setClientDiagnosticEndpoints("proxies: [{server: node.example, port: 443, ws-opts: {path: /}}]")
+	got := sanitizeClientLogPayload("refresh https://subscription.example/private-link?token=secret failed")
+	for _, secret := range []string{"subscription.example", "private-link", "secret"} {
+		if strings.Contains(got, secret) {
+			t.Fatal("transport path replacement exposed subscription URL")
+		}
 	}
 }
 
@@ -127,7 +143,7 @@ func TestClientDiagnosticResolverObservesWithoutChangingLookupResults(t *testing
 	previous := resolver.ProxyServerHostResolver
 	t.Cleanup(func() {
 		resolver.ProxyServerHostResolver = previous
-		setClientDiagnosticEndpoints("")
+		clearClientDiagnosticEndpoints()
 	})
 	upstream := &diagnosticTestResolver{addresses: []netip.Addr{netip.MustParseAddr("192.0.2.20")}}
 	resolver.ProxyServerHostResolver = upstream
@@ -171,7 +187,7 @@ func TestClientDiagnosticServerEndpointsHideAllPorts(t *testing.T) {
   - server: ignored.example.com
     port: invalid
 `)
-	t.Cleanup(func() { setClientDiagnosticEndpoints("") })
+	t.Cleanup(clearClientDiagnosticEndpoints)
 	for _, test := range []struct {
 		metadata constant.Metadata
 		want     string

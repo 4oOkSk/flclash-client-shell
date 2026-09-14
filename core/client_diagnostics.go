@@ -29,17 +29,15 @@ type clientDiagnosticEndpointSet struct {
 
 func setClientDiagnosticEndpoints(configText string) {
 	endpoints := &clientDiagnosticEndpointSet{hosts: map[string]map[uint16]struct{}{}}
-	if configText != "" {
-		if previous, _ := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet); previous != nil {
-			previous.mu.RLock()
-			for host, ports := range previous.hosts {
-				for port := range ports {
-					endpoints.add(host, port)
-				}
+	if previous, _ := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet); previous != nil {
+		previous.mu.RLock()
+		for host, ports := range previous.hosts {
+			for port := range ports {
+				endpoints.add(host, port)
 			}
-			endpoints.secrets = append(endpoints.secrets, previous.secrets...)
-			previous.mu.RUnlock()
 		}
+		endpoints.secrets = append(endpoints.secrets, previous.secrets...)
+		previous.mu.RUnlock()
 	}
 	var document map[string]any
 	if commonYaml.Unmarshal([]byte(configText), &document) == nil {
@@ -141,6 +139,7 @@ func (endpoints *clientDiagnosticEndpointSet) recordAddresses(host string, addre
 }
 
 func sanitizeClientLogPayload(payload string) string {
+	payload = sanitizeClientDiagnosticMessage(payload)
 	endpoints, _ := clientDiagnosticEndpoints.Load().(*clientDiagnosticEndpointSet)
 	if endpoints == nil {
 		return sanitizeClientDiagnosticMessage(payload)
