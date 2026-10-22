@@ -1,0 +1,7 @@
+tags: with_gvisor
+go_ldflags: "-w -s"
+core_dir: core
+core_name: HarborProxyCore
+lib_name: libclash
+output_dir: libclash
+dist_dir: dist
