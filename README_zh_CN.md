@@ -13,8 +13,7 @@ Android、Linux、Windows 和 macOS。示例名称为 **HarborProxy**，应用 I
 ## 构建
 
 使用 Flutter **3.44.8**、Go **1.26.8** 和目标平台的原生工具链；Android 使用
-JDK 17、NDK r28c，并设置 `ANDROID_NDK`。Core 源码已包含在 `core/Clash.Meta`，
-无需初始化 Git 子模块。
+JDK 17、NDK r28c，并设置 `ANDROID_NDK`。Core 源码直接包含在 `core/Clash.Meta`。
 
 ```sh
 python3 tool/download_geodata.py
@@ -24,11 +23,10 @@ dart setup.dart linux
 ```
 
 GeoData 从 MetaCubeX 的公开 Release 下载，校验附件 SHA-256，并将来源与哈希写入
-`assets/data/GEODATA.lock`；数据库不提交到 Git。平台依赖与测试命令见
+`assets/data/GEODATA.lock`；下载的数据库作为本地构建输入保存。平台依赖与测试命令见
 [英文构建说明](README.md#build)。
 
-分发衍生版本时
-自行配置品牌与部署输入；仓库不提供发布上传流程或签名凭据。
+分发衍生版本时，自行配置品牌、部署输入、发布上传流程和签名凭据。
 
 ## 许可证
 

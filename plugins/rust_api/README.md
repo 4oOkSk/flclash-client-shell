@@ -13,4 +13,4 @@ After changing the exposed Rust API, regenerate bindings:
 flutter_rust_bridge_codegen generate
 ```
 
-Generated bindings are not edited by hand. Desktop IPC ownership is in [lib/core/desktop](../../lib/core/desktop/).
+Update generated bindings through the generator. Desktop IPC ownership is in [lib/core/desktop](../../lib/core/desktop/).

@@ -14,8 +14,7 @@ diagnostics. Example requests and credentials in tests are synthetic fixtures.
 ## Build
 
 Use Flutter **3.44.8**, Go **1.26.8**, and the platform's native build tools.
-Android requires JDK 17 and NDK r28c. Core source is included in `core/Clash.Meta`;
-there are no Git submodules to initialize.
+Android requires JDK 17 and NDK r28c. Core source is included directly in `core/Clash.Meta`.
 
 ```sh
 python3 tool/download_geodata.py
@@ -31,7 +30,7 @@ Xcode. Install Rust for the local Rust plugin. Set `ANDROID_NDK` for Android.
 
 GeoData is downloaded from the public MetaCubeX release. The downloader verifies
 the release asset SHA-256 digests and records the source and hashes in
-`assets/data/GEODATA.lock`. Downloaded databases are not tracked in Git.
+`assets/data/GEODATA.lock`. Downloaded databases remain local build inputs.
 
 Verify source changes with:
 
@@ -41,8 +40,8 @@ flutter test --concurrency=2
 (cd core && CGO_ENABLED=0 go test -p 2 -tags=with_gvisor ./...)
 ```
 
-The template has no release-upload workflow or signing credentials. Supply your
-own branding and deployment configuration when distributing a derivative.
+Supply your own branding, deployment configuration, release-upload workflow and
+signing credentials when distributing a derivative.
 
 ## License
 

@@ -26,7 +26,7 @@
 - Rules based off domains, GEOIP, IPCIDR or Process to forward packets to different nodes
 - Remote groups allow users to implement powerful rules. Supports automatic fallback, load balancing or auto select node
   based off latency
-- Remote providers, allowing users to get node lists remotely instead of hard-coding in config
+- Remote providers for loading node lists from remote sources
 - Netfilter TCP redirecting. Deploy Mihomo on your Internet gateway with `iptables`.
 - Comprehensive HTTP RESTful API controller
 
@@ -55,7 +55,7 @@ cd mihomo && go mod download
 go build
 ```
 
-Set go proxy if a connection to GitHub is not possible:
+For proxy-assisted GitHub access, configure a Go proxy:
 
 ```shell
 go env -w GOPROXY=https://goproxy.io,direct
